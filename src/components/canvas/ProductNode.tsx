@@ -24,6 +24,7 @@ function ProductNode() {
       <Handle
         type="target"
         position={Position.Left}
+        id="in"
         style={{
           width: 10,
           height: 10,

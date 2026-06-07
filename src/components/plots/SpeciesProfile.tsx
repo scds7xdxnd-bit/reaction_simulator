@@ -79,6 +79,7 @@ export default function SpeciesProfile() {
             fontSize: 12,
           }}
           labelFormatter={(val) => `τ = ${Number(val).toFixed(2)} s`}
+          formatter={(value: unknown) => [`${(value as number).toFixed(3)} mol/L`]}
         />
 
         {profileData.boundaries.map((b, i) => (

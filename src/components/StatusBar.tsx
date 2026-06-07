@@ -1,10 +1,12 @@
 import { useSimulatorStore } from '../store/simulatorStore';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, CheckCircle } from 'lucide-react';
 
 export default function StatusBar() {
   const result = useSimulatorStore((s) => s.result);
   const params = useSimulatorStore((s) => s.params);
   const nodes = useSimulatorStore((s) => s.nodes);
+  const simulationMode = useSimulatorStore((s) => s.simulationMode);
+  const setSimulationMode = useSimulatorStore((s) => s.setSimulationMode);
 
   const isSingle = params.reactionMode === 'single';
   const finalXa = result?.finalConversion ?? null;
@@ -19,6 +21,7 @@ export default function StatusBar() {
       : '#6b7280';
 
   const reactorCount = nodes.filter((n) => n.type === 'cstr' || n.type === 'pfr').length;
+  const hasMixerOrSplitter = nodes.some((n) => n.type === 'mixer' || n.type === 'splitter');
 
   const kUnit = isSingle
     ? params.kinetics === 'first-order' ? 's⁻¹' : 'L·mol⁻¹·s⁻¹'
@@ -76,11 +79,30 @@ export default function StatusBar() {
               </span>
             </>
           )}
+
+          {hasMixerOrSplitter && result && (
+            <>
+              <span className="text-[#b0bcd4]">|</span>
+              {result.converged ? (
+                <span className="flex items-center gap-1" style={{ color: '#16a34a' }}>
+                  <CheckCircle size={12} />
+                  <span className="font-mono">Converged ({result.iterations} iter)</span>
+                </span>
+              ) : (
+                <span className="flex items-center gap-1" style={{ color: '#d97706' }}>
+                  <AlertTriangle size={12} />
+                  <span className="font-mono">Not converged ({result.iterations} iter)</span>
+                </span>
+              )}
+            </>
+          )}
         </>
       ) : (
         <span className="flex items-center gap-1.5" style={{ color: '#d97706' }}>
           <AlertTriangle size={14} />
-          <span>Connect Feed → Reactors → Product to simulate</span>
+          <span>{hasMixerOrSplitter
+            ? 'Connect Feed → Units → Product to simulate'
+            : 'Connect Feed → Reactors → Product to simulate'}</span>
         </span>
       )}
 
@@ -118,8 +140,35 @@ export default function StatusBar() {
 
       <span className="text-[#b0bcd4]">|</span>
       <span className="text-[#374151]">
-        {reactorCount} Reactor{reactorCount !== 1 ? 's' : ''} in Series
+        {hasMixerOrSplitter
+          ? `${reactorCount} Reactor${reactorCount !== 1 ? 's' : ''} in Network`
+          : `${reactorCount} Reactor${reactorCount !== 1 ? 's' : ''} in Series`}
       </span>
+
+      <div className="ml-auto flex gap-1">
+        <button
+          onClick={() => setSimulationMode('steady-state')}
+          className="text-[10px] px-2 py-0.5 rounded border font-medium transition-colors"
+          style={{
+            background: simulationMode === 'steady-state' ? '#2563eb' : '#f8faff',
+            color: simulationMode === 'steady-state' ? '#ffffff' : '#6b7280',
+            borderColor: simulationMode === 'steady-state' ? '#2563eb' : '#dde3f0',
+          }}
+        >
+          Steady State
+        </button>
+        <button
+          onClick={() => setSimulationMode('dynamic')}
+          className="text-[10px] px-2 py-0.5 rounded border font-medium transition-colors"
+          style={{
+            background: simulationMode === 'dynamic' ? '#2563eb' : '#f8faff',
+            color: simulationMode === 'dynamic' ? '#ffffff' : '#6b7280',
+            borderColor: simulationMode === 'dynamic' ? '#2563eb' : '#dde3f0',
+          }}
+        >
+          Dynamic
+        </button>
+      </div>
     </div>
   );
 }

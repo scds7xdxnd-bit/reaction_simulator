@@ -19,6 +19,7 @@ function FeedNode() {
       <Handle
         type="source"
         position={Position.Right}
+        id="out"
         style={{
           width: 10,
           height: 10,

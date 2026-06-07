@@ -17,6 +17,17 @@ export default function LevenspielPlot() {
   const result = useSimulatorStore((s) => s.result);
   const params = useSimulatorStore((s) => s.params);
 
+  const yDomain = useMemo<[number, number]>(() => {
+    if (!result?.levenspielCurve?.length) return [0, 10];
+    const vals = result.levenspielCurve
+      .map(p => p.inv_rA_norm)
+      .filter(v => isFinite(v) && v > 0)
+      .sort((a, b) => a - b);
+    if (!vals.length) return [0, 10];
+    const p97 = vals[Math.floor(vals.length * 0.97)];
+    return [0, p97 * 1.2];
+  }, [result]);
+
   const allAreas = useMemo(() => {
     if (!result) return { cstrs: [], pfrs: [] };
 
@@ -34,7 +45,7 @@ export default function LevenspielPlot() {
           x1: s.Xa_in,
           x2: s.Xa_out,
           y1: 0,
-          y2: height,
+          y2: Math.min(height, yDomain[1]),
           label: s.label,
         };
       });
@@ -57,7 +68,7 @@ export default function LevenspielPlot() {
           stripData.push({
             x1: s.Xa_in + dx * i,
             x2: s.Xa_in + dx * (i + 1),
-            height: h,
+            height: Math.min(h, yDomain[1]),
           });
         }
         return {
@@ -69,7 +80,16 @@ export default function LevenspielPlot() {
       });
 
     return { cstrs, pfrs };
-  }, [result, params]);
+  }, [result, params, yDomain]);
+
+  const xAxisDomain = useMemo(() => {
+    if (!result) return [0, 1];
+    let maxX = 0.1;
+    for (const seg of result.segments) {
+      maxX = Math.max(maxX, seg.Xa_out);
+    }
+    return [0, Math.min(1, maxX * 1.15)];
+  }, [result]);
 
   if (!result) {
     return (
@@ -122,9 +142,9 @@ export default function LevenspielPlot() {
             x2={cstr.x2}
             y1={cstr.y1}
             y2={cstr.y2}
-            fill="#eff6ff"
+            fill="#2563eb40"
             stroke="#2563eb"
-            strokeWidth={1.5}
+            strokeWidth={2.5}
           >
             <Label
               value={cstr.label}
@@ -145,10 +165,16 @@ export default function LevenspielPlot() {
                 x2={strip.x2}
                 y1={0}
                 y2={strip.height}
-                fill="#fffbeb"
+                fill="#d97706"
+                fillOpacity={0.22}
                 stroke="none"
               />
             ))}
+            <ReferenceLine
+              x={pfr.x1}
+              stroke="#d9770699"
+              strokeWidth={1.5}
+            />
             <ReferenceLine
               x={pfr.x2}
               stroke="#d97706"
@@ -176,7 +202,7 @@ export default function LevenspielPlot() {
         <XAxis
           dataKey="Xa"
           type="number"
-          domain={[0, 1]}
+          domain={xAxisDomain as [number, number]}
           tickFormatter={(v) => v.toFixed(1)}
           stroke="#374151"
           fontSize={11}
@@ -185,6 +211,8 @@ export default function LevenspielPlot() {
         />
         <YAxis
           type="number"
+          domain={yDomain}
+          tickFormatter={(v) => Number(v).toFixed(0)}
           stroke="#374151"
           fontSize={11}
           label={{ value: 'Cₐ₀/(−rₐ) [s]  ←area = τ', angle: -90, position: 'insideLeft', fill: '#374151', fontSize: 11 }}

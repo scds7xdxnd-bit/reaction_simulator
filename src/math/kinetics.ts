@@ -12,15 +12,34 @@ export function rateAutocatalytic(Xa: number, k: number, Ca0: number, Cr0_frac: 
   return k * Ca0 * Ca0 * (1 - Xa) * (Xa + Cr0_frac);
 }
 
-export function getRate(Xa: number, params: SimulationParams): number {
+export function kArrhenius(params: SimulationParams, T: number): number {
+  const R_kJ = 8.314e-3;
+  if (params.Ea <= 0) return params.k;
+  const exponent = (params.Ea / R_kJ) * (1 / params.T_ref - 1 / Math.max(T, 50));
+  return params.k * Math.exp(Math.max(-30, Math.min(30, exponent)));
+}
+
+export function k2Arrhenius(params: SimulationParams, T: number): number {
+  const R_kJ = 8.314e-3;
+  if (params.Ea <= 0) return params.k2;
+  const exponent = (params.Ea / R_kJ) * (1 / params.T_ref - 1 / Math.max(T, 50));
+  return params.k2 * Math.exp(Math.max(-30, Math.min(30, exponent)));
+}
+
+export function getRate(
+  Xa: number,
+  params: SimulationParams,
+  T: number = params.T_ref ?? 300
+): number {
   const clamped = Math.max(0, Math.min(0.9999, Xa));
+  const k_eff = kArrhenius(params, T);
   switch (params.kinetics) {
     case 'first-order':
-      return rateFirstOrder(clamped, params.k, params.Ca0);
+      return k_eff * params.Ca0 * (1 - clamped);
     case 'second-order':
-      return rateSecondOrder(clamped, params.k, params.Ca0);
+      return k_eff * params.Ca0 ** 2 * (1 - clamped) ** 2;
     case 'autocatalytic':
-      return rateAutocatalytic(clamped, params.k, params.Ca0, params.Cr0_fraction);
+      return k_eff * params.Ca0 ** 2 * (1 - clamped) * (clamped + params.Cr0_fraction);
   }
 }
 

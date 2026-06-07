@@ -77,6 +77,61 @@ export default function ReactorToolbar() {
           PFR
         </span>
       </div>
+
+      <div
+        className="flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing"
+        draggable
+        onDragStart={(e) => onDragStart(e, 'Mixer')}
+        style={{ width: 56 }}
+      >
+        <div
+          className="flex items-center justify-center rounded-md border"
+          style={{
+            width: 44,
+            height: 52,
+            borderColor: '#059669',
+            background: '#ecfdf5',
+          }}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M8 8L16 16M16 8L8 16" stroke="#059669" strokeWidth="1.5" strokeLinecap="round" />
+            <circle cx="12" cy="12" r="9" stroke="#059669" strokeWidth="1.5" fill="none" />
+            <circle cx="12" cy="12" r="3" fill="#059669" opacity="0.2" />
+          </svg>
+        </div>
+        <span className="text-[10px] font-medium text-[#059669] uppercase tracking-wider">
+          Mixer
+        </span>
+      </div>
+
+      <div
+        className="flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing"
+        draggable
+        onDragStart={(e) => onDragStart(e, 'Splitter')}
+        style={{ width: 56 }}
+      >
+        <div
+          className="flex items-center justify-center rounded-md border"
+          style={{
+            width: 44,
+            height: 52,
+            borderColor: '#7c3aed',
+            background: '#f5f3ff',
+          }}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="9" stroke="#7c3aed" strokeWidth="1.5" fill="none" />
+            <circle cx="12" cy="12" r="3" fill="#7c3aed" opacity="0.2" />
+            <line x1="8" y1="12" x2="16" y2="12" stroke="#7c3aed" strokeWidth="1.5" />
+            <line x1="12" y1="8" x2="12" y2="16" stroke="#7c3aed" strokeWidth="1.5" />
+            <path d="M12 12L18 8" stroke="#7c3aed" strokeWidth="1" strokeDasharray="2 1" />
+            <path d="M12 12L18 16" stroke="#7c3aed" strokeWidth="1" strokeDasharray="2 1" />
+          </svg>
+        </div>
+        <span className="text-[10px] font-medium text-[#7c3aed] uppercase tracking-wider">
+          Split
+        </span>
+      </div>
     </div>
   );
 }

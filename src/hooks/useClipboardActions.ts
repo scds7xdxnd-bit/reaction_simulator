@@ -1,0 +1,90 @@
+import { useState, useCallback } from 'react';
+import type { Node, Edge } from '@xyflow/react';
+import { useSimulatorStore } from '../store/simulatorStore';
+
+function getConnectedEdgesInternal(selectedNodes: Node[], allEdges: Edge[]): Edge[] {
+  const selectedIds = new Set(selectedNodes.map(n => n.id));
+  return allEdges.filter(
+    e => selectedIds.has(e.source) && selectedIds.has(e.target)
+  );
+}
+
+export function useClipboardActions() {
+  const [clipboard, setClipboard] = useState<{ nodes: Node[]; edges: Edge[] } | null>(null);
+
+  const storeNodes = useSimulatorStore((s) => s.nodes);
+  const storeEdges = useSimulatorStore((s) => s.edges);
+  const setNodes = useSimulatorStore((s) => s.setNodes);
+  const setEdges = useSimulatorStore((s) => s.setEdges);
+  const pushHistory = useSimulatorStore((s) => s.pushHistory);
+
+  const copySelected = useCallback(() => {
+    const sel = storeNodes.filter(n => n.selected && (n as any).deletable !== false);
+    const internal = getConnectedEdgesInternal(sel, storeEdges);
+    if (sel.length > 0) setClipboard({ nodes: sel, edges: internal });
+  }, [storeNodes, storeEdges]);
+
+  const paste = useCallback(() => {
+    if (!clipboard) return;
+    pushHistory();
+    const idMap = new Map<string, string>();
+    const timestamp = Date.now();
+    const newNodes = clipboard.nodes.map((n, i) => {
+      const newId = `${n.type}-paste-${timestamp}-${i}`;
+      idMap.set(n.id, newId);
+      return {
+        ...n,
+        id: newId,
+        position: { x: n.position.x + 60, y: n.position.y + 60 },
+        selected: true,
+        data: { ...n.data },
+      };
+    });
+    const newEdges: Edge[] = clipboard.edges.map((e, i) => ({
+      ...e,
+      id: `e-paste-${timestamp}-${i}`,
+      source: idMap.get(e.source) ?? e.source,
+      target: idMap.get(e.target) ?? e.target,
+      selected: false,
+    }));
+    setNodes([...storeNodes.map(n => ({ ...n, selected: false, data: { ...n.data } })), ...newNodes]);
+    setEdges([...storeEdges, ...newEdges]);
+  }, [clipboard, storeNodes, storeEdges, setNodes, setEdges, pushHistory]);
+
+  const cut = useCallback(() => {
+    copySelected();
+  }, [copySelected]);
+
+  const duplicate = useCallback(() => {
+    const sel = storeNodes.filter(n => n.selected && (n as any).deletable !== false);
+    const internal = getConnectedEdgesInternal(sel, storeEdges);
+    if (sel.length === 0) return;
+    setClipboard({ nodes: sel, edges: internal });
+
+    pushHistory();
+    const idMap = new Map<string, string>();
+    const timestamp = Date.now();
+    const newNodes = sel.map((n, i) => {
+      const newId = `${n.type}-dup-${timestamp}-${i}`;
+      idMap.set(n.id, newId);
+      return {
+        ...n,
+        id: newId,
+        position: { x: n.position.x + 60, y: n.position.y + 60 },
+        selected: true,
+        data: { ...n.data },
+      };
+    });
+    const newEdges: Edge[] = internal.map((e, i) => ({
+      ...e,
+      id: `e-dup-${timestamp}-${i}`,
+      source: idMap.get(e.source) ?? e.source,
+      target: idMap.get(e.target) ?? e.target,
+      selected: false,
+    }));
+    setNodes([...storeNodes.map(n => ({ ...n, selected: false, data: { ...n.data } })), ...newNodes]);
+    setEdges([...storeEdges, ...newEdges]);
+  }, [storeNodes, storeEdges, setNodes, setEdges, pushHistory]);
+
+  return { copySelected, paste, cut, duplicate };
+}

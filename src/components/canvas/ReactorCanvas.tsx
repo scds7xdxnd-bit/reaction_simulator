@@ -24,6 +24,8 @@ import CSTRNode from './CSTRNode';
 import PFRNode from './PFRNode';
 import FeedNode from './FeedNode';
 import ProductNode from './ProductNode';
+import MixerNode from './MixerNode';
+import SplitterNode from './SplitterNode';
 import { useSimulatorStore } from '../../store/simulatorStore';
 import { useSimulation } from '../../hooks/useSimulation';
 
@@ -63,6 +65,8 @@ const initialEdges: Edge[] = [
     id: 'feed-cstr-0',
     source: 'feed',
     target: 'cstr-0',
+    sourceHandle: 'out',
+    targetHandle: 'in',
     type: 'smoothstep',
     style: { stroke: '#94a3b8', strokeWidth: 2 },
     animated: true,
@@ -72,6 +76,8 @@ const initialEdges: Edge[] = [
     id: 'cstr-0-pfr-0',
     source: 'cstr-0',
     target: 'pfr-0',
+    sourceHandle: 'out',
+    targetHandle: 'in',
     type: 'smoothstep',
     style: { stroke: '#94a3b8', strokeWidth: 2 },
     animated: true,
@@ -81,6 +87,8 @@ const initialEdges: Edge[] = [
     id: 'pfr-0-product',
     source: 'pfr-0',
     target: 'product',
+    sourceHandle: 'out',
+    targetHandle: 'in',
     type: 'smoothstep',
     style: { stroke: '#94a3b8', strokeWidth: 2 },
     animated: true,
@@ -93,6 +101,8 @@ const nodeTypes = {
   pfr: PFRNode,
   feed: FeedNode,
   product: ProductNode,
+  mixer: MixerNode,
+  splitter: SplitterNode,
 };
 
 const defaultEdgeOptions: Partial<Edge> = {
@@ -106,6 +116,10 @@ export default function ReactorCanvas() {
   const storeSetNodes = useSimulatorStore((s) => s.setNodes);
   const storeSetEdges = useSimulatorStore((s) => s.setEdges);
   const addReactor = useSimulatorStore((s) => s.addReactor);
+  const addUnit = useSimulatorStore((s) => s.addUnit);
+  const result = useSimulatorStore((s) => s.result);
+  const pushHistory = useSimulatorStore((s) => s.pushHistory);
+  const setSelectedNodeId = useSimulatorStore((s) => s.setSelectedNodeId);
 
   const [nodes, setNodes, _onNodesChangeBase] = useNodesState<FlowNode>(initialNodes as FlowNode[]);
   const [edges, setEdges, _onEdgesChangeBase] = useEdgesState<Edge>(initialEdges);
@@ -117,74 +131,78 @@ export default function ReactorCanvas() {
 
   useSimulation();
 
-  const syncStore = useCallback(
-    (newNodes: typeof nodes, newEdges: Edge[]) => {
-      storeSetNodes(newNodes);
-      storeSetEdges(newEdges);
-    },
-    [storeSetNodes, storeSetEdges]
-  );
+  useEffect(() => {
+    if (!result) return;
+    const recycleIds = new Set(result.recycleEdgeIds);
+    setEdges((eds) =>
+      eds.map((e) => {
+        if (recycleIds.has(e.id)) {
+          return {
+            ...e,
+            style: { stroke: '#7c3aed', strokeWidth: 2 },
+            animated: true,
+            markerEnd: { type: MarkerType.ArrowClosed, color: '#7c3aed' },
+          };
+        }
+        return e;
+      })
+    );
+  }, [result, setEdges]);
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
-      setNodes((nds) => {
-        const updated = applyNodeChanges(changes, nds);
-        syncStore(updated, edges);
-        return updated;
-      });
+      setNodes((nds) => applyNodeChanges(changes, nds));
     },
-    [setNodes, edges, syncStore]
+    [setNodes]
   );
 
   const onEdgesChange = useCallback(
     (changes: EdgeChange[]) => {
-      setEdges((eds) => {
-        const updated = applyEdgeChanges(changes, eds) as Edge[];
-        syncStore(nodes, updated);
-        return updated;
-      });
+      setEdges((eds) => applyEdgeChanges(changes, eds) as Edge[]);
     },
-    [setEdges, nodes, syncStore]
+    [setEdges]
   );
+
+  useEffect(() => {
+    storeSetNodes(nodes);
+  }, [nodes, storeSetNodes]);
+
+  useEffect(() => {
+    storeSetEdges(edges);
+  }, [edges, storeSetEdges]);
 
   const onConnect = useCallback(
     (connection: Connection) => {
-      const sourceAlreadyConnected = edges.some(
-        (e) => e.source === connection.source
-      );
-      if (sourceAlreadyConnected) return;
-
       const sourceNode = nodes.find((n) => n.id === connection.source);
       const targetNode = nodes.find((n) => n.id === connection.target);
       if (!sourceNode || !targetNode) return;
 
-      const sourceX = sourceNode.position.x;
-      const targetX = targetNode.position.x;
-      if (sourceX > targetX) return;
+      if (targetNode.type === 'mixer') {
+        const incomingCount = edges.filter(
+          (e) => e.target === targetNode.id
+        ).length;
+        if (incomingCount >= 2) return;
+      }
 
-      setEdges((eds) => {
-        const newEdges = addEdge(connection, eds) as Edge[];
-        syncStore(nodes, newEdges);
-        return newEdges;
-      });
+      if (sourceNode.type === 'splitter') {
+        const outgoingCount = edges.filter(
+          (e) => e.source === sourceNode.id
+        ).length;
+        if (outgoingCount >= 2) return;
+      }
+
+      pushHistory();
+      setEdges((eds) => addEdge(connection, eds) as Edge[]);
     },
-    [edges, nodes, setEdges, syncStore]
+    [edges, nodes, setEdges, pushHistory]
   );
 
   const onReconnect = useCallback(
     (oldEdge: Edge, newConnection: Connection) => {
-      const sourceNode = nodes.find((n) => n.id === newConnection.source);
-      const targetNode = nodes.find((n) => n.id === newConnection.target);
-      if (!sourceNode || !targetNode) return;
-      if (sourceNode.position.x > targetNode.position.x) return;
-
-      setEdges((eds) => {
-        const updated = reconnectEdge(oldEdge, newConnection, eds) as Edge[];
-        syncStore(nodes, updated);
-        return updated;
-      });
+      pushHistory();
+      setEdges((eds) => reconnectEdge(oldEdge, newConnection, eds) as Edge[]);
     },
-    [nodes, setEdges, syncStore]
+    [setEdges, pushHistory]
   );
 
   const onDragOver = useCallback((event: React.DragEvent) => {
@@ -198,6 +216,8 @@ export default function ReactorCanvas() {
       const type = event.dataTransfer.getData('application/reactflow') as
         | 'CSTR'
         | 'PFR'
+        | 'Mixer'
+        | 'Splitter'
         | undefined;
       if (!type) return;
 
@@ -207,39 +227,50 @@ export default function ReactorCanvas() {
       if (!reactFlowBounds) return;
 
       const position = {
-        x: event.clientX - reactFlowBounds.left - 75,
-        y: event.clientY - reactFlowBounds.top - 45,
+        x: event.clientX - reactFlowBounds.left - 55,
+        y: event.clientY - reactFlowBounds.top - 40,
       };
 
-      addReactor(type, position);
+      if (type === 'CSTR' || type === 'PFR') {
+        addReactor(type, position);
+      } else {
+        addUnit(type, position);
+      }
+
       const latestNodes = useSimulatorStore.getState().nodes;
       setNodes(latestNodes as FlowNode[]);
     },
-    [addReactor, setNodes]
+    [addReactor, addUnit, setNodes]
   );
 
   const onDelete = useCallback(
     (deletedNodes: { id: string }[]) => {
-      setNodes((nds) => {
-        const updated = nds.filter(
+      const deletedIds = new Set(deletedNodes.map((n) => n.id));
+      pushHistory();
+      setNodes((nds) =>
+        nds.filter(
           (n) =>
-            !deletedNodes.some((dn) => dn.id === n.id) ||
+            !deletedIds.has(n.id) ||
             n.id === 'feed' ||
             n.id === 'product'
-        );
-        syncStore(updated, edges);
-        return updated;
-      });
-
-      setEdges((eds) => {
-        const deletedIds = new Set(deletedNodes.map((n) => n.id));
-        const updated = eds.filter(
+        )
+      );
+      setEdges((eds) =>
+        eds.filter(
           (e) => !deletedIds.has(e.source) && !deletedIds.has(e.target)
-        );
-        return updated;
-      });
+        )
+      );
     },
-    [edges, setNodes, setEdges, syncStore]
+    [setNodes, setEdges, pushHistory]
+  );
+
+  const onNodeClick = useCallback(
+    (_event: React.MouseEvent, node: FlowNode) => {
+      if (node.type === 'cstr' || node.type === 'pfr') {
+        setSelectedNodeId(node.id);
+      }
+    },
+    [setSelectedNodeId]
   );
 
   return (
@@ -255,6 +286,7 @@ export default function ReactorCanvas() {
         onDragOver={onDragOver}
         onDrop={onDrop}
         onNodesDelete={onDelete}
+        onNodeClick={onNodeClick}
         nodeTypes={nodeTypes}
         defaultEdgeOptions={defaultEdgeOptions}
         deleteKeyCode={['Delete', 'Backspace']}
@@ -283,6 +315,8 @@ export default function ReactorCanvas() {
             if (node.type === 'pfr') return '#d97706';
             if (node.type === 'feed') return '#6b7280';
             if (node.type === 'product') return '#16a34a';
+            if (node.type === 'mixer') return '#059669';
+            if (node.type === 'splitter') return '#7c3aed';
             return '#6b7280';
           }}
         />
