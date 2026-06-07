@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: #f0f4ff;
+  color: #0f1730;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.react-flow__node {
+  cursor: default;
+}
+
+.react-flow__node.react-flow__node-cstr,
+.react-flow__node.react-flow__node-pfr {
+  cursor: grab;
+}
+
+.react-flow__node.react-flow__node-feed,
+.react-flow__node.react-flow__node-product {
+  cursor: default;
+}
