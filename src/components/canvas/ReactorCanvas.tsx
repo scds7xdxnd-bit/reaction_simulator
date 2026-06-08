@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import {
   ReactFlow,
   Background,
@@ -131,24 +131,6 @@ export default function ReactorCanvas() {
 
   useSimulation();
 
-  useEffect(() => {
-    if (!result) return;
-    const recycleIds = new Set(result.recycleEdgeIds);
-    setEdges((eds) =>
-      eds.map((e) => {
-        if (recycleIds.has(e.id)) {
-          return {
-            ...e,
-            style: { stroke: '#7c3aed', strokeWidth: 2 },
-            animated: true,
-            markerEnd: { type: MarkerType.ArrowClosed, color: '#7c3aed' },
-          };
-        }
-        return e;
-      })
-    );
-  }, [result, setEdges]);
-
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
       setNodes((nds) => applyNodeChanges(changes, nds));
@@ -273,11 +255,36 @@ export default function ReactorCanvas() {
     [setSelectedNodeId]
   );
 
+  // Recycle edge styling is DISPLAY-ONLY — never written back to `edges` state.
+  // Keeping style out of the base `edges` state breaks the feedback loop:
+  //   result → setEdges → storeSetEdges → simulation → result → ...
+  const recycleIdsKey = result?.recycleEdgeIds.join(',') ?? '';
+  const displayEdges = useMemo(() => {
+    const recycleIds = new Set(result?.recycleEdgeIds ?? []);
+    return edges.map((e) => {
+      const isRecycle = recycleIds.has(e.id);
+      return {
+        ...e,
+        style: {
+          stroke: isRecycle ? '#7c3aed' : '#94a3b8',
+          strokeWidth: 2,
+        },
+        animated: true,
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color: isRecycle ? '#7c3aed' : '#94a3b8',
+        },
+      };
+    });
+  // recycleIdsKey is a stable string; avoids recompute on every new result object
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [edges, recycleIdsKey]);
+
   return (
     <div className="w-full h-full bg-[#e8eeff]">
       <ReactFlow
         nodes={nodes}
-        edges={edges}
+        edges={displayEdges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}

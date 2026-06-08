@@ -2,7 +2,6 @@ import type { Node, Edge } from '@xyflow/react';
 import type {
   SimulationParams,
   SimulationResult,
-  StreamState,
   ReactorSegmentResult,
   ThermalMode,
 } from '../types/reactor';
@@ -20,6 +19,10 @@ import {
   solvePFRAdiabatic,
   solvePFRCooled,
 } from './thermalSolvers';
+import { type StreamState, stateToStream, annotateStream } from './streamBridge';
+import { buildChemistry } from './chemistryFactory';
+import type { AnnotatedStream } from '../types/stream';
+import type { ChemistryModel } from '../types/chemistry';
 
 export function findTearEdgeIds(nodes: Node[], edges: Edge[]): Set<string> {
   const color = new Map<string, 'white' | 'gray' | 'black'>();
@@ -645,15 +648,22 @@ export function solveNetwork(
     streamIdx++;
   }
 
-  const streamsWithLabels: Record<string, StreamState> = {};
+  const streamsOut: Record<string, AnnotatedStream> = {};
   for (const [edgeId, state] of lastPass.streams) {
     const labels = streamLabels.get(edgeId);
-    streamsWithLabels[edgeId] = {
-      ...state,
-      streamLabel: labels?.label,
-      streamDesc: labels?.desc,
-    };
+    streamsOut[edgeId] = annotateStream(
+      stateToStream(state),
+      labels?.label,
+      labels?.desc
+    );
   }
+
+  const nodeOutputsOut: Record<string, AnnotatedStream> = {};
+  for (const [nodeId, state] of lastPass.nodeOutputs) {
+    nodeOutputsOut[nodeId] = annotateStream(stateToStream(state));
+  }
+
+  const chemistry = buildChemistry(params);
 
   const finalXa = productOutput.Xa;
   const finalYield = productOutput.Cr / Math.max(params.Ca0, 1e-9);
@@ -663,8 +673,8 @@ export function solveNetwork(
       : 0;
 
   return {
-    streams: streamsWithLabels,
-    nodeOutputs: Object.fromEntries(lastPass.nodeOutputs),
+    streams: streamsOut,
+    nodeOutputs: nodeOutputsOut,
     converged,
     iterations,
     recycleEdgeIds: [...tearIds],
@@ -673,5 +683,6 @@ export function solveNetwork(
     finalYield,
     finalSelectivity,
     levenspielCurve,
+    chemistry,
   };
 }

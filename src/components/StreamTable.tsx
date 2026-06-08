@@ -1,10 +1,13 @@
 import { useSimulatorStore } from '../store/simulatorStore';
 import { ChevronDown, ChevronRight, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useState } from 'react';
+import { concentration, conversion, totalMolarFlow } from '../types/stream';
+import { makeFeedStream } from '../math/streamBridge';
 
 export default function StreamTable() {
   const result = useSimulatorStore((s) => s.result);
   const params = useSimulatorStore((s) => s.params);
+  const feedStream = makeFeedStream(params.Ca0, params.T_feed);
   const [collapsed, setCollapsed] = useState(false);
 
   if (!result) return null;
@@ -78,18 +81,18 @@ export default function StreamTable() {
                       )}
                     </td>
                     <td className="text-right px-2 py-0.5 text-[#0f1730]">
-                      {(stream.Xa * 100).toFixed(1)}%
+                      {(conversion(stream, feedStream, 'A') * 100).toFixed(1)}%
                     </td>
                     <td className="text-right px-2 py-0.5 text-[#0f1730]">
-                      {stream.Ca.toFixed(3)}
+                      {concentration(stream, 'A', params.Ca0).toFixed(3)}
                     </td>
                     {!isSingle && (
                       <>
                         <td className="text-right px-2 py-0.5 text-[#0f1730]">
-                          {stream.Cr.toFixed(3)}
+                          {concentration(stream, 'R', params.Ca0).toFixed(3)}
                         </td>
                         <td className="text-right px-2 py-0.5 text-[#0f1730]">
-                          {stream.Cs.toFixed(3)}
+                          {concentration(stream, 'S', params.Ca0).toFixed(3)}
                         </td>
                       </>
                     )}
@@ -97,7 +100,7 @@ export default function StreamTable() {
                       {T.toFixed(0)} K
                     </td>
                     <td className="text-right px-2 py-0.5 text-[#0f1730]">
-                      {stream.flow.toFixed(2)}
+                      {(totalMolarFlow(stream) / params.Ca0).toFixed(2)}
                     </td>
                   </tr>
                 );
