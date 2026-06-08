@@ -8,6 +8,7 @@ import type {
 import { buildLevenspielCurve } from './kinetics';
 import { type StreamState, streamToState, stateToStream, annotateStream } from './streamBridge';
 import { buildChemistry } from './chemistryFactory';
+import { getPreset } from './reactionRegistry';
 import { cstrModel, pfrModel, type UnitParams } from './unitModels';
 import type { AnnotatedStream } from '../types/stream';
 import type { ChemistryModel } from '../types/chemistry';
@@ -246,10 +247,7 @@ function buildSegments(
     const T_in = inlet.T ?? (params.T_feed ?? 300);
     const T_out = output.T ?? T_in;
 
-    const Da =
-      params.kinetics === 'first-order'
-        ? params.k * data.tau
-        : params.k * params.Ca0 * data.tau;
+    const Da = getPreset(params).computeDa(params.k, data.tau, params.Ca0);
 
     const tauEff = data.tau / Math.max(inlet.flow, 0.001);
 
@@ -280,10 +278,9 @@ function buildSegments(
     cumTauOffset += tauEff;
 
     const yieldR = output.Cr / Math.max(params.Ca0, 1e-9);
-    const consumed =
-      params.reactionMode === 'single'
-        ? params.Ca0 * Xa_out
-        : inlet.Ca - output.Ca;
+    const consumed = getPreset(params).isSingle
+      ? params.Ca0 * Xa_out
+      : inlet.Ca - output.Ca;
     const selectivity =
       Math.abs(consumed) > 1e-9
         ? output.Cr / Math.max(consumed, 1e-9)
