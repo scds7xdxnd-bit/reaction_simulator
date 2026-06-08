@@ -443,6 +443,8 @@ h1 {
 <div class="crosscut">
   <span class="crosscut-label">A · Units &amp; Validation</span>
   <span class="crosscut-desc">Physical-unit labels, dimensional consistency, input bounds, diagnostic surfacing — spans all layers continuously</span>
+  &nbsp;<span class="badge badge-done">✓ Done</span>
+  <span style="font-size:9.5px;color:#0369a1;background:#eff6ff;border:1px solid #bfdbfe;border-radius:4px;padding:3px 8px;margin-left:8px;font-weight:600">✓ validation.ts: validateParams + validateTopology, pure (zero store/hook imports) · StatusBar: getPreset() replaces params.kinetics=== branching · validation badge (red/amber) with hover tooltip</span>
 </div>
 
 <!-- LAYER 1 -->
@@ -695,6 +697,8 @@ h1 {
 <div class="crosscut" style="margin-top:6px">
   <span class="crosscut-label">B · Persistence &amp; Examples</span>
   <span class="crosscut-desc">Serialize Model↔JSON, load saved cases, ship example flowsheets. Saved cases double as regression tests — assert a known case still yields its known Result.</span>
+  &nbsp;<span class="badge badge-done">✓ Done</span>
+  <span style="font-size:9.5px;color:#0369a1;background:#eff6ff;border:1px solid #bfdbfe;border-radius:4px;padding:3px 8px;margin-left:8px;font-weight:600">✓ serializer.ts: serializeState/deserializeState v1 schema, pure TS · examples.ts: 3 flowsheets (Single CSTR, 2×CSTR, CSTR+PFR) · useFileIO: save→download, load→file picker, loadExample · ReactorToolbar: Save/Load/Examples buttons</span>
 </div>
 
 <!-- Graphify signals callout -->
@@ -746,7 +750,7 @@ h1 {
     <div class="order-arrow">→</div>
     <div class="order-step done">✓ C10–12<br/><small>UI layers · done</small></div>
     <div class="order-arrow">→</div>
-    <div class="order-step next">A + B<br/><small>Validation &amp;<br/>Persistence</small></div>
+    <div class="order-step done">✓ A + B<br/><small>Validation &amp;<br/>Persistence · done</small></div>
   </div>
   <div style="margin-top:10px;font-size:11px;color:#64748b;line-height:1.6;padding:8px 12px;background:#f8fafc;border-radius:6px;border:1px solid #e2e8f0">
     <strong>Rule:</strong> A compartment can only be deepened when its <em>upstream dependencies</em> have frozen contracts.

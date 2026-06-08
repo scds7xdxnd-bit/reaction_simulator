@@ -1,4 +1,7 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
+import { Save, FolderOpen, BookOpen } from 'lucide-react';
+import { useSaveFile, useLoadFile, useLoadExample } from '../../hooks/useFileIO';
+import { EXAMPLES } from '../../io/examples';
 
 function CstRIcon() {
   return (
@@ -32,8 +35,13 @@ export default function ReactorToolbar() {
     []
   );
 
+  const handleSave        = useSaveFile();
+  const handleLoad        = useLoadFile();
+  const handleLoadExample = useLoadExample();
+  const [examplesOpen, setExamplesOpen] = useState(false);
+
   return (
-    <div className="w-16 h-full bg-[#ffffff] border-r border-[#dde3f0] flex flex-col items-center pt-4 gap-4">
+    <div className="w-16 h-full bg-[#ffffff] border-r border-[#dde3f0] flex flex-col items-center pt-4 gap-4 pb-4">
       <div
         className="flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing"
         draggable
@@ -131,6 +139,67 @@ export default function ReactorToolbar() {
         <span className="text-[10px] font-medium text-[#7c3aed] uppercase tracking-wider">
           Split
         </span>
+      </div>
+
+      <div className="mt-auto" />
+      <div style={{ width: 40, height: 1, background: '#dde3f0', marginBottom: 4 }} />
+
+      <button
+        onClick={handleSave}
+        title="Save flowsheet"
+        className="flex items-center justify-center rounded-md border mb-2"
+        style={{ width: 44, height: 44, borderColor: '#dde3f0', background: '#f8faff' }}
+      >
+        <Save size={18} color="#374151" />
+      </button>
+
+      <button
+        onClick={handleLoad}
+        title="Load flowsheet"
+        className="flex items-center justify-center rounded-md border mb-2"
+        style={{ width: 44, height: 44, borderColor: '#dde3f0', background: '#f8faff' }}
+      >
+        <FolderOpen size={18} color="#374151" />
+      </button>
+
+      <div style={{ position: 'relative' }} className="mb-4">
+        <button
+          onClick={() => setExamplesOpen((v) => !v)}
+          title="Load example"
+          className="flex items-center justify-center rounded-md border"
+          style={{ width: 44, height: 44, borderColor: '#dde3f0', background: '#f8faff' }}
+        >
+          <BookOpen size={18} color="#374151" />
+        </button>
+
+        {examplesOpen && (
+          <div
+            style={{
+              position: 'absolute',
+              left: 52,
+              bottom: 0,
+              background: '#fff',
+              border: '1px solid #dde3f0',
+              borderRadius: 8,
+              boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+              padding: 8,
+              minWidth: 210,
+              zIndex: 100,
+            }}
+          >
+            <div className="text-[11px] font-semibold text-[#374151] mb-2 px-1">Examples</div>
+            {EXAMPLES.map((ex) => (
+              <button
+                key={ex.id}
+                onClick={() => { handleLoadExample(ex); setExamplesOpen(false); }}
+                className="w-full text-left px-2 py-1.5 rounded hover:bg-[#eff6ff]"
+              >
+                <div className="text-[12px] font-medium text-[#0f1730]">{ex.name}</div>
+                <div className="text-[10px] text-[#6b7280]">{ex.description}</div>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

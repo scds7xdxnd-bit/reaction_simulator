@@ -1,4 +1,6 @@
 import { useSimulatorStore } from '../store/simulatorStore';
+import { getPreset } from '../math/reactionRegistry';
+import { useValidation } from '../hooks/useValidation';
 import { AlertTriangle, CheckCircle } from 'lucide-react';
 
 export default function StatusBar() {
@@ -23,19 +25,9 @@ export default function StatusBar() {
   const reactorCount = nodes.filter((n) => n.type === 'cstr' || n.type === 'pfr').length;
   const hasMixerOrSplitter = nodes.some((n) => n.type === 'mixer' || n.type === 'splitter');
 
-  const kUnit = isSingle
-    ? params.kinetics === 'first-order' ? 's⁻¹' : 'L·mol⁻¹·s⁻¹'
-    : 's⁻¹';
-
-  const kineticsLabel = isSingle
-    ? params.kinetics === 'first-order'
-      ? '1st Order'
-      : params.kinetics === 'second-order'
-        ? '2nd Order'
-        : 'Autocatalytic'
-    : params.reactionMode === 'series'
-      ? 'Series A→R→S'
-      : 'Parallel A→R/A→S';
+  const preset        = getPreset(params);
+  const kUnit         = preset.kUnit ?? 's⁻¹';
+  const kineticsLabel = preset.uiLabel;
 
   const finalYield = result?.finalYield ?? NaN;
   const finalSelectivity = result?.finalSelectivity ?? NaN;
@@ -55,6 +47,10 @@ export default function StatusBar() {
       : finalSelectivity > 0.3
         ? '#d97706'
         : '#dc2626';
+
+  const issues     = useValidation();
+  const errorCount = issues.filter((i) => i.level === 'error').length;
+  const warnCount  = issues.filter((i) => i.level === 'warning').length;
 
   return (
     <div className="h-12 bg-[#f8faff] border-t border-[#dde3f0] flex items-center px-4 gap-3 text-[12px] shrink-0">
@@ -106,6 +102,24 @@ export default function StatusBar() {
         </span>
       )}
 
+      {issues.length > 0 && (
+        <>
+          <span className="text-[#b0bcd4]">|</span>
+          <span
+            title={issues.map((i) => i.message).join('\n')}
+            className="flex items-center gap-1 cursor-default"
+            style={{ color: errorCount > 0 ? '#dc2626' : '#d97706' }}
+          >
+            <AlertTriangle size={12} />
+            <span className="font-mono">
+              {errorCount > 0
+                ? `${errorCount} error${errorCount > 1 ? 's' : ''}`
+                : `${warnCount} warning${warnCount > 1 ? 's' : ''}`}
+            </span>
+          </span>
+        </>
+      )}
+
       <span className="text-[#b0bcd4]">|</span>
       <span className="text-[#374151]">Kinetics:</span>
       <span className="text-[#0f1730]">{kineticsLabel}</span>
@@ -130,7 +144,7 @@ export default function StatusBar() {
       <span className="text-[#374151]">Cₐ₀ =</span>
       <span className="font-mono text-[#0f1730]">{params.Ca0.toFixed(2)} mol/L</span>
 
-      {isSingle && params.kinetics === 'autocatalytic' && (
+      {preset.id === 'single-autocatalytic' && (
         <>
           <span className="text-[#b0bcd4]">|</span>
           <span className="text-[#374151]">Cᵣ₀/Cₐ₀ =</span>
