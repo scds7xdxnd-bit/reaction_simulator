@@ -11,11 +11,23 @@ import {
   Tooltip,
 } from 'recharts';
 import { useSimulatorStore } from '../../store/simulatorStore';
-import { getRate } from '../../math/kinetics';
+
+function interpolateCurve(
+  curve: { Xa: number; inv_rA_norm: number }[],
+  xa: number,
+): number {
+  if (!curve.length) return 0;
+  for (let i = 0; i < curve.length - 1; i++) {
+    if (curve[i].Xa <= xa && xa <= curve[i + 1].Xa) {
+      const t = (xa - curve[i].Xa) / (curve[i + 1].Xa - curve[i].Xa);
+      return curve[i].inv_rA_norm * (1 - t) + curve[i + 1].inv_rA_norm * t;
+    }
+  }
+  return curve[curve.length - 1].inv_rA_norm;
+}
 
 export default function LevenspielPlot() {
   const result = useSimulatorStore((s) => s.result);
-  const params = useSimulatorStore((s) => s.params);
 
   const yDomain = useMemo<[number, number]>(() => {
     if (!result?.levenspielCurve?.length) return [0, 10];
@@ -34,13 +46,7 @@ export default function LevenspielPlot() {
     const cstrs = result.segments
       .filter((s) => s.reactorType === 'CSTR')
       .map((s) => {
-        const effectiveParams = params.reactionMode === 'parallel'
-          ? { ...params, kinetics: 'first-order' as const, k: params.k + params.k2 }
-          : params.reactionMode !== 'single'
-            ? { ...params, kinetics: 'first-order' as const }
-            : params;
-        const rate_at_exit = getRate(s.Xa_out, effectiveParams);
-        const height = params.Ca0 / Math.max(rate_at_exit, 1e-12);
+        const height = interpolateCurve(result.levenspielCurve, s.Xa_out);
         return {
           x1: s.Xa_in,
           x2: s.Xa_out,
@@ -58,13 +64,7 @@ export default function LevenspielPlot() {
         const stripData = [];
         for (let i = 0; i < strips; i++) {
           const xa = s.Xa_in + dx * (i + 0.5);
-          const effectiveParams = params.reactionMode === 'parallel'
-            ? { ...params, kinetics: 'first-order' as const, k: params.k + params.k2 }
-            : params.reactionMode !== 'single'
-              ? { ...params, kinetics: 'first-order' as const }
-              : params;
-          const rate = getRate(xa, effectiveParams);
-          const h = params.Ca0 / Math.max(rate, 1e-12);
+          const h = interpolateCurve(result.levenspielCurve, xa);
           stripData.push({
             x1: s.Xa_in + dx * i,
             x2: s.Xa_in + dx * (i + 1),
@@ -80,7 +80,7 @@ export default function LevenspielPlot() {
       });
 
     return { cstrs, pfrs };
-  }, [result, params, yDomain]);
+  }, [result, yDomain]);
 
   const xAxisDomain = useMemo(() => {
     if (!result) return [0, 1];

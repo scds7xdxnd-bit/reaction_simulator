@@ -14,6 +14,7 @@ import type { AnnotatedStream } from '../types/stream';
 import type { ChemistryModel } from '../types/chemistry';
 
 import { findTearEdgeIds, topoSort } from './topology';
+import { buildOperatingDiagram, type OperatingDiagramData } from './operatingDiagramModel';
 
 function getInletStream(
   inEdges: Edge[],
@@ -341,6 +342,27 @@ export function solveNetwork(
   const segments = buildSegments(nodes, edges, tearIds, lastPass, params, chemistry);
   const levenspielCurve = buildLevenspielCurve(params);
 
+  const operatingDiagrams: Record<string, OperatingDiagramData> = {};
+  if (params.reactionMode === 'single') {
+    const incomingEdges = new Map<string, Edge[]>();
+    for (const e of edges) {
+      if (!incomingEdges.has(e.target)) incomingEdges.set(e.target, []);
+      incomingEdges.get(e.target)!.push(e);
+    }
+    for (const node of nodes) {
+      if (node.type !== 'cstr') continue;
+      const data = node.data as { thermalMode?: string; tau: number; Tc?: number; kappa_v?: number };
+      if (data.thermalMode !== 'cooled') continue;
+      const inEdge = (incomingEdges.get(node.id) ?? [])[0];
+      const inlet = inEdge ? lastPass.streams.get(inEdge.id) : null;
+      const Xa_in = inlet?.Xa ?? 0;
+      const T_in = inlet?.T ?? (params.T_feed ?? 300);
+      operatingDiagrams[node.id] = buildOperatingDiagram(
+        Xa_in, T_in, data.tau, data.Tc ?? 300, data.kappa_v ?? 0.5, params
+      );
+    }
+  }
+
   const nodeMap = new Map(nodes.map(n => [n.id, n]));
   const streamLabels = new Map<string, { label: string; desc: string }>();
   let streamIdx = 0;
@@ -405,5 +427,6 @@ export function solveNetwork(
     finalSelectivity,
     levenspielCurve,
     chemistry,
+    operatingDiagrams,
   };
 }

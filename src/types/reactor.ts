@@ -1,5 +1,6 @@
 import type { AnnotatedStream } from './stream';
 import type { ChemistryModel } from './chemistry';
+import type { OperatingDiagramData } from '../math/operatingDiagramModel';
 
 export type KineticsType = 'first-order' | 'second-order' | 'autocatalytic';
 export type ReactorType = 'CSTR' | 'PFR';
@@ -78,6 +79,7 @@ export interface NetworkResult {
   finalSelectivity: number;
   levenspielCurve: { Xa: number; inv_rA_norm: number }[];
   chemistry: ChemistryModel;
+  operatingDiagrams: Record<string, OperatingDiagramData>;
 }
 
 export interface SimulationResult extends NetworkResult {}

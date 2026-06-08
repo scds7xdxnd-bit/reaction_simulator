@@ -1,4 +1,4 @@
-import type { SimulationParams, ReactionMode } from '../types/reactor';
+import type { SimulationParams, ReactionMode, KineticsType } from '../types/reactor';
 import type { Species, Reaction, ReactionSet } from '../types/chemistry';
 
 export interface ReactionPreset {
@@ -6,6 +6,9 @@ export interface ReactionPreset {
   label: string;
   mode: ReactionMode;
   isSingle: boolean;
+  uiLabel: string;
+  kinetics?: KineticsType;
+  kUnit?: string;
 
   buildSpecies(params: SimulationParams): Species[];
   buildReactions(params: SimulationParams): ReactionSet;
@@ -22,6 +25,9 @@ const firstOrderPreset: ReactionPreset = {
   label: 'A → R  (1st order)',
   mode: 'single',
   isSingle: true,
+  uiLabel: '1st Order',
+  kinetics: 'first-order',
+  kUnit: 's⁻¹',
 
   buildSpecies: () => [
     { id: 'A', label: 'Reactant A' },
@@ -44,6 +50,9 @@ const secondOrderPreset: ReactionPreset = {
   label: 'A → R  (2nd order)',
   mode: 'single',
   isSingle: true,
+  uiLabel: '2nd Order',
+  kinetics: 'second-order',
+  kUnit: 'L·mol⁻¹·s⁻¹',
 
   buildSpecies: () => [
     { id: 'A', label: 'Reactant A' },
@@ -66,6 +75,9 @@ const autocatalyticPreset: ReactionPreset = {
   label: 'A → R  (autocatalytic)',
   mode: 'single',
   isSingle: true,
+  uiLabel: 'Autocatalytic',
+  kinetics: 'autocatalytic',
+  kUnit: 'L·mol⁻¹·s⁻¹',
 
   buildSpecies: () => [
     { id: 'A', label: 'Reactant A' },
@@ -91,6 +103,7 @@ const seriesPreset: ReactionPreset = {
   label: 'A → R → S  (series)',
   mode: 'series',
   isSingle: false,
+  uiLabel: 'Series A→R→S',
 
   buildSpecies: () => [
     { id: 'A', label: 'Reactant A' },
@@ -123,6 +136,7 @@ const parallelPreset: ReactionPreset = {
   label: 'A → R, A → S  (parallel)',
   mode: 'parallel',
   isSingle: false,
+  uiLabel: 'Parallel A→R/A→S',
 
   buildSpecies: () => [
     { id: 'A', label: 'Reactant A' },

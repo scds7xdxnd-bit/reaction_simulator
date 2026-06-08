@@ -2,6 +2,7 @@ import { memo, useState, useEffect } from 'react';
 import { Handle, Position, useReactFlow, type NodeProps } from '@xyflow/react';
 import type { ReactorNodeData, ThermalMode } from '../../types/reactor';
 import { useSimulatorStore } from '../../store/simulatorStore';
+import { getPreset } from '../../math/reactionRegistry';
 
 type PFRNodeProps = NodeProps & { data: ReactorNodeData };
 
@@ -22,7 +23,7 @@ function PFRNode({ id, data, selected }: PFRNodeProps) {
 
   const Da = segment
     ? segment.Da
-    : data.tau * params.k * (params.kinetics !== 'first-order' ? params.Ca0 : 1);
+    : getPreset(params).computeDa(params.k, data.tau, params.Ca0);
 
   const isSingle = params.reactionMode === 'single';
   const thermalMode = data.thermalMode ?? 'isothermal';

@@ -9,24 +9,20 @@ import {
   ReferenceDot,
 } from 'recharts';
 import { useSimulatorStore } from '../../store/simulatorStore';
-import { buildOperatingDiagram } from '../../math/thermalSolvers';
-import { conversion } from '../../types/stream';
-import { makeFeedStream } from '../../math/streamBridge';
 
 export default function OperatingDiagram() {
   const result = useSimulatorStore((s) => s.result);
-  const params = useSimulatorStore((s) => s.params);
   const nodes = useSimulatorStore((s) => s.nodes);
-  const edges = useSimulatorStore((s) => s.edges);
 
   const cooledCstrs = useMemo(() => {
-    if (!result || params.reactionMode !== 'single') return [];
+    if (!result) return [];
     return nodes.filter(
       (n) =>
         n.type === 'cstr' &&
-        (n.data as { thermalMode?: string }).thermalMode === 'cooled'
+        (n.data as { thermalMode?: string }).thermalMode === 'cooled' &&
+        result.operatingDiagrams[n.id] != null
     );
-  }, [nodes, result, params.reactionMode]);
+  }, [nodes, result]);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -37,35 +33,10 @@ export default function OperatingDiagram() {
 
   const diagramData = useMemo(() => {
     if (!activeId || !result) return null;
-
-    const cstrNode = nodes.find((n) => n.id === activeId);
-    if (!cstrNode) return null;
-
-    const nodeData = cstrNode.data as {
-      thermalMode?: string;
-      Tc?: number;
-      kappa_v?: number;
-      tau: number;
-    };
-
-    const inEdges = edges.filter((e) => e.target === cstrNode.id);
-    const inletStream =
-      inEdges.length > 0 ? result.streams[inEdges[0].id] : undefined;
-    const feedStream = makeFeedStream(params.Ca0, params.T_feed);
-    const Xa_in = inletStream ? conversion(inletStream, feedStream, 'A') : 0;
-    const T_in = inletStream?.T ?? (params.T_feed ?? 300);
-
-    const diagram = buildOperatingDiagram(
-      Xa_in,
-      T_in,
-      nodeData.tau,
-      nodeData.Tc ?? 300,
-      nodeData.kappa_v ?? 0.5,
-      params
-    );
-
-    return { diagram, Xa_in, T_in, hasMultiplicity: diagram.steadyStates.length >= 3 };
-  }, [activeId, result, params, nodes, edges]);
+    const diagram = result.operatingDiagrams[activeId];
+    if (!diagram) return null;
+    return { diagram, hasMultiplicity: diagram.steadyStates.length >= 3 };
+  }, [activeId, result]);
 
   if (!diagramData) {
     return (

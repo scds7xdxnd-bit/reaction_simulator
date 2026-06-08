@@ -1,13 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { useSimulatorStore } from '../../store/simulatorStore';
-import type { KineticsType, ReactionMode } from '../../types/reactor';
+import type { ReactionMode } from '../../types/reactor';
+import { PRESETS, getPreset } from '../../math/reactionRegistry';
 import { Gauge, X } from 'lucide-react';
 
-const kineticsOptions: { value: KineticsType; label: string }[] = [
-  { value: 'first-order', label: '1st Order' },
-  { value: 'second-order', label: '2nd Order' },
-  { value: 'autocatalytic', label: 'Autocatalytic' },
-];
+const kineticsOptions = PRESETS
+  .filter((p) => p.kinetics != null)
+  .map((p) => ({ value: p.kinetics!, label: p.uiLabel }));
 
 const modeOptions: { value: ReactionMode; label: string }[] = [
   { value: 'single', label: 'Single' },
@@ -117,10 +116,9 @@ export default function ParameterPanel() {
   const updateParams = useSimulatorStore((s) => s.updateParams);
   const [thermalOpen, setThermalOpen] = useState(false);
 
-  const isSingle = params.reactionMode === 'single';
-  const kUnit = isSingle
-    ? params.kinetics === 'first-order' ? 's⁻¹' : 'L·mol⁻¹·s⁻¹'
-    : 's⁻¹';
+  const preset = getPreset(params);
+  const isSingle = preset.isSingle;
+  const kUnit = preset.kUnit ?? 's⁻¹';
 
   const kLabel = isSingle ? 'k₁' : 'k₁';
 
@@ -195,7 +193,7 @@ export default function ParameterPanel() {
         <span className="text-[10px] text-[#6b7280]">mol/L</span>
       </div>
 
-      {isSingle && params.kinetics === 'autocatalytic' && (
+      {preset.id === 'single-autocatalytic' && (
         <div className="flex items-center gap-1.5 shrink-0">
           <span className="text-[11px] text-[#374151] font-mono">Cᵣ₀/Cₐ₀ =</span>
           <input
