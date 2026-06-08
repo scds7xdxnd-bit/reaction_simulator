@@ -549,13 +549,13 @@ h1 {
     </div>
 
     <div class="card load-bearing">
-      <div style="margin-bottom:4px"><span class="badge badge-load">⚡ Load-bearing</span></div>
+      <div style="margin-bottom:4px"><span class="badge badge-load">⚡ Load-bearing</span>&nbsp;<span class="badge badge-done">✓ Done</span></div>
       <div class="card-top">
         <div class="card-num">6</div>
         <div class="card-name">Unit Models</div>
       </div>
       <div class="card-job">One CSTR + one PFR function, each accepting <em>injected</em> chemistry. Never branches on kinetics type. Adding a reaction requires zero unit code changes.</div>
-      <div style="font-size:9.5px;color:#6d28d9;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:4px;padding:3px 8px;margin-bottom:6px;font-weight:600">📊 solveReactorUnit() 11 edges · god node — ChemistryModel injector ready, collapse solver matrix now</div>
+      <div style="font-size:9.5px;color:#0369a1;background:#eff6ff;border:1px solid #bfdbfe;border-radius:4px;padding:3px 8px;margin-bottom:6px;font-weight:600">✓ solveReactorUnit() (196 lines, 9-path matrix) → cstrModel + pfrModel · networkSolver –185 lines</div>
       <div class="depth-axis">
         <div class="depth-label">Depth axis</div>
         <div class="depth-row">
@@ -716,9 +716,9 @@ h1 {
   <div class="order-flow">
     <div class="order-step done">✓ Slice 0<br/><small>C1+C4+C2 · done</small></div>
     <div class="order-arrow">→</div>
-    <div class="order-step load next">⚡ C6<br/><small>Unit Models<br/><span class="step-sig">11 edges</span></small></div>
+    <div class="order-step done">✓ C6<br/><small>Unit Models · done</small></div>
     <div class="order-arrow">→</div>
-    <div class="order-step graph">C9<br/><small>State Store<br/><span class="step-sig">26 edges</span></small></div>
+    <div class="order-step graph next">C9<br/><small>State Store<br/><span class="step-sig">26 edges</span></small></div>
     <div class="order-arrow">→</div>
     <div class="order-step graph">C8<br/><small>Exec Engine<br/><span class="step-sig">cohesion 0.12</span></small></div>
     <div class="order-arrow">→</div>
