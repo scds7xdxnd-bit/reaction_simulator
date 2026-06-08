@@ -571,11 +571,13 @@ h1 {
     </div>
 
     <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-done">✓ Done</span></div>
       <div class="card-top">
         <div class="card-num">7</div>
         <div class="card-name">Flowsheet / Topology</div>
       </div>
       <div class="card-job">Connectivity, cycle detection, tear-stream selection, execution order. Owns all graph logic — nothing else should touch cycles.</div>
+      <div style="font-size:9.5px;color:#0369a1;background:#eff6ff;border:1px solid #bfdbfe;border-radius:4px;padding:3px 8px;margin-bottom:6px;font-weight:600">✓ topology.ts: findTearEdgeIds + topoSort, imports only @xyflow/react · findReactorOrder fixed to use topoSort (hardcoded 'feed' walk removed)</div>
       <div class="depth-axis">
         <div class="depth-label">Depth axis</div>
         <div class="depth-row">
@@ -734,9 +736,9 @@ h1 {
     <div class="order-arrow">→</div>
     <div class="order-step done">✓ C5<br/><small>Numerics · done</small></div>
     <div class="order-arrow">→</div>
-    <div class="order-step next">C7<br/><small>Flowsheet</small></div>
+    <div class="order-step done">✓ C7<br/><small>Flowsheet · done</small></div>
     <div class="order-arrow">→</div>
-    <div class="order-step">C10–12<br/><small>UI layers</small></div>
+    <div class="order-step next">C10–12<br/><small>UI layers</small></div>
     <div class="order-arrow">→</div>
     <div class="order-step">A + B<br/><small>Validation &amp;<br/>Persistence</small></div>
   </div>
