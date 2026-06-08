@@ -6,5 +6,4 @@ dist/
 
 # Architecture artefacts (local-only, not for review)
 Architecture Map.pdf
-architecture.html
 graphify-out/
