@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reaction Simulator — Architecture Map</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #f1f5f9;
+  color: #1e293b;
+  padding: 32px;
+  min-height: 100vh;
+}
+
+h1 {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 4px;
+  letter-spacing: -0.3px;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 24px;
+}
+
+.legend {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  background: white;
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  color: #475569;
+  font-weight: 500;
+}
+
+.legend-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 2px solid;
+  flex-shrink: 0;
+}
+
+/* Cross-cutting bands */
+.crosscut {
+  background: #faf5ff;
+  border: 1.5px dashed #7c3aed;
+  border-radius: 8px;
+  padding: 9px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 6px;
+}
+
+.crosscut-label {
+  font-size: 10px;
+  font-weight: 800;
+  color: #6d28d9;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  background: #ede9fe;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.crosscut-desc {
+  font-size: 11.5px;
+  color: #5b21b6;
+  line-height: 1.4;
+}
+
+/* Layer wrapper */
+.layer {
+  margin-bottom: 6px;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+}
+
+.layer-header {
+  padding: 9px 16px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.layer-body {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  padding: 10px;
+}
+
+.layer-1 { background: #fff7ed; }
+.layer-1 .layer-header { background: #c2410c; color: white; }
+
+.layer-2 { background: #eff6ff; }
+.layer-2 .layer-header { background: #1d4ed8; color: white; }
+
+.layer-3 { background: #f0fdf4; }
+.layer-3 .layer-header { background: #15803d; color: white; }
+
+/* Cards */
+.card {
+  background: white;
+  border-radius: 8px;
+  padding: 13px 13px 11px;
+  border: 1.5px solid #e2e8f0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 148px;
+  transition: box-shadow 0.15s, transform 0.15s;
+  cursor: default;
+}
+
+.card:hover {
+  box-shadow: 0 4px 18px rgba(0,0,0,0.13);
+  transform: translateY(-2px);
+  z-index: 2;
+}
+
+.card.load-bearing {
+  border: 2px solid #b45309;
+  background: #fffbeb;
+}
+
+.card-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.card-num {
+  font-size: 10px;
+  font-weight: 900;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.layer-1 .card:not(.load-bearing) .card-num { background: #c2410c; }
+.layer-2 .card:not(.load-bearing) .card-num { background: #1d4ed8; }
+.layer-3 .card:not(.load-bearing) .card-num { background: #15803d; }
+.load-bearing .card-num { background: #b45309; }
+
+.card-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.3;
+}
+
+.card-job {
+  font-size: 11px;
+  color: #64748b;
+  line-height: 1.45;
+  flex: 1;
+  padding-bottom: 8px;
+}
+
+.depth-axis {
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.depth-label {
+  font-size: 9px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 3px;
+  font-weight: 600;
+}
+
+.depth-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.depth-from { color: #94a3b8; flex: 1; }
+.depth-arrow { color: #cbd5e1; padding-top: 1px; flex-shrink: 0; }
+.depth-to { color: #475569; font-weight: 600; flex: 1; text-align: right; }
+
+/* Badges */
+.badge {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: inline-block;
+  margin-bottom: 6px;
+}
+
+.badge-load { background: #b45309; color: white; }
+.badge-slice0 { background: #15803d; color: white; }
+
+/* Dep arrow */
+.dep-arrow {
+  text-align: center;
+  padding: 5px;
+  font-size: 11px;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-weight: 500;
+}
+.dep-arrow::before, .dep-arrow::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #cbd5e1;
+}
+
+/* Hardening order */
+.hardening {
+  margin-top: 12px;
+  background: white;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px 18px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.section-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 12px;
+}
+
+.order-flow {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.order-step {
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 7px;
+  padding: 7px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #334155;
+  text-align: center;
+  line-height: 1.4;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.order-step small {
+  display: block;
+  font-size: 10px;
+  font-weight: 400;
+  color: #94a3b8;
+  margin-top: 1px;
+}
+
+.order-step.slice0 { background: #f0fdf4; border-color: #16a34a; color: #14532d; }
+.order-step.load   { background: #fffbeb; border-color: #b45309; color: #78350f; }
+
+.order-arrow {
+  color: #94a3b8;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  padding: 0 6px;
+  flex-shrink: 0;
+}
+
+/* Contracts */
+.contracts {
+  margin-top: 12px;
+  background: #fffbeb;
+  border: 2px solid #b45309;
+  border-radius: 10px;
+  padding: 14px 18px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.contracts-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: #78350f;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 12px;
+}
+
+.contract-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.contract-name-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #92400e;
+  margin-bottom: 6px;
+}
+
+.contract-block {
+  background: white;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 11px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  color: #334155;
+  line-height: 1.75;
+  border: 1px solid #fde68a;
+}
+
+.c  { color: #9ca3af; }   /* comment */
+.k  { color: #7c3aed; }   /* keyword */
+.t  { color: #0891b2; }   /* type */
+.n  { color: #0f172a; font-weight: 600; } /* name */
+.s  { color: #059669; }   /* string */
+
+.rule-box {
+  background: #fef9c3;
+  border-radius: 6px;
+  padding: 9px 14px;
+  font-size: 11.5px;
+  color: #78350f;
+  line-height: 1.5;
+}
+
+/* ── Graphify additions ─────────────────────────────────── */
+.badge-done { background: #0369a1; color: white; }
+
+.order-step.done  { background: #dbeafe; border-color: #3b82f6; color: #1e3a5f; opacity: 0.82; }
+.order-step.next  { box-shadow: 0 0 0 2.5px #b45309; }
+.order-step.graph { background: #faf5ff; border-color: #7c3aed; color: #4c1d95; }
+
+.step-sig { display: block; font-size: 9px; color: inherit; opacity: 0.75; font-weight: 600; }
+
+/* graph signals callout */
+.graph-callout {
+  margin-top: 12px;
+  background: #faf5ff;
+  border: 1.5px solid #a78bfa;
+  border-radius: 10px;
+  padding: 14px 18px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.graph-callout .section-title { color: #4c1d95; }
+.gsig-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.gsig {
+  border-radius: 7px;
+  padding: 9px 12px;
+  font-size: 11px;
+  line-height: 1.45;
+}
+.gsig-critical { background: #fff1f2; border: 1.5px solid #f87171; }
+.gsig-high     { background: #fff7ed; border: 1.5px solid #fb923c; }
+.gsig-medium   { background: #fefce8; border: 1.5px solid #facc15; }
+.gsig-name  { font-weight: 800; color: #0f172a; margin-bottom: 2px; }
+.gsig-metric{ font-size: 10px; font-weight: 700; color: #6d28d9; margin-bottom: 4px; }
+.gsig-why   { color: #475569; font-size: 10.5px; }
+</style>
+</head>
+<body>
+
+<h1>Reaction Simulator — Architecture Map</h1>
+<p class="subtitle">12 compartments · 4 layers · 2 cross-cutting concerns · load-bearing contracts highlighted in amber &nbsp;·&nbsp; <span style="color:#6d28d9;font-weight:700">hardening order updated from Graphify graph (2026-06-08 · commit 6ae4576)</span></p>
+
+<div class="legend">
+  <div class="legend-item">
+    <div class="legend-swatch" style="background:#fff7ed;border-color:#c2410c;"></div>
+    Layer 1 — Domain Core
+  </div>
+  <div class="legend-item">
+    <div class="legend-swatch" style="background:#eff6ff;border-color:#1d4ed8;"></div>
+    Layer 2 — Engine
+  </div>
+  <div class="legend-item">
+    <div class="legend-swatch" style="background:#f0fdf4;border-color:#15803d;"></div>
+    Layer 3 — Presentation
+  </div>
+  <div class="legend-item">
+    <div class="legend-swatch" style="background:#fffbeb;border-color:#b45309;"></div>
+    ⚡ Load-bearing contract
+  </div>
+  <div class="legend-item" style="color:#0369a1;font-weight:700;">
+    ✓ Slice 0 — done
+  </div>
+  <div class="legend-item" style="color:#6d28d9;font-weight:700;">
+    📊 Graphify signal
+  </div>
+</div>
+
+<!-- Cross-cut A -->
+<div class="crosscut">
+  <span class="crosscut-label">A · Units &amp; Validation</span>
+  <span class="crosscut-desc">Physical-unit labels, dimensional consistency, input bounds, diagnostic surfacing — spans all layers continuously</span>
+</div>
+
+<!-- LAYER 1 -->
+<div class="layer layer-1">
+  <div class="layer-header">▶ &nbsp;Layer 1 — Domain Core &nbsp;·&nbsp; the data everything references — freeze contracts first</div>
+  <div class="layer-body">
+
+    <div class="card load-bearing">
+      <div style="margin-bottom:4px"><span class="badge badge-done">✓ Done</span>&nbsp;<span class="badge badge-slice0">Slice 0</span></div>
+      <div class="card-top">
+        <div class="card-num">1</div>
+        <div class="card-name">Species / Component</div>
+      </div>
+      <div class="card-job">Define each substance once with its properties. "Reactant vs product" is just a stoichiometric sign — not a separate entity.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Depth axis</div>
+        <div class="depth-row">
+          <span class="depth-from">Hardcoded A/R/S</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">Registry: MW, Cp, ΔH_f, phase</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card load-bearing">
+      <div style="margin-bottom:4px"><span class="badge badge-done">✓ Done</span>&nbsp;<span class="badge badge-slice0">Slice 0</span></div>
+      <div class="card-top">
+        <div class="card-num">2</div>
+        <div class="card-name">Reaction Model</div>
+      </div>
+      <div class="card-job">Stoichiometry + rate law as <em>data</em>, referencing species by id. Rate laws are configurations, not separate code paths.</div>
+      <div style="font-size:9.5px;color:#6d28d9;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:4px;padding:3px 8px;margin-bottom:6px;font-weight:600">📊 ReactionMode betweenness 0.086 — sole bridge between architecture and UI controls</div>
+      <div class="depth-axis">
+        <div class="depth-label">Depth axis</div>
+        <div class="depth-row">
+          <span class="depth-from">3 baked-in laws</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">Configurable mass-action, reversible, user expressions</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-top">
+        <div class="card-num">3</div>
+        <div class="card-name">Thermodynamics / Properties</div>
+      </div>
+      <div class="card-job">Compute ρ, Cp, ΔH_rxn(T), K_eq(T) from species data. Keeps thermal math out of the unit solvers.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Depth axis</div>
+        <div class="depth-row">
+          <span class="depth-from">Constant ρCp, ΔH</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">T-dep. Cp polynomials, van't Hoff K(T)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card load-bearing">
+      <div style="margin-bottom:4px">
+        <span class="badge badge-load">⚡ Load-bearing</span>
+        &nbsp;
+        <span class="badge badge-done">✓ Done</span>&nbsp;<span class="badge badge-slice0">Slice 0</span>
+      </div>
+      <div class="card-top">
+        <div class="card-num">4</div>
+        <div class="card-name">Stream Model</div>
+      </div>
+      <div class="card-job">The currency passed between all units. Species-centric — conversion is a <em>derived</em> helper, never stored. Changing this seam unlocks everything.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Depth axis</div>
+        <div class="depth-row">
+          <span class="depth-from">{Xa, Ca, Cr}</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">{F[speciesId], T, P, H} — Xa derived</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="dep-arrow">↓ &nbsp;&nbsp; Engine consumes Domain Core contracts &nbsp;&nbsp; ↓</div>
+
+<!-- LAYER 2 -->
+<div class="layer layer-2">
+  <div class="layer-header">⚙ &nbsp;Layer 2 — Engine &nbsp;·&nbsp; behavior over the core — collapse the solver combinatorial matrix here</div>
+  <div class="layer-body">
+
+    <div class="card">
+      <div class="card-top">
+        <div class="card-num">5</div>
+        <div class="card-name">Numerics / Solver Kernels</div>
+      </div>
+      <div class="card-job">Reusable math primitives: integrators, root-finders, linear algebra. No chemistry knowledge inside — pure math.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Depth axis</div>
+        <div class="depth-row">
+          <span class="depth-from">Inline RK4 + bisection</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">RKF45/stiff, Newton-Raphson, Wegstein</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card load-bearing">
+      <div style="margin-bottom:4px"><span class="badge badge-load">⚡ Load-bearing</span></div>
+      <div class="card-top">
+        <div class="card-num">6</div>
+        <div class="card-name">Unit Models</div>
+      </div>
+      <div class="card-job">One CSTR + one PFR function, each accepting <em>injected</em> chemistry. Never branches on kinetics type. Adding a reaction requires zero unit code changes.</div>
+      <div style="font-size:9.5px;color:#6d28d9;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:4px;padding:3px 8px;margin-bottom:6px;font-weight:600">📊 solveReactorUnit() 11 edges · god node — ChemistryModel injector ready, collapse solver matrix now</div>
+      <div class="depth-axis">
+        <div class="depth-label">Depth axis</div>
+        <div class="depth-row">
+          <span class="depth-from">N×M solver matrix</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">2 generic functions, chemistry injected</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-top">
+        <div class="card-num">7</div>
+        <div class="card-name">Flowsheet / Topology</div>
+      </div>
+      <div class="card-job">Connectivity, cycle detection, tear-stream selection, execution order. Owns all graph logic — nothing else should touch cycles.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Depth axis</div>
+        <div class="depth-row">
+          <span class="depth-from">DFS + damped loop</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">SCC partitioning, optimal tear selection</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-top">
+        <div class="card-num">8</div>
+        <div class="card-name">Execution Engine</div>
+      </div>
+      <div class="card-job">Runs the correct procedure for the active mode (steady-state / dynamic). Emits one typed Result schema to all consumers.</div>
+      <div style="font-size:9.5px;color:#6d28d9;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:4px;padding:3px 8px;margin-bottom:6px;font-weight:600">📊 Dynamic community cohesion 0.12 · 38 nodes — dumping ground, extract boundary and unify modes</div>
+      <div class="depth-axis">
+        <div class="depth-label">Depth axis</div>
+        <div class="depth-row">
+          <span class="depth-from">Two parallel hooks</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">One engine, pluggable modes, unified Result</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="dep-arrow">↓ &nbsp;&nbsp; Presentation consumes Engine's Result schema &nbsp;&nbsp; ↓</div>
+
+<!-- LAYER 3 -->
+<div class="layer layer-3">
+  <div class="layer-header">◈ &nbsp;Layer 3 — Presentation &nbsp;·&nbsp; safe to deepen independently once Engine contracts are frozen</div>
+  <div class="layer-body">
+
+    <div class="card">
+      <div class="card-top">
+        <div class="card-num">9</div>
+        <div class="card-name">State Store</div>
+      </div>
+      <div class="card-job">Single source of truth, sliced by concern. No business logic here — pure state holding and action dispatch.</div>
+      <div style="font-size:9.5px;color:#6d28d9;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:4px;padding:3px 8px;margin-bottom:6px;font-weight:600">📊 useSimulatorStore 26 edges · #1 god node — connects 4 communities, split into topology/params/result/history slices</div>
+      <div class="depth-axis">
+        <div class="depth-label">Depth axis</div>
+        <div class="depth-row">
+          <span class="depth-from">One growing store (setState bugs)</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">Slices: chemistry / flowsheet / result / history</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-top">
+        <div class="card-num">10</div>
+        <div class="card-name">Canvas Editor</div>
+      </div>
+      <div class="card-job">Edit the flowsheet graphically. Nodes are thin views — all connection rules read from the flowsheet model, not hard-coded.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Depth axis</div>
+        <div class="depth-row">
+          <span class="depth-from">Nodes own chemistry logic</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">Nodes are thin views; rules from model</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-top">
+        <div class="card-num">11</div>
+        <div class="card-name">Controls &amp; Inspectors</div>
+      </div>
+      <div class="card-job">Forms that edit Species, Reactions, Units, and Feed. Schema-driven so new reaction types auto-generate correct fields.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Depth axis</div>
+        <div class="depth-row">
+          <span class="depth-from">Ad-hoc panels &amp; node inputs</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">Schema-driven, unit-inspector pattern</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-top">
+        <div class="card-num">12</div>
+        <div class="card-name">Visualization / Reporting</div>
+      </div>
+      <div class="card-job">Pure functions of Result → charts and tables. No solver calls, no store mutations. Consistent axes, theming, and export.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Depth axis</div>
+        <div class="depth-row">
+          <span class="depth-from">Per-concept ad-hoc charts</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">Shared framework, consistent axes, export</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Cross-cut B -->
+<div class="crosscut" style="margin-top:6px">
+  <span class="crosscut-label">B · Persistence &amp; Examples</span>
+  <span class="crosscut-desc">Serialize Model↔JSON, load saved cases, ship example flowsheets. Saved cases double as regression tests — assert a known case still yields its known Result.</span>
+</div>
+
+<!-- Graphify signals callout -->
+<div class="graph-callout">
+  <div class="section-title">📊 Graphify signals — priorities derived from codebase graph (built 2026-06-08 · commit 6ae4576)</div>
+  <div class="gsig-grid">
+    <div class="gsig gsig-critical">
+      <div class="gsig-name">C9 · State Store</div>
+      <div class="gsig-metric">26 edges · #1 god node in entire codebase</div>
+      <div class="gsig-why"><code>useSimulatorStore</code> connects 4 communities: Reactor UI → Dynamic Simulation → Node Parameter Panel → Stream Management. Any params change re-runs simulation, re-renders every panel, and re-renders the canvas — all synchronously. Split into <strong>topology / params / result / history</strong> slices to cap fan-out to ~7 edges per slice.</div>
+    </div>
+    <div class="gsig gsig-critical">
+      <div class="gsig-name">C6 · Unit Models</div>
+      <div class="gsig-metric">solveReactorUnit() 11 edges · solver matrix ready to collapse</div>
+      <div class="gsig-why"><code>solveReactorUnit()</code> and <code>solveReactorUnitDynamic()</code> are tied at 11 edges each. Slice 0 delivered the <code>ChemistryModel</code> injector — the prerequisite is satisfied. Collapse the 8-branch <em>kinetics × thermal × mode</em> matrix into two generic functions (CSTR, PFR).</div>
+    </div>
+    <div class="gsig gsig-high">
+      <div class="gsig-name">C8 · Execution Engine</div>
+      <div class="gsig-metric">Dynamic community cohesion 0.12 · 38 loosely-connected nodes</div>
+      <div class="gsig-why">The "Dynamic Reactor Simulation" community is a dumping ground: <code>CstrHistory</code>, <code>buildLevenspielCurve</code>, <code>k2Arrhenius</code>, <code>getInletStreamForDynamic</code> all in one blob. Extract a clear execution boundary and unify with the steady-state engine into one pluggable-mode interface.</div>
+    </div>
+    <div class="gsig gsig-medium">
+      <div class="gsig-name">C2 · Reaction Model</div>
+      <div class="gsig-metric">ReactionMode betweenness 0.086 · highest bridge in graph</div>
+      <div class="gsig-why"><code>ReactionMode</code> is the only concept bridging the Architecture Overview and the UI controls. Adding a new reaction mode (reversible, equilibrium) currently touches <code>ParameterPanel</code>, <code>networkSolver</code>, <code>chemistryFactory</code>, and the diagram. Replace the enum choke point with an extensible reaction registry.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Hardening order -->
+<div class="hardening">
+  <div class="section-title">⬇ Hardening order — updated from Graphify signals (dependency-first)</div>
+  <div class="order-flow">
+    <div class="order-step done">✓ Slice 0<br/><small>C1+C4+C2 · done</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step load next">⚡ C6<br/><small>Unit Models<br/><span class="step-sig">11 edges</span></small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step graph">C9<br/><small>State Store<br/><span class="step-sig">26 edges</span></small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step graph">C8<br/><small>Exec Engine<br/><span class="step-sig">cohesion 0.12</span></small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step graph">C2<br/><small>Rxn Registry<br/><span class="step-sig">btw 0.086</span></small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step">C3<br/><small>Thermo</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step">C5<br/><small>Numerics</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step">C7<br/><small>Flowsheet</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step">C10–12<br/><small>UI layers</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step">A + B<br/><small>Validation &amp;<br/>Persistence</small></div>
+  </div>
+  <div style="margin-top:10px;font-size:11px;color:#64748b;line-height:1.6;padding:8px 12px;background:#f8fafc;border-radius:6px;border:1px solid #e2e8f0">
+    <strong>Rule:</strong> A compartment can only be deepened when its <em>upstream dependencies</em> have frozen contracts.
+    If deepening compartment A forces edits in B, the seam is in the wrong place — move the boundary before writing more code.<br/>
+    <strong>Graph signal key:</strong> <span style="color:#6d28d9;font-weight:600">edge count</span> = coupling breadth (god node risk) ·
+    <span style="color:#6d28d9;font-weight:600">betweenness</span> = bridge criticality ·
+    <span style="color:#6d28d9;font-weight:600">cohesion</span> = internal coherence (0 = dumping ground · 1 = pure module).
+    Signals are stale after large refactors — run <code>graphify update .</code> to refresh.
+  </div>
+</div>
+
+<!-- Load-bearing contracts -->
+<div class="contracts">
+  <div class="contracts-title">⚡ The two load-bearing contracts — define first, change no behavior in Slice 0</div>
+  <div class="contract-grid">
+    <div>
+      <div class="contract-name-label">#4 Stream — species-centric, conversion is derived</div>
+      <div class="contract-block">
+<span class="k">interface</span> <span class="n">Stream</span> {<br>
+&nbsp;&nbsp;<span class="c">// molar flow of each species [mol/s]</span><br>
+&nbsp;&nbsp;<span class="n">F</span>: <span class="t">Record</span>&lt;<span class="t">SpeciesId</span>, <span class="t">number</span>&gt;;<br>
+&nbsp;&nbsp;<span class="n">T</span>: <span class="t">number</span>;&nbsp; <span class="c">// K</span><br>
+&nbsp;&nbsp;<span class="n">P</span>: <span class="t">number</span>;&nbsp; <span class="c">// Pa</span><br>
+}<br>
+<br>
+<span class="c">// Xa is a DERIVED helper — never stored:</span><br>
+<span class="k">const</span> <span class="n">getXa</span> = (<span class="n">s</span>: <span class="t">Stream</span>, <span class="n">feed</span>: <span class="t">Stream</span>) =&gt;<br>
+&nbsp;&nbsp;1 - s.F[<span class="s">'A'</span>] / feed.F[<span class="s">'A'</span>];
+      </div>
+    </div>
+    <div>
+      <div class="contract-name-label">#6 Unit Model — injected chemistry, no kinetics branching</div>
+      <div class="contract-block">
+<span class="k">type</span> <span class="n">UnitModel</span> = (<br>
+&nbsp;&nbsp;<span class="n">inlets</span>: <span class="t">Stream</span>[],<br>
+&nbsp;&nbsp;<span class="n">params</span>: <span class="t">UnitParams</span>,&nbsp;&nbsp;&nbsp; <span class="c">// τ, vol, energy mode</span><br>
+&nbsp;&nbsp;<span class="n">reactions</span>: <span class="t">ReactionSet</span>, <span class="c">// injected chemistry</span><br>
+&nbsp;&nbsp;<span class="n">thermo</span>: <span class="t">ThermoModel</span>&nbsp;&nbsp; <span class="c">// injected properties</span><br>
+) =&gt; {<br>
+&nbsp;&nbsp;<span class="n">outlets</span>: <span class="t">Stream</span>[];<br>
+&nbsp;&nbsp;<span class="n">profile</span>: <span class="t">ProfilePoint</span>[];&nbsp; <span class="c">// for plots</span><br>
+&nbsp;&nbsp;<span class="n">diagnostics</span>: <span class="t">Diagnostics</span>; <span class="c">// converged?, warnings</span><br>
+}
+      </div>
+    </div>
+  </div>
+  <div class="rule-box">
+    <strong>The operating principle:</strong> The unit evaluates an <em>injected</em> ReactionSet — it never does
+    <code style="background:#fef3c7;padding:1px 5px;border-radius:3px">if (kinetics === 'first-order')</code>.
+    This collapses <code>reactorSolvers</code> + <code>thermalSolvers</code> + <code>dynamicSolvers</code> into
+    <strong>two functions</strong> (CSTR, PFR). Adding reversible reactions, a 4th species, or user-defined expressions
+    requires <strong>zero changes</strong> to unit code. Emergence from composition, not from growing the switch statement.
+  </div>
+</div>
+
+</body>
+</html>

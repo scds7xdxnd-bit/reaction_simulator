@@ -2,3 +2,8 @@ node_modules/
 dist/
 .DS_Store
 *.local
+.vercel
+
+# Architecture artefacts (local-only, not for review)
+Architecture Map.pdf
+graphify-out/

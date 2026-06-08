@@ -10,6 +10,8 @@ import {
 } from 'recharts';
 import { useSimulatorStore } from '../../store/simulatorStore';
 import { buildOperatingDiagram } from '../../math/thermalSolvers';
+import { conversion } from '../../types/stream';
+import { makeFeedStream } from '../../math/streamBridge';
 
 export default function OperatingDiagram() {
   const result = useSimulatorStore((s) => s.result);
@@ -49,7 +51,8 @@ export default function OperatingDiagram() {
     const inEdges = edges.filter((e) => e.target === cstrNode.id);
     const inletStream =
       inEdges.length > 0 ? result.streams[inEdges[0].id] : undefined;
-    const Xa_in = inletStream?.Xa ?? 0;
+    const feedStream = makeFeedStream(params.Ca0, params.T_feed);
+    const Xa_in = inletStream ? conversion(inletStream, feedStream, 'A') : 0;
     const T_in = inletStream?.T ?? (params.T_feed ?? 300);
 
     const diagram = buildOperatingDiagram(

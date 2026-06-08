@@ -1,3 +1,6 @@
+import type { AnnotatedStream } from './stream';
+import type { ChemistryModel } from './chemistry';
+
 export type KineticsType = 'first-order' | 'second-order' | 'autocatalytic';
 export type ReactorType = 'CSTR' | 'PFR';
 export type ReactionMode = 'single' | 'series' | 'parallel';
@@ -47,16 +50,12 @@ export interface ReactorSegmentResult {
   profile: { cumTau: number; Xa: number; Ca: number; Cr: number; Cs: number; T: number }[];
 }
 
-export interface StreamState {
-  Xa: number;
-  Ca: number;
-  Cr: number;
-  Cs: number;
-  flow: number;
-  T: number;
-  streamLabel?: string;
-  streamDesc?: string;
-}
+/**
+ * @internal — re-exported from streamBridge.ts, the single source of truth.
+ * Imported here only for backward compatibility with existing solver imports.
+ * Do not add fields here. All display metadata belongs on AnnotatedStream.
+ */
+export type { StreamState } from '../math/streamBridge';
 
 export interface MixerNodeData {
   label: string;
@@ -68,8 +67,8 @@ export interface SplitterNodeData {
 }
 
 export interface NetworkResult {
-  streams: Record<string, StreamState>;
-  nodeOutputs: Record<string, StreamState>;
+  streams: Record<string, AnnotatedStream>;
+  nodeOutputs: Record<string, AnnotatedStream>;
   converged: boolean;
   iterations: number;
   recycleEdgeIds: string[];
@@ -78,6 +77,7 @@ export interface NetworkResult {
   finalYield: number;
   finalSelectivity: number;
   levenspielCurve: { Xa: number; inv_rA_norm: number }[];
+  chemistry: ChemistryModel;
 }
 
 export interface SimulationResult extends NetworkResult {}

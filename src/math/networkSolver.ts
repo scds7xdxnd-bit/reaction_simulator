@@ -2,24 +2,15 @@ import type { Node, Edge } from '@xyflow/react';
 import type {
   SimulationParams,
   SimulationResult,
-  StreamState,
   ReactorSegmentResult,
   ThermalMode,
 } from '../types/reactor';
-import { buildLevenspielCurve, getRate } from './kinetics';
-import {
-  solveCSTR,
-  solvePFR,
-  solveSeriesCSTR,
-  solveParallelCSTR,
-  solveMultiPFR,
-} from './reactorSolvers';
-import {
-  solveCSTRAdiabatic,
-  solveCSTRCooled,
-  solvePFRAdiabatic,
-  solvePFRCooled,
-} from './thermalSolvers';
+import { buildLevenspielCurve } from './kinetics';
+import { type StreamState, streamToState, stateToStream, annotateStream } from './streamBridge';
+import { buildChemistry } from './chemistryFactory';
+import { cstrModel, pfrModel, type UnitParams } from './unitModels';
+import type { AnnotatedStream } from '../types/stream';
+import type { ChemistryModel } from '../types/chemistry';
 
 export function findTearEdgeIds(nodes: Node[], edges: Edge[]): Set<string> {
   const color = new Map<string, 'white' | 'gray' | 'black'>();
@@ -123,109 +114,14 @@ function mixStreams(
   return { Xa, Ca, Cr, Cs, flow: totalFlow, T };
 }
 
-function solveReactorUnit(
-  inlet: StreamState,
-  tauEff: number,
-  reactorType: 'cstr' | 'pfr',
-  params: SimulationParams,
-  nodeData?: { thermalMode?: ThermalMode; Tc?: number; kappa_v?: number }
-): StreamState {
-  const T_in = inlet.T ?? (params.T_feed ?? 300);
-  const thermalMode = nodeData?.thermalMode ?? 'isothermal';
-  const isSingle = params.reactionMode === 'single';
-
-  if (thermalMode === 'isothermal' || !isSingle) {
-    if (isSingle) {
-      let Xa_out: number;
-      if (reactorType === 'cstr') {
-        const r = solveCSTR(inlet.Xa, tauEff, params);
-        Xa_out = r.Xa_out;
-      } else {
-        const r = solvePFR(inlet.Xa, tauEff, params);
-        Xa_out = r.Xa_out;
-      }
-      const Ca = params.Ca0 * (1 - Xa_out);
-      const Cr = params.Ca0 * Xa_out;
-      return { Xa: Xa_out, Ca, Cr, Cs: 0, flow: inlet.flow, T: T_in };
-    }
-
-    if (reactorType === 'cstr') {
-      const r =
-        params.reactionMode === 'series'
-          ? solveSeriesCSTR(
-              inlet.Ca,
-              inlet.Cr,
-              inlet.Cs,
-              tauEff,
-              params.k,
-              params.k2
-            )
-          : solveParallelCSTR(
-              inlet.Ca,
-              inlet.Cr,
-              inlet.Cs,
-              tauEff,
-              params.k,
-              params.k2
-            );
-      const Xa = 1 - r.Ca_out / Math.max(params.Ca0, 1e-9);
-      return {
-        Xa: Math.max(0, Math.min(0.9999, Xa)),
-        Ca: r.Ca_out,
-        Cr: r.Cr_out,
-        Cs: r.Cs_out,
-        flow: inlet.flow,
-        T: T_in,
-      };
-    }
-
-    const r = solveMultiPFR(
-      inlet.Ca,
-      inlet.Cr,
-      inlet.Cs,
-      tauEff,
-      params.k,
-      params.k2,
-      params.reactionMode as 'series' | 'parallel'
-    );
-    const Xa = 1 - r.Ca_out / Math.max(params.Ca0, 1e-9);
-    return {
-      Xa: Math.max(0, Math.min(0.9999, Xa)),
-      Ca: r.Ca_out,
-      Cr: r.Cr_out,
-      Cs: r.Cs_out,
-      flow: inlet.flow,
-      T: T_in,
-    };
-  }
-
-  const Tc = nodeData?.Tc ?? 300;
-  const kappa_v_node = nodeData?.kappa_v ?? 0.5;
-
-  if (reactorType === 'cstr') {
-    const r = thermalMode === 'adiabatic'
-      ? solveCSTRAdiabatic(inlet.Xa, T_in, tauEff, params)
-      : solveCSTRCooled(inlet.Xa, T_in, tauEff, Tc, kappa_v_node, params);
-    const Ca = params.Ca0 * (1 - r.Xa_out);
-    const Cr = params.Ca0 * r.Xa_out;
-    return { Xa: r.Xa_out, Ca, Cr, Cs: 0, flow: inlet.flow, T: r.T_out };
-  }
-
-  const r = thermalMode === 'adiabatic'
-    ? solvePFRAdiabatic(inlet.Xa, T_in, tauEff, params)
-    : solvePFRCooled(inlet.Xa, T_in, tauEff, Tc, kappa_v_node, params);
-  const Ca = params.Ca0 * (1 - r.Xa_out);
-  const Cr = params.Ca0 * r.Xa_out;
-  return { Xa: r.Xa_out, Ca, Cr, Cs: 0, flow: inlet.flow, T: r.T_out };
-}
-
 function forwardPass(
   nodes: Node[],
   edges: Edge[],
   tearIds: Set<string>,
   tearStreams: Map<string, StreamState>,
   params: SimulationParams,
-  topoOrder: string[]
+  topoOrder: string[],
+  chemistry: ChemistryModel
 ): { streams: Map<string, StreamState>; nodeOutputs: Map<string, StreamState> } {
   const nodeMap = new Map(nodes.map((n) => [n.id, n]));
   const streams = new Map<string, StreamState>();
@@ -269,9 +165,17 @@ function forwardPass(
         kappa_v?: number;
       };
       const tauEff = data.tau / Math.max(inlet.flow, 0.001);
-      outState = solveReactorUnit(
-        inlet, tauEff, node.type as 'cstr' | 'pfr', params, data
-      );
+      const unitParams: UnitParams = {
+        tau:         tauEff,
+        thermalMode: data.thermalMode ?? 'isothermal',
+        Tc:          data.Tc          ?? 300,
+        kappa_v:     data.kappa_v     ?? 0.5,
+        Ca0:         params.Ca0,
+      };
+      const model = node.type === 'cstr' ? cstrModel : pfrModel;
+      const inletStream = stateToStream(inlet);
+      const unitResult  = model(inletStream, unitParams, chemistry);
+      outState = streamToState(unitResult.outlet, params.Ca0);
     } else if (node.type === 'mixer') {
       const inEdges = incomingEdges.get(nodeId) ?? [];
       outState = mixStreams(inEdges, streams, params);
@@ -308,114 +212,12 @@ function forwardPass(
   return { streams, nodeOutputs };
 }
 
-function buildReactorProfile(
-  node: Node,
-  inlet: StreamState,
-  Xa_out: number,
-  tauEff: number,
-  params: SimulationParams
-): { cumTau: number; Xa: number; Ca: number; Cr: number; Cs: number; T: number }[] {
-  const data = node.data as {
-    tau: number;
-    reactorType: 'CSTR' | 'PFR';
-    thermalMode?: ThermalMode;
-    Tc?: number;
-    kappa_v?: number;
-  };
-  const isSingle = params.reactionMode === 'single';
-  const thermalMode = data.thermalMode ?? 'isothermal';
-  const T_in = inlet.T ?? (params.T_feed ?? 300);
-
-  if (node.type === 'cstr') {
-    if (isSingle && thermalMode === 'adiabatic') {
-      const r = solveCSTRAdiabatic(inlet.Xa, T_in, tauEff, params);
-      return [
-        { cumTau: 0, Xa: inlet.Xa, Ca: params.Ca0 * (1 - inlet.Xa), Cr: params.Ca0 * inlet.Xa, Cs: 0, T: T_in },
-        { cumTau: tauEff, Xa: r.Xa_out, Ca: params.Ca0 * (1 - r.Xa_out), Cr: params.Ca0 * r.Xa_out, Cs: 0, T: r.T_out },
-      ];
-    }
-    if (isSingle && thermalMode === 'cooled') {
-      const Tc = data.Tc ?? 300;
-      const kappa_v_node = data.kappa_v ?? 0.5;
-      const r = solveCSTRCooled(inlet.Xa, T_in, tauEff, Tc, kappa_v_node, params);
-      return [
-        { cumTau: 0, Xa: inlet.Xa, Ca: params.Ca0 * (1 - inlet.Xa), Cr: params.Ca0 * inlet.Xa, Cs: 0, T: T_in },
-        { cumTau: tauEff, Xa: r.Xa_out, Ca: params.Ca0 * (1 - r.Xa_out), Cr: params.Ca0 * r.Xa_out, Cs: 0, T: r.T_out },
-      ];
-    }
-
-    if (isSingle) {
-      return [
-        { cumTau: 0, Xa: inlet.Xa, Ca: params.Ca0 * (1 - inlet.Xa), Cr: params.Ca0 * inlet.Xa, Cs: 0, T: T_in },
-        { cumTau: tauEff, Xa: Xa_out, Ca: params.Ca0 * (1 - Xa_out), Cr: params.Ca0 * Xa_out, Cs: 0, T: T_in },
-      ];
-    }
-
-    const r =
-      params.reactionMode === 'series'
-        ? solveSeriesCSTR(inlet.Ca, inlet.Cr, inlet.Cs, tauEff, params.k, params.k2)
-        : solveParallelCSTR(inlet.Ca, inlet.Cr, inlet.Cs, tauEff, params.k, params.k2);
-    return [
-      { cumTau: 0, Xa: inlet.Xa, Ca: inlet.Ca, Cr: inlet.Cr, Cs: inlet.Cs, T: T_in },
-      { cumTau: tauEff, Xa: 1 - r.Ca_out / Math.max(params.Ca0, 1e-9), Ca: r.Ca_out, Cr: r.Cr_out, Cs: r.Cs_out, T: T_in },
-    ];
-  }
-
-  if (isSingle && thermalMode === 'adiabatic') {
-    const r = solvePFRAdiabatic(inlet.Xa, T_in, tauEff, params);
-    return r.profile.map((p) => ({
-      cumTau: p.t,
-      Xa: p.Xa,
-      Ca: params.Ca0 * (1 - p.Xa),
-      Cr: params.Ca0 * p.Xa,
-      Cs: 0,
-      T: p.T,
-    }));
-  }
-  if (isSingle && thermalMode === 'cooled') {
-    const Tc = data.Tc ?? 300;
-    const kappa_v_node = data.kappa_v ?? 0.5;
-    const r = solvePFRCooled(inlet.Xa, T_in, tauEff, Tc, kappa_v_node, params);
-    return r.profile.map((p) => ({
-      cumTau: p.t,
-      Xa: p.Xa,
-      Ca: params.Ca0 * (1 - p.Xa),
-      Cr: params.Ca0 * p.Xa,
-      Cs: 0,
-      T: p.T,
-    }));
-  }
-
-  if (isSingle) {
-    const r = solvePFR(inlet.Xa, tauEff, params);
-    return r.profile.map((p) => ({
-      cumTau: p.cumTau,
-      Xa: p.Xa,
-      Ca: params.Ca0 * (1 - p.Xa),
-      Cr: params.Ca0 * p.Xa,
-      Cs: 0,
-      T: T_in,
-    }));
-  }
-
-  const r = solveMultiPFR(
-    inlet.Ca, inlet.Cr, inlet.Cs, tauEff,
-    params.k, params.k2,
-    params.reactionMode as 'series' | 'parallel'
-  );
-  return r.profile.map((p) => ({
-    cumTau: p.t,
-    Xa: 1 - p.Ca / Math.max(params.Ca0, 1e-9),
-    Ca: p.Ca, Cr: p.Cr, Cs: p.Cs,
-    T: T_in,
-  }));
-}
-
 function buildSegments(
   nodes: Node[],
   edges: Edge[],
   pass: ReturnType<typeof forwardPass>,
-  params: SimulationParams
+  params: SimulationParams,
+  chemistry: ChemistryModel
 ): ReactorSegmentResult[] {
   const reactorNodes = nodes.filter((n) => n.type === 'cstr' || n.type === 'pfr');
   const order = findReactorOrder(nodes, edges);
@@ -451,7 +253,24 @@ function buildSegments(
 
     const tauEff = data.tau / Math.max(inlet.flow, 0.001);
 
-    const rawProfile = buildReactorProfile(node, inlet, Xa_out, tauEff, params);
+    const unitParams: UnitParams = {
+      tau:         tauEff,
+      thermalMode: data.thermalMode ?? 'isothermal',
+      Tc:          data.Tc          ?? 300,
+      kappa_v:     data.kappa_v     ?? 0.5,
+      Ca0:         params.Ca0,
+    };
+    const model = node.type === 'cstr' ? cstrModel : pfrModel;
+    const inletStream = stateToStream(inlet);
+    const unitResult  = model(inletStream, unitParams, chemistry);
+    const rawProfile = unitResult.profile.map(p => ({
+      cumTau: p.cumTau,
+      Xa:     Math.max(0, Math.min(0.9999, 1 - (p.C[chemistry.keyReactantId] ?? 0) / Math.max(params.Ca0, 1e-9))),
+      Ca:     p.C['A'] ?? 0,
+      Cr:     p.C['R'] ?? 0,
+      Cs:     p.C['S'] ?? 0,
+      T:      p.T,
+    }));
 
     const profile = rawProfile.map((p) => ({
       ...p,
@@ -547,6 +366,8 @@ export function solveNetwork(
   )
     return null;
 
+  const chemistry = buildChemistry(params);
+
   const tearIds = findTearEdgeIds(nodes, edges);
   const topoOrder = topoSort(nodes, edges, tearIds);
   if (topoOrder.length !== nodes.length) return null;
@@ -573,7 +394,7 @@ export function solveNetwork(
 
   for (let iter = 0; iter < MAX_ITER; iter++) {
     iterations = iter + 1;
-    const pass = forwardPass(nodes, edges, tearIds, tearStreams, params, topoOrder);
+    const pass = forwardPass(nodes, edges, tearIds, tearStreams, params, topoOrder, chemistry);
     lastPass = pass;
 
     let error = 0;
@@ -612,7 +433,7 @@ export function solveNetwork(
   const productOutput = lastPass.nodeOutputs.get('product');
   if (!productOutput) return null;
 
-  const segments = buildSegments(nodes, edges, lastPass, params);
+  const segments = buildSegments(nodes, edges, lastPass, params, chemistry);
   const levenspielCurve = buildLevenspielCurve(params);
 
   const nodeMap = new Map(nodes.map(n => [n.id, n]));
@@ -645,14 +466,19 @@ export function solveNetwork(
     streamIdx++;
   }
 
-  const streamsWithLabels: Record<string, StreamState> = {};
+  const streamsOut: Record<string, AnnotatedStream> = {};
   for (const [edgeId, state] of lastPass.streams) {
     const labels = streamLabels.get(edgeId);
-    streamsWithLabels[edgeId] = {
-      ...state,
-      streamLabel: labels?.label,
-      streamDesc: labels?.desc,
-    };
+    streamsOut[edgeId] = annotateStream(
+      stateToStream(state),
+      labels?.label,
+      labels?.desc
+    );
+  }
+
+  const nodeOutputsOut: Record<string, AnnotatedStream> = {};
+  for (const [nodeId, state] of lastPass.nodeOutputs) {
+    nodeOutputsOut[nodeId] = annotateStream(stateToStream(state));
   }
 
   const finalXa = productOutput.Xa;
@@ -663,8 +489,8 @@ export function solveNetwork(
       : 0;
 
   return {
-    streams: streamsWithLabels,
-    nodeOutputs: Object.fromEntries(lastPass.nodeOutputs),
+    streams: streamsOut,
+    nodeOutputs: nodeOutputsOut,
     converged,
     iterations,
     recycleEdgeIds: [...tearIds],
@@ -673,5 +499,6 @@ export function solveNetwork(
     finalYield,
     finalSelectivity,
     levenspielCurve,
+    chemistry,
   };
 }
