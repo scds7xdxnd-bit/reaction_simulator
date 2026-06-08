@@ -635,11 +635,13 @@ h1 {
     </div>
 
     <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-done">✓ Done</span></div>
       <div class="card-top">
         <div class="card-num">10</div>
         <div class="card-name">Canvas Editor</div>
       </div>
       <div class="card-job">Edit the flowsheet graphically. Nodes are thin views — all connection rules read from the flowsheet model, not hard-coded.</div>
+      <div style="font-size:9.5px;color:#0369a1;background:#eff6ff;border:1px solid #bfdbfe;border-radius:4px;padding:3px 8px;margin-bottom:6px;font-weight:600">✓ CSTRNode + PFRNode Da fallback: getPreset(params).computeDa() replaces inline kinetics branch</div>
       <div class="depth-axis">
         <div class="depth-label">Depth axis</div>
         <div class="depth-row">
@@ -651,11 +653,13 @@ h1 {
     </div>
 
     <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-done">✓ Done</span></div>
       <div class="card-top">
         <div class="card-num">11</div>
         <div class="card-name">Controls &amp; Inspectors</div>
       </div>
       <div class="card-job">Forms that edit Species, Reactions, Units, and Feed. Schema-driven so new reaction types auto-generate correct fields.</div>
+      <div style="font-size:9.5px;color:#0369a1;background:#eff6ff;border:1px solid #bfdbfe;border-radius:4px;padding:3px 8px;margin-bottom:6px;font-weight:600">✓ ReactionPreset: uiLabel / kinetics? / kUnit? schema fields · ParameterPanel derives kineticsOptions from PRESETS, visibility from getPreset()</div>
       <div class="depth-axis">
         <div class="depth-label">Depth axis</div>
         <div class="depth-row">
@@ -667,11 +671,13 @@ h1 {
     </div>
 
     <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-done">✓ Done</span></div>
       <div class="card-top">
         <div class="card-num">12</div>
         <div class="card-name">Visualization / Reporting</div>
       </div>
       <div class="card-job">Pure functions of Result → charts and tables. No solver calls, no store mutations. Consistent axes, theming, and export.</div>
+      <div style="font-size:9.5px;color:#0369a1;background:#eff6ff;border:1px solid #bfdbfe;border-radius:4px;padding:3px 8px;margin-bottom:6px;font-weight:600">✓ thermalSolvers.ts deleted · operatingDiagramModel.ts extracted · OperatingDiagram reads result.operatingDiagrams · LevenspielPlot uses interpolateCurve, no getRate</div>
       <div class="depth-axis">
         <div class="depth-label">Depth axis</div>
         <div class="depth-row">
@@ -738,9 +744,9 @@ h1 {
     <div class="order-arrow">→</div>
     <div class="order-step done">✓ C7<br/><small>Flowsheet · done</small></div>
     <div class="order-arrow">→</div>
-    <div class="order-step next">C10–12<br/><small>UI layers</small></div>
+    <div class="order-step done">✓ C10–12<br/><small>UI layers · done</small></div>
     <div class="order-arrow">→</div>
-    <div class="order-step">A + B<br/><small>Validation &amp;<br/>Persistence</small></div>
+    <div class="order-step next">A + B<br/><small>Validation &amp;<br/>Persistence</small></div>
   </div>
   <div style="margin-top:10px;font-size:11px;color:#64748b;line-height:1.6;padding:8px 12px;background:#f8fafc;border-radius:6px;border:1px solid #e2e8f0">
     <strong>Rule:</strong> A compartment can only be deepened when its <em>upstream dependencies</em> have frozen contracts.
