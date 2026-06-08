@@ -1,6 +1,7 @@
 import type { SimulationParams } from '../types/reactor';
-import type { ChemistryModel, ThermoModel } from '../types/chemistry';
+import type { ChemistryModel } from '../types/chemistry';
 import { getPreset } from './reactionRegistry';
+import { buildThermoModel } from './thermoModel';
 
 export function buildChemistry(params: SimulationParams): ChemistryModel {
   const preset = getPreset(params);
@@ -9,12 +10,5 @@ export function buildChemistry(params: SimulationParams): ChemistryModel {
     reactions:     preset.buildReactions(params),
     thermo:        buildThermoModel(params),
     keyReactantId: 'A',
-  };
-}
-
-function buildThermoModel(params: SimulationParams): ThermoModel {
-  return {
-    deltaH: (_rxnId, _T) => params.delta_H,
-    rhoCp:  (_C, _T)     => params.rho_Cp,
   };
 }
