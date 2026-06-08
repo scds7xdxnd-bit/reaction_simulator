@@ -486,11 +486,13 @@ h1 {
     </div>
 
     <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-done">✓ Done</span></div>
       <div class="card-top">
         <div class="card-num">3</div>
         <div class="card-name">Thermodynamics / Properties</div>
       </div>
       <div class="card-job">Compute ρ, Cp, ΔH_rxn(T), K_eq(T) from species data. Keeps thermal math out of the unit solvers.</div>
+      <div style="font-size:9.5px;color:#0369a1;background:#eff6ff;border:1px solid #bfdbfe;border-radius:4px;padding:3px 8px;margin-bottom:6px;font-weight:600">✓ buildThermoModel extracted → thermoModel.ts · interface accepts reactionId + T, ready for van't Hoff depth</div>
       <div class="depth-axis">
         <div class="depth-label">Depth axis</div>
         <div class="depth-row">
@@ -726,9 +728,9 @@ h1 {
     <div class="order-arrow">→</div>
     <div class="order-step done">✓ C2<br/><small>Rxn Registry · done</small></div>
     <div class="order-arrow">→</div>
-    <div class="order-step next">C3<br/><small>Thermo</small></div>
+    <div class="order-step done">✓ C3<br/><small>Thermo · done</small></div>
     <div class="order-arrow">→</div>
-    <div class="order-step">C5<br/><small>Numerics</small></div>
+    <div class="order-step next">C5<br/><small>Numerics</small></div>
     <div class="order-arrow">→</div>
     <div class="order-step">C7<br/><small>Flowsheet</small></div>
     <div class="order-arrow">→</div>

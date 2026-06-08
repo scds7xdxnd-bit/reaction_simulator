@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { Node, Edge } from '@xyflow/react';
 import { useSimulatorStore } from '../store/simulatorStore';
-import type { SimulationParams } from '../types/reactor';
 import {
   runDynamicStep,
   makeDynamicInitialState,

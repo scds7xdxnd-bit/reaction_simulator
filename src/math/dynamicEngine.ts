@@ -4,6 +4,7 @@ import type { ChemistryModel, SpeciesId } from '../types/chemistry';
 import type { Stream } from '../types/stream';
 import { findTearEdgeIds, topoSort } from './networkSolver';
 import { pfrModel, type UnitParams } from './unitModels';
+import { rk4Step as rk4StepBase } from './numerics';
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -314,7 +315,7 @@ function rk4Step(
     return rec;
   };
 
-  const yDeriv = (y: number[]): number[] => {
+  const yDeriv = (_t: number, y: number[]): number[] => {
     const C = toRec(y.slice(0, n));
     const T = y[n];
     const { dC, dT } = derivFn(C, T);
@@ -322,18 +323,7 @@ function rk4Step(
   };
 
   const y0 = [...toArr(C_in), T_in];
-
-  const k1 = yDeriv(y0);
-  const y1 = y0.map((yi, i) => yi + k1[i] * dt / 2);
-  const k2 = yDeriv(y1);
-  const y2 = y0.map((yi, i) => yi + k2[i] * dt / 2);
-  const k3 = yDeriv(y2);
-  const y3 = y0.map((yi, i) => yi + k3[i] * dt);
-  const k4 = yDeriv(y3);
-
-  const yNext = y0.map(
-    (yi, i) => yi + dt * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]) / 6,
-  );
+  const yNext = rk4StepBase(yDeriv, 0, y0, dt);
 
   for (let i = 0; i < n; i++) yNext[i] = Math.max(0, yNext[i]);
   yNext[n] = Math.max(200, Math.min(1500, yNext[n]));

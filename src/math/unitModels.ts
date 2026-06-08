@@ -1,6 +1,7 @@
 import type { Stream } from '../types/stream';
 import type { ChemistryModel, SpeciesId, Reaction } from '../types/chemistry';
 import type { ThermalMode } from '../types/reactor';
+import { bisect, rk4Step } from './numerics';
 
 export interface UnitParams {
   tau: number;
@@ -57,28 +58,6 @@ function fromConc(
     F[s] = Math.max(0, c * volFlow);
   }
   return { F, T, P: 101325 };
-}
-
-function bisect(
-  f: (x: number) => number,
-  lo: number,
-  hi: number,
-  maxIter: number = 60
-): number {
-  let a = lo;
-  let b = hi;
-  const fa = f(a);
-  const fb = f(b);
-  if (fa * fb > 0) return Math.abs(fa) < Math.abs(fb) ? a : b;
-  if (fa > 0) {
-    [a, b] = [b, a];
-  }
-  for (let i = 0; i < maxIter; i++) {
-    const mid = (a + b) / 2;
-    if (f(mid) < 0) a = mid;
-    else b = mid;
-  }
-  return (a + b) / 2;
 }
 
 function evaluateRates(
@@ -283,22 +262,6 @@ export const cstrModel: UnitModel = (
   };
 };
 
-function rk4Vector(
-  fn: (t: number, y: number[]) => number[],
-  t: number,
-  y: number[],
-  h: number
-): number[] {
-  const k1 = fn(t, y);
-  const y2 = y.map((yi, i) => yi + k1[i] * h / 2);
-  const k2 = fn(t + h / 2, y2);
-  const y3 = y.map((yi, i) => yi + k2[i] * h / 2);
-  const k3 = fn(t + h / 2, y3);
-  const y4 = y.map((yi, i) => yi + k3[i] * h);
-  const k4 = fn(t + h, y4);
-  return y.map((yi, i) => yi + h * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]) / 6);
-}
-
 export const pfrModel: UnitModel = (
   inlet: Stream,
   params: UnitParams,
@@ -355,7 +318,7 @@ export const pfrModel: UnitModel = (
 
   let y = [...y0];
   for (let i = 0; i < nSteps; i++) {
-    y = rk4Vector(fn, i * h, y, h);
+    y = rk4Step(fn, i * h, y, h);
     for (let j = 0; j < speciesIds.length; j++) {
       y[j] = Math.max(0, y[j]);
     }
