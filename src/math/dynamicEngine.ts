@@ -2,7 +2,7 @@ import type { Node, Edge } from '@xyflow/react';
 import type { SimulationParams, ThermalMode } from '../types/reactor';
 import type { ChemistryModel, SpeciesId } from '../types/chemistry';
 import type { Stream } from '../types/stream';
-import { findTearEdgeIds, topoSort } from './networkSolver';
+import { findTearEdgeIds, topoSort } from './topology';
 import { pfrModel, type UnitParams } from './unitModels';
 import { rk4Step as rk4StepBase } from './numerics';
 
