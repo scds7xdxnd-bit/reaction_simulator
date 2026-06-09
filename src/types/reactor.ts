@@ -77,6 +77,7 @@ export interface NetworkResult {
   finalConversion: number;
   finalYield: number;
   finalSelectivity: number;
+  finalConversions: Record<string, number>;
   levenspielCurve: { Xa: number; inv_rA_norm: number }[];
   chemistry: ChemistryModel;
   operatingDiagrams: Record<string, OperatingDiagramData>;

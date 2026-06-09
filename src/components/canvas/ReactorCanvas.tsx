@@ -54,6 +54,8 @@ export default function ReactorCanvas() {
   const storeSetEdges = useSimulatorStore((s) => s.setEdges);
   const addReactor = useSimulatorStore((s) => s.addReactor);
   const addUnit = useSimulatorStore((s) => s.addUnit);
+  const addFeedNode    = useSimulatorStore((s) => s.addFeedNode);
+  const addProductNode = useSimulatorStore((s) => s.addProductNode);
   const result = useSimulatorStore((s) => s.result);
   const pushHistory = useSimulatorStore((s) => s.pushHistory);
   const setSelectedNodeId = useSimulatorStore((s) => s.setSelectedNodeId);
@@ -109,6 +111,8 @@ export default function ReactorCanvas() {
         | 'PFR'
         | 'Mixer'
         | 'Splitter'
+        | 'Feed'
+        | 'Product'
         | undefined;
       if (!type) return;
 
@@ -124,11 +128,15 @@ export default function ReactorCanvas() {
 
       if (type === 'CSTR' || type === 'PFR') {
         addReactor(type, position);
+      } else if (type === 'Feed') {
+        addFeedNode(position);
+      } else if (type === 'Product') {
+        addProductNode(position);
       } else {
         addUnit(type, position);
       }
     },
-    [addReactor, addUnit]
+    [addReactor, addUnit, addFeedNode, addProductNode]
   );
 
   const onDelete = useCallback((deletedNodes: { id: string }[]) => {

@@ -31,6 +31,8 @@ export interface TopologySlice {
   pfrCount: number;
   mixerCount: number;
   splitterCount: number;
+  feedCount: number;
+  productCount: number;
   _history: { nodes: Node[]; edges: Edge[] }[];
   _historyIndex: number;
 
@@ -38,6 +40,8 @@ export interface TopologySlice {
   setEdges: (edges: Edge[]) => void;
   addReactor: (type: ReactorType, position: { x: number; y: number }) => void;
   addUnit: (unitType: UnitType, position: { x: number; y: number }) => void;
+  addFeedNode: (position: { x: number; y: number }) => void;
+  addProductNode: (position: { x: number; y: number }) => void;
   updateReactorTau: (nodeId: string, tau: number) => void;
   updateNodeThermal: (nodeId: string, data: { thermalMode?: ThermalMode; Tc?: number; kappa_v?: number }) => void;
   pushHistory: () => void;
@@ -56,6 +60,8 @@ export const createTopologySlice: StateCreator<SimulatorStore, [], [], TopologyS
     pfrCount: 1,
     mixerCount: 0,
     splitterCount: 0,
+    feedCount: 1,
+    productCount: 1,
     _history: [],
     _historyIndex: -1,
 
@@ -158,6 +164,60 @@ export const createTopologySlice: StateCreator<SimulatorStore, [], [], TopologyS
       }
     },
 
+    addFeedNode: (position) => {
+      const state = get();
+      const snapshot = {
+        nodes: state.nodes.map(n => ({ ...n, data: { ...n.data } })),
+        edges: state.edges.map(e => ({ ...e })),
+      };
+      const trimmed = state._history.slice(0, state._historyIndex + 1);
+      trimmed.push(snapshot);
+      if (trimmed.length > 50) trimmed.shift();
+
+      const count = state.feedCount + 1;
+      const newNode: Node = {
+        id: `feed-${count}`,
+        type: 'feed',
+        position,
+        data: { label: `Feed-${count}` },
+        draggable: true,
+        deletable: true,
+      };
+      set({
+        nodes: [...state.nodes, newNode],
+        feedCount: count,
+        _history: trimmed,
+        _historyIndex: trimmed.length - 1,
+      });
+    },
+
+    addProductNode: (position) => {
+      const state = get();
+      const snapshot = {
+        nodes: state.nodes.map(n => ({ ...n, data: { ...n.data } })),
+        edges: state.edges.map(e => ({ ...e })),
+      };
+      const trimmed = state._history.slice(0, state._historyIndex + 1);
+      trimmed.push(snapshot);
+      if (trimmed.length > 50) trimmed.shift();
+
+      const count = state.productCount + 1;
+      const newNode: Node = {
+        id: `product-${count}`,
+        type: 'product',
+        position,
+        data: { label: `Product-${count}` },
+        draggable: true,
+        deletable: true,
+      };
+      set({
+        nodes: [...state.nodes, newNode],
+        productCount: count,
+        _history: trimmed,
+        _historyIndex: trimmed.length - 1,
+      });
+    },
+
     pushHistory: () => {
       const s = get();
       const snapshot = {
@@ -189,5 +249,5 @@ export const createTopologySlice: StateCreator<SimulatorStore, [], [], TopologyS
     canUndo: () => get()._historyIndex > 0,
     canRedo: () => get()._historyIndex < get()._history.length - 1,
 
-    resetCanvas: () => set({ nodes: initialNodes, edges: initialEdges, cstrCount: 1, pfrCount: 1, mixerCount: 0, splitterCount: 0 }),
+    resetCanvas: () => set({ nodes: initialNodes, edges: initialEdges, cstrCount: 1, pfrCount: 1, mixerCount: 0, splitterCount: 0, feedCount: 1, productCount: 1 }),
   });

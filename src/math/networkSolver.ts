@@ -93,9 +93,13 @@ function forwardPass(
     let outState: StreamState;
 
     if (node.type === 'feed') {
+      const fData = node.data as { Ca0?: number; T_feed?: number; flowrate?: number };
       outState = {
-        Xa: 0, Ca: params.Ca0, Cr: 0, Cs: 0,
-        flow: 1.0, T: params.T_feed ?? 300,
+        Xa: 0,
+        Ca:   fData.Ca0      ?? params.Ca0,
+        Cr: 0, Cs: 0,
+        flow: fData.flowrate ?? 1.0,
+        T:    fData.T_feed   ?? params.T_feed,
       };
     } else if (node.type === 'product') {
       const inEdges = incomingEdges.get(nodeId) ?? [];
@@ -258,10 +262,19 @@ function findReactorOrder(nodes: Node[], edges: Edge[], tearIds: Set<string>): s
   const reactorIds = new Set(
     nodes.filter((n) => n.type === 'cstr' || n.type === 'pfr').map((n) => n.id)
   );
-  const fromFeed = reachableFrom('feed', edges);
-  const toProduct = reachableTo('product', edges);
+
+  const fromAnyFeed = new Set<string>();
+  for (const fn of nodes.filter((n) => n.type === 'feed')) {
+    for (const id of reachableFrom(fn.id, edges)) fromAnyFeed.add(id);
+  }
+
+  const toAnyProduct = new Set<string>();
+  for (const pn of nodes.filter((n) => n.type === 'product')) {
+    for (const id of reachableTo(pn.id, edges)) toAnyProduct.add(id);
+  }
+
   return topoSort(nodes, edges, tearIds).filter(
-    (id) => reactorIds.has(id) && fromFeed.has(id) && toProduct.has(id)
+    (id) => reactorIds.has(id) && fromAnyFeed.has(id) && toAnyProduct.has(id)
   );
 }
 
@@ -270,13 +283,16 @@ export function solveNetwork(
   edges: Edge[],
   params: SimulationParams
 ): SimulationResult | null {
-  if (
-    !nodes.find((n) => n.id === 'feed') ||
-    !nodes.find((n) => n.id === 'product')
-  )
-    return null;
+  const feedNodes    = nodes.filter((n) => n.type === 'feed');
+  const productNodes = nodes.filter((n) => n.type === 'product');
 
-  if (!reachableFrom('feed', edges).has('product')) return null;
+  if (feedNodes.length === 0 || productNodes.length === 0) return null;
+
+  const reachableFromAllFeeds = new Set<string>();
+  for (const fn of feedNodes) {
+    for (const id of reachableFrom(fn.id, edges)) reachableFromAllFeeds.add(id);
+  }
+  if (!productNodes.some((pn) => reachableFromAllFeeds.has(pn.id))) return null;
 
   const chemistry = buildChemistry(params);
 
@@ -342,8 +358,19 @@ export function solveNetwork(
 
   if (!lastPass) return null;
 
-  const productOutput = lastPass.nodeOutputs.get('product');
+  const primaryProductId =
+    topoOrder.find((id) => productNodes.some((pn) => pn.id === id)) ??
+    productNodes[0]?.id ?? null;
+  const productOutput = primaryProductId
+    ? lastPass.nodeOutputs.get(primaryProductId)
+    : null;
   if (!productOutput) return null;
+
+  const finalConversions: Record<string, number> = {};
+  for (const pn of productNodes) {
+    const pOut = lastPass.nodeOutputs.get(pn.id);
+    if (pOut) finalConversions[pn.id] = pOut.Xa;
+  }
 
   const segments = buildSegments(nodes, edges, tearIds, lastPass, params, chemistry);
   const levenspielCurve = buildLevenspielCurve(params);
@@ -431,6 +458,7 @@ export function solveNetwork(
     finalConversion: finalXa,
     finalYield,
     finalSelectivity,
+    finalConversions,
     levenspielCurve,
     chemistry,
     operatingDiagrams,

@@ -39,8 +39,6 @@ export function validateTopology(nodes: Node[], edges: Edge[]): ValidationIssue[
 
   if (feedCount === 0)
     issues.push({ level: 'error', field: 'topology', message: 'Flowsheet requires a Feed node' });
-  if (feedCount > 1)
-    issues.push({ level: 'warning', field: 'topology', message: 'Multiple Feed nodes detected' });
   if (productCount === 0)
     issues.push({ level: 'error', field: 'topology', message: 'Flowsheet requires a Product node' });
 

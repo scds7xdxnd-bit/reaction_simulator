@@ -142,6 +142,49 @@ export default function ReactorToolbar() {
         </span>
       </div>
 
+      <Divider className="w-10" />
+
+      <div
+        className="flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing"
+        draggable
+        onDragStart={(e) => onDragStart(e, 'Feed')}
+        style={{ width: 56 }}
+      >
+        <div
+          className="flex items-center justify-center rounded-md border"
+          style={{ width: 44, height: 52, borderColor: '#6b7280', background: '#f9fafb' }}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="9" stroke="#6b7280" strokeWidth="1.5" strokeDasharray="4 2" />
+            <line x1="12" y1="8" x2="12" y2="16" stroke="#6b7280" strokeWidth="1.5" strokeLinecap="round" />
+            <line x1="8" y1="12" x2="12" y2="12" stroke="#6b7280" strokeWidth="1" strokeLinecap="round" />
+          </svg>
+        </div>
+        <span className="text-[10px] font-medium text-[#6b7280] uppercase tracking-wider">
+          Feed
+        </span>
+      </div>
+
+      <div
+        className="flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing"
+        draggable
+        onDragStart={(e) => onDragStart(e, 'Product')}
+        style={{ width: 56 }}
+      >
+        <div
+          className="flex items-center justify-center rounded-md border"
+          style={{ width: 44, height: 52, borderColor: '#16a34a', background: '#f0fdf4' }}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="9" stroke="#16a34a" strokeWidth="1.5" strokeDasharray="4 2" />
+            <polyline points="10,10 14,12 10,14" stroke="#16a34a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          </svg>
+        </div>
+        <span className="text-[10px] font-medium text-[#16a34a] uppercase tracking-wider">
+          Product
+        </span>
+      </div>
+
       <div className="mt-auto" />
       <Divider className="w-10 mb-1" />
 
