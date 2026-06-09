@@ -10,9 +10,11 @@ import {
   Tooltip,
 } from 'recharts';
 import { useSimulatorStore } from '../../store/simulatorStore';
+import PlotAxisBar from './PlotAxisBar';
 
 export default function ConversionProfile() {
   const result = useSimulatorStore((s) => s.result);
+  const cfg = useSimulatorStore((s) => s.plotConfig['conversion']);
 
   const profileData = useMemo(() => {
     if (!result) return { allPoints: [], boundaries: [] };
@@ -53,92 +55,102 @@ export default function ConversionProfile() {
     ? profileData.allPoints[profileData.allPoints.length - 1].cumTau
     : 5;
 
+  const autoXMax = Math.max(maxTau * 1.05, 5);
+  const xDomainFinal: [number, number] = [cfg.xMin ?? 0, cfg.xMax ?? autoXMax];
+  const yDomainFinal: [number, number] = [cfg.yMin ?? 0, cfg.yMax ?? 1];
+
   return (
-    <ResponsiveContainer width="100%" height="100%">
-      <ComposedChart
-        data={profileData.allPoints}
-        margin={{ top: 20, right: 10, left: 10, bottom: 30 }}
-      >
-        <text
-          x={10}
-          y={12}
-          fill="#6b7280"
-          fontSize={11}
-          fontWeight={600}
-          style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}
-        >
-          CONVERSION PROFILE
-        </text>
-
-        <Tooltip
-          contentStyle={{
-            backgroundColor: '#ffffff',
-            border: '1px solid #dde3f0',
-            borderRadius: 4,
-            fontSize: 12,
-          }}
-          labelFormatter={(val) => `τ = ${Number(val).toFixed(2)} s`}
-          formatter={(value: unknown) => [`${((Number(value) as number) * 100).toFixed(1)}%`]}
-        />
-
-        {profileData.boundaries.map((b, i) => (
-          <ReferenceLine
-            key={`b-${i}`}
-            x={b.cumTau}
-            stroke="#b0bcd4"
-            strokeDasharray="4 4"
-            strokeWidth={1}
+    <div className="flex flex-col h-full">
+      <PlotAxisBar plotId="conversion" />
+      <div className="flex-1 min-h-0">
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart
+            data={profileData.allPoints}
+            margin={{ top: 20, right: 10, left: 10, bottom: 30 }}
           >
-            <Label
-              value={b.label}
-              position="top"
-              fill="#374151"
-              fontSize={9}
-              offset={2}
+            <text
+              x={10}
+              y={12}
+              fill="#6b7280"
+              fontSize={11}
+              fontWeight={600}
+              style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}
+            >
+              CONVERSION PROFILE
+            </text>
+
+            <Tooltip
+              contentStyle={{
+                backgroundColor: '#ffffff',
+                border: '1px solid #dde3f0',
+                borderRadius: 4,
+                fontSize: 12,
+              }}
+              labelFormatter={(val) => `τ = ${Number(val).toFixed(2)} s`}
+              formatter={(value: unknown) => [`${((Number(value) as number) * 100).toFixed(1)}%`]}
             />
-          </ReferenceLine>
-        ))}
 
-        <Line
-          dataKey="Xa"
-          stroke="#0f1730"
-          strokeWidth={2}
-          dot={false}
-          isAnimationActive={false}
-          connectNulls={false}
-        />
+            {profileData.boundaries.map((b, i) => (
+              <ReferenceLine
+                key={`b-${i}`}
+                x={b.cumTau}
+                stroke="#b0bcd4"
+                strokeDasharray="4 4"
+                strokeWidth={1}
+              >
+                <Label
+                  value={b.label}
+                  position="top"
+                  fill="#374151"
+                  fontSize={9}
+                  offset={2}
+                />
+              </ReferenceLine>
+            ))}
 
-        <XAxis
-          dataKey="cumTau"
-          type="number"
-          domain={[0, Math.max(maxTau * 1.05, 5)]}
-          stroke="#374151"
-          fontSize={11}
-          label={{
-            value: 'Cumulative τ (s)',
-            position: 'insideBottom',
-            offset: -5,
-            fill: '#374151',
-            fontSize: 11,
-          }}
-          tick={{ fill: '#374151' }}
-        />
-        <YAxis
-          type="number"
-          domain={[0, 1]}
-          tickFormatter={(v) => `${(v * 100).toFixed(0)}%`}
-          stroke="#374151"
-          fontSize={11}
-          label={{
-            value: 'Conversion, Xₐ',
-            angle: -90,
-            position: 'insideLeft',
-            fill: '#374151',
-            fontSize: 11,
-          }}
-          tick={{ fill: '#374151' }}
-        />
-      </ComposedChart>
-    </ResponsiveContainer>
+            <Line
+              dataKey="Xa"
+              stroke="#0f1730"
+              strokeWidth={2}
+              dot={false}
+              isAnimationActive={false}
+              connectNulls={false}
+            />
+
+            <XAxis
+              dataKey="cumTau"
+              type="number"
+              domain={xDomainFinal}
+              stroke="#374151"
+              fontSize={11}
+              label={{
+                value: 'Cumulative τ (s)',
+                position: 'insideBottom',
+                offset: -5,
+                fill: '#374151',
+                fontSize: 11,
+              }}
+              tick={{ fill: '#374151' }}
+            />
+            <YAxis
+              type="number"
+              domain={yDomainFinal}
+              allowDataOverflow
+              tickFormatter={(v) => `${(v * 100).toFixed(0)}%`}
+              stroke="#374151"
+              fontSize={11}
+              label={{
+                value: 'Conversion, Xₐ',
+                angle: -90,
+                position: 'insideLeft',
+                fill: '#374151',
+                fontSize: 11,
+              }}
+              tick={{ fill: '#374151' }}
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
   );
 }

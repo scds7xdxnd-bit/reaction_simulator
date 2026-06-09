@@ -11,10 +11,12 @@ import {
   Tooltip,
 } from 'recharts';
 import { useSimulatorStore } from '../../store/simulatorStore';
+import PlotAxisBar from './PlotAxisBar';
 
 export default function SpeciesProfile() {
   const result = useSimulatorStore((s) => s.result);
   const params = useSimulatorStore((s) => s.params);
+  const cfg = useSimulatorStore((s) => s.plotConfig['species']);
 
   const profileData = useMemo(() => {
     if (!result) return { allPoints: [], boundaries: [] };
@@ -55,114 +57,124 @@ export default function SpeciesProfile() {
     ? profileData.allPoints[profileData.allPoints.length - 1].cumTau
     : 5;
 
+  const autoXMax = Math.max(maxTau * 1.05, 5);
+  const xDomainFinal: [number, number] = [cfg.xMin ?? 0, cfg.xMax ?? autoXMax];
+  const yDomainFinal: [number, number] = [cfg.yMin ?? 0, cfg.yMax ?? (params.Ca0 * 1.05)];
+
   return (
-    <ResponsiveContainer width="100%" height="100%">
-      <ComposedChart
-        data={profileData.allPoints}
-        margin={{ top: 20, right: 10, left: 10, bottom: 30 }}
-      >
-        <text
-          x={10}
-          y={12}
-          fill="#6b7280"
-          fontSize={11}
-          fontWeight={600}
-          style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}
-        >
-          SPECIES PROFILE
-        </text>
-
-        <Legend
-          verticalAlign="top"
-          align="right"
-          wrapperStyle={{ fontSize: 10, paddingRight: 10 }}
-          iconType="line"
-        />
-
-        <Tooltip
-          contentStyle={{
-            backgroundColor: '#ffffff',
-            border: '1px solid #dde3f0',
-            borderRadius: 4,
-            fontSize: 12,
-          }}
-          labelFormatter={(val) => `τ = ${Number(val).toFixed(2)} s`}
-          formatter={(value: unknown) => [`${(value as number).toFixed(3)} mol/L`]}
-        />
-
-        {profileData.boundaries.map((b, i) => (
-          <ReferenceLine
-            key={`b-${i}`}
-            x={b.cumTau}
-            stroke="#b0bcd4"
-            strokeDasharray="4 4"
-            strokeWidth={1}
+    <div className="flex flex-col h-full">
+      <PlotAxisBar plotId="species" />
+      <div className="flex-1 min-h-0">
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart
+            data={profileData.allPoints}
+            margin={{ top: 20, right: 10, left: 10, bottom: 30 }}
           >
-            <Label
-              value={b.label}
-              position="top"
-              fill="#374151"
-              fontSize={9}
-              offset={2}
+            <text
+              x={10}
+              y={12}
+              fill="#6b7280"
+              fontSize={11}
+              fontWeight={600}
+              style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}
+            >
+              SPECIES PROFILE
+            </text>
+
+            <Legend
+              verticalAlign="top"
+              align="right"
+              wrapperStyle={{ fontSize: 10, paddingRight: 10 }}
+              iconType="line"
             />
-          </ReferenceLine>
-        ))}
 
-        <Line
-          dataKey="Ca"
-          stroke="#6366f1"
-          strokeWidth={2}
-          dot={false}
-          isAnimationActive={false}
-          name="A (Reactant)"
-        />
-        <Line
-          dataKey="Cr"
-          stroke="#16a34a"
-          strokeWidth={2}
-          dot={false}
-          isAnimationActive={false}
-          name="R (Desired)"
-        />
-        <Line
-          dataKey="Cs"
-          stroke="#dc2626"
-          strokeWidth={2}
-          dot={false}
-          isAnimationActive={false}
-          name="S (Byproduct)"
-        />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: '#ffffff',
+                border: '1px solid #dde3f0',
+                borderRadius: 4,
+                fontSize: 12,
+              }}
+              labelFormatter={(val) => `τ = ${Number(val).toFixed(2)} s`}
+              formatter={(value: unknown) => [`${(value as number).toFixed(3)} mol/L`]}
+            />
 
-        <XAxis
-          dataKey="cumTau"
-          type="number"
-          domain={[0, Math.max(maxTau * 1.05, 5)]}
-          stroke="#374151"
-          fontSize={11}
-          label={{
-            value: 'Cumulative τ (s)',
-            position: 'insideBottom',
-            offset: -5,
-            fill: '#374151',
-            fontSize: 11,
-          }}
-          tick={{ fill: '#374151' }}
-        />
-        <YAxis
-          type="number"
-          domain={[0, params.Ca0 * 1.05]}
-          stroke="#374151"
-          fontSize={11}
-          label={{
-            value: 'Concentration (mol/L)',
-            angle: -90,
-            position: 'insideLeft',
-            fill: '#374151',
-            fontSize: 11,
-          }}
-          tick={{ fill: '#374151' }}
-        />
-      </ComposedChart>
-    </ResponsiveContainer>
+            {profileData.boundaries.map((b, i) => (
+              <ReferenceLine
+                key={`b-${i}`}
+                x={b.cumTau}
+                stroke="#b0bcd4"
+                strokeDasharray="4 4"
+                strokeWidth={1}
+              >
+                <Label
+                  value={b.label}
+                  position="top"
+                  fill="#374151"
+                  fontSize={9}
+                  offset={2}
+                />
+              </ReferenceLine>
+            ))}
+
+            <Line
+              dataKey="Ca"
+              stroke="#6366f1"
+              strokeWidth={2}
+              dot={false}
+              isAnimationActive={false}
+              name="A (Reactant)"
+            />
+            <Line
+              dataKey="Cr"
+              stroke="#16a34a"
+              strokeWidth={2}
+              dot={false}
+              isAnimationActive={false}
+              name="R (Desired)"
+            />
+            <Line
+              dataKey="Cs"
+              stroke="#dc2626"
+              strokeWidth={2}
+              dot={false}
+              isAnimationActive={false}
+              name="S (Byproduct)"
+            />
+
+            <XAxis
+              dataKey="cumTau"
+              type="number"
+              domain={xDomainFinal}
+              stroke="#374151"
+              fontSize={11}
+              label={{
+                value: 'Cumulative τ (s)',
+                position: 'insideBottom',
+                offset: -5,
+                fill: '#374151',
+                fontSize: 11,
+              }}
+              tick={{ fill: '#374151' }}
+            />
+            <YAxis
+              type="number"
+              domain={yDomainFinal}
+              allowDataOverflow
+              stroke="#374151"
+              fontSize={11}
+              label={{
+                value: 'Concentration (mol/L)',
+                angle: -90,
+                position: 'insideLeft',
+                fill: '#374151',
+                fontSize: 11,
+              }}
+              tick={{ fill: '#374151' }}
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
   );
 }
