@@ -10,6 +10,8 @@ import {
   applyEdgeChanges,
   MarkerType,
   BackgroundVariant,
+  PanOnScrollMode,
+  SelectionMode,
   type Connection,
   type Edge,
   type Node as FlowNode,
@@ -229,6 +231,11 @@ export default function ReactorCanvas() {
         onMove={onMove}
         onInit={onInit}
         onPaneContextMenu={onPaneContextMenu}
+        selectionOnDrag
+        selectionMode={SelectionMode.Partial}
+        panOnDrag={[1, 2]}
+        panOnScroll
+        panOnScrollMode={PanOnScrollMode.Free}
         nodeTypes={nodeTypes}
         defaultEdgeOptions={defaultEdgeOptions}
         deleteKeyCode={['Delete', 'Backspace']}

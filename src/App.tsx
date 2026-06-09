@@ -55,6 +55,24 @@ export default function App() {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') { closeMenu(); closeCanvasMenu(); return; }
+
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        const t = e.target as HTMLElement;
+        if (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable) return;
+        const { nodes: cur, setNodes: sn } = useSimulatorStore.getState();
+        if (!cur.some(n => n.selected)) return;
+        e.preventDefault();
+        const step = e.shiftKey ? 1 : 10;
+        const dx = e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0;
+        const dy = e.key === 'ArrowUp'   ? -step : e.key === 'ArrowDown'  ? step : 0;
+        sn(cur.map(n =>
+          n.selected
+            ? { ...n, position: { x: n.position.x + dx, y: n.position.y + dy }, data: { ...n.data } }
+            : n
+        ));
+        return;
+      }
+
       const cmd = e.metaKey || e.ctrlKey;
       if (!cmd) return;
       const key = e.key.toLowerCase();
