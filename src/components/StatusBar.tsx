@@ -22,7 +22,7 @@ export default function StatusBar() {
           : '#dc2626'
       : '#6b7280';
 
-  const reactorCount = nodes.filter((n) => n.type === 'cstr' || n.type === 'pfr').length;
+  const reactorCount = nodes.filter((n) => n.type === 'cstr' || n.type === 'pfr' || n.type === 'batch').length;
   const hasMixerOrSplitter = nodes.some((n) => n.type === 'mixer' || n.type === 'splitter');
 
   const preset        = getPreset(params);

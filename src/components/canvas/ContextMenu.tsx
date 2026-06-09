@@ -21,7 +21,7 @@ export default function ContextMenu() {
 
   const targetNode   = nodes.find((n) => n.id === menuTargetId);
   const isProtected  = menuTargetId === 'feed' || menuTargetId === 'product';
-  const isReactor    = targetNode?.type === 'cstr' || targetNode?.type === 'pfr';
+  const isReactor    = targetNode?.type === 'cstr' || targetNode?.type === 'pfr' || targetNode?.type === 'batch';
 
   const run = useCallback((fn: () => void) => {
     fn();

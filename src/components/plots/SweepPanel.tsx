@@ -162,7 +162,7 @@ export default function SweepPanel() {
   const xAxisLabel = VARIABLE_LABELS[sweepConfig.variable];
 
   const reactorNodes = useMemo(
-    () => nodes.filter((n) => n.type === 'cstr' || n.type === 'pfr'),
+    () => nodes.filter((n) => n.type === 'cstr' || n.type === 'pfr' || n.type === 'batch'),
     [nodes]
   );
   const showReactorPicker = sweepConfig.variable === 'tau';

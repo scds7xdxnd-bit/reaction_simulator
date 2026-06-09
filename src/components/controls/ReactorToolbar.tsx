@@ -27,6 +27,16 @@ function PFRicon() {
   );
 }
 
+function BatchIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <path d="M9 3h6M10 3v5L6 16a3 3 0 006 0h0a3 3 0 006 0L14 8V3"
+        stroke="#be123c" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      <path d="M7 14h10" stroke="#be123c" strokeWidth="1" strokeDasharray="2 1.5" />
+    </svg>
+  );
+}
+
 export default function ReactorToolbar() {
   const onDragStart = useCallback(
     (event: React.DragEvent, nodeType: string) => {
@@ -84,6 +94,23 @@ export default function ReactorToolbar() {
         </div>
         <span className="text-[10px] font-medium text-[#d97706] uppercase tracking-wider">
           PFR
+        </span>
+      </div>
+
+      <div
+        className="flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing"
+        draggable
+        onDragStart={(e) => onDragStart(e, 'Batch')}
+        style={{ width: 56 }}
+      >
+        <div
+          className="flex items-center justify-center rounded-md border"
+          style={{ width: 44, height: 52, borderColor: '#be123c', background: '#fff1f2' }}
+        >
+          <BatchIcon />
+        </div>
+        <span className="text-[10px] font-medium uppercase tracking-wider" style={{ color: '#be123c' }}>
+          Batch
         </span>
       </div>
 

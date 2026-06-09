@@ -42,7 +42,7 @@ export function validateTopology(nodes: Node[], edges: Edge[]): ValidationIssue[
   if (productCount === 0)
     issues.push({ level: 'error', field: 'topology', message: 'Flowsheet requires a Product node' });
 
-  const reactorIds   = new Set(nodes.filter((n) => n.type === 'cstr' || n.type === 'pfr').map((n) => n.id));
+  const reactorIds   = new Set(nodes.filter((n) => n.type === 'cstr' || n.type === 'pfr' || n.type === 'batch').map((n) => n.id));
   const connectedIds = new Set([...edges.map((e) => e.source), ...edges.map((e) => e.target)]);
   const orphanCount  = [...reactorIds].filter((id) => !connectedIds.has(id)).length;
 

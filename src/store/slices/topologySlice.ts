@@ -29,6 +29,7 @@ export interface TopologySlice {
   edges: Edge[];
   cstrCount: number;
   pfrCount: number;
+  batchCount: number;
   mixerCount: number;
   splitterCount: number;
   feedCount: number;
@@ -58,6 +59,7 @@ export const createTopologySlice: StateCreator<SimulatorStore, [], [], TopologyS
     edges: initialEdges,
     cstrCount: 1,
     pfrCount: 1,
+    batchCount: 0,
     mixerCount: 0,
     splitterCount: 0,
     feedCount: 1,
@@ -88,14 +90,25 @@ export const createTopologySlice: StateCreator<SimulatorStore, [], [], TopologyS
 
     addReactor: (type, position) => {
       const state = get();
-      const id =
-        type === 'CSTR'
-          ? `cstr-${state.cstrCount + 1}`
-          : `pfr-${state.pfrCount + 1}`;
-      const count = type === 'CSTR' ? state.cstrCount + 1 : state.cstrCount;
-      const pfrCount = type === 'PFR' ? state.pfrCount + 1 : state.pfrCount;
+      let id: string;
+      let label: string;
+      let cstrCount = state.cstrCount;
+      let pfrCount = state.pfrCount;
+      let batchCount = state.batchCount;
 
-      const label = `${type}-${type === 'CSTR' ? count : pfrCount}`;
+      if (type === 'CSTR') {
+        cstrCount = state.cstrCount + 1;
+        id = `cstr-${cstrCount}`;
+        label = `CSTR-${cstrCount}`;
+      } else if (type === 'PFR') {
+        pfrCount = state.pfrCount + 1;
+        id = `pfr-${pfrCount}`;
+        label = `PFR-${pfrCount}`;
+      } else {
+        batchCount = state.batchCount + 1;
+        id = `batch-${batchCount}`;
+        label = `Batch-${batchCount}`;
+      }
 
       const snapshot = {
         nodes: state.nodes.map(n => ({ ...n, data: { ...n.data } })),
@@ -123,8 +136,9 @@ export const createTopologySlice: StateCreator<SimulatorStore, [], [], TopologyS
 
       set({
         nodes: [...state.nodes, newNode],
-        cstrCount: type === 'CSTR' ? count : state.cstrCount,
-        pfrCount: type === 'PFR' ? pfrCount : state.pfrCount,
+        cstrCount,
+        pfrCount,
+        batchCount,
         _history: trimmed,
         _historyIndex: trimmed.length - 1,
       });
@@ -249,5 +263,5 @@ export const createTopologySlice: StateCreator<SimulatorStore, [], [], TopologyS
     canUndo: () => get()._historyIndex > 0,
     canRedo: () => get()._historyIndex < get()._history.length - 1,
 
-    resetCanvas: () => set({ nodes: initialNodes, edges: initialEdges, cstrCount: 1, pfrCount: 1, mixerCount: 0, splitterCount: 0, feedCount: 1, productCount: 1 }),
+    resetCanvas: () => set({ nodes: initialNodes, edges: initialEdges, cstrCount: 1, pfrCount: 1, batchCount: 0, mixerCount: 0, splitterCount: 0, feedCount: 1, productCount: 1 }),
   });

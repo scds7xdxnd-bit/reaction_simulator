@@ -104,12 +104,14 @@ function forwardPass(
     } else if (node.type === 'product') {
       const inEdges = incomingEdges.get(nodeId) ?? [];
       outState = getInletStream(inEdges, streams, params);
-    } else if (node.type === 'cstr' || node.type === 'pfr') {
+    } else if (node.type === 'cstr' || node.type === 'pfr' || node.type === 'batch') {
       const inEdges = incomingEdges.get(nodeId) ?? [];
-      const inlet = getInletStream(inEdges, streams, params);
+      const inlet = node.type === 'batch'
+        ? { Xa: 0, Ca: params.Ca0, Cr: 0, Cs: 0, flow: 1, T: params.T_feed ?? 300 }
+        : getInletStream(inEdges, streams, params);
       const data = node.data as {
         tau: number;
-        reactorType: 'CSTR' | 'PFR';
+        reactorType: 'CSTR' | 'PFR' | 'Batch';
         thermalMode?: ThermalMode;
         Tc?: number;
         kappa_v?: number;
@@ -170,7 +172,7 @@ function buildSegments(
   params: SimulationParams,
   chemistry: ChemistryModel
 ): ReactorSegmentResult[] {
-  const reactorNodes = nodes.filter((n) => n.type === 'cstr' || n.type === 'pfr');
+  const reactorNodes = nodes.filter((n) => n.type === 'cstr' || n.type === 'pfr' || n.type === 'batch');
   const order = findReactorOrder(nodes, edges, tearIds);
   const segments: ReactorSegmentResult[] = [];
   let cumTauOffset = 0;
@@ -180,7 +182,7 @@ function buildSegments(
     if (!node) continue;
 
     const data = node.data as {
-      reactorType: 'CSTR' | 'PFR';
+      reactorType: 'CSTR' | 'PFR' | 'Batch';
       label: string;
       tau: number;
       thermalMode?: ThermalMode;
@@ -191,7 +193,9 @@ function buildSegments(
     if (!output) continue;
 
     const incomingEdges = edges.filter((e) => e.target === nodeId);
-    const inlet = getInletStream(incomingEdges, pass.streams, params);
+    const inlet = node.type === 'batch'
+      ? { Xa: 0, Ca: params.Ca0, Cr: 0, Cs: 0, flow: 1, T: params.T_feed ?? 300 }
+      : getInletStream(incomingEdges, pass.streams, params);
     const Xa_in = inlet.Xa;
     const Xa_out = output.Xa;
     const T_in = inlet.T ?? (params.T_feed ?? 300);
@@ -200,6 +204,8 @@ function buildSegments(
     const Da = getPreset(params).computeDa(params.k, data.tau, params.Ca0);
 
     const tauEff = data.tau / Math.max(inlet.flow, 0.001);
+
+    if (node.type === 'batch') cumTauOffset = 0;
 
     const unitParams: UnitParams = {
       tau:         tauEff,
@@ -260,7 +266,10 @@ function buildSegments(
 
 function findReactorOrder(nodes: Node[], edges: Edge[], tearIds: Set<string>): string[] {
   const reactorIds = new Set(
-    nodes.filter((n) => n.type === 'cstr' || n.type === 'pfr').map((n) => n.id)
+    nodes.filter((n) => n.type === 'cstr' || n.type === 'pfr' || n.type === 'batch').map((n) => n.id)
+  );
+  const batchIds = new Set(
+    nodes.filter((n) => n.type === 'batch').map((n) => n.id)
   );
 
   const fromAnyFeed = new Set<string>();
@@ -274,7 +283,9 @@ function findReactorOrder(nodes: Node[], edges: Edge[], tearIds: Set<string>): s
   }
 
   return topoSort(nodes, edges, tearIds).filter(
-    (id) => reactorIds.has(id) && fromAnyFeed.has(id) && toAnyProduct.has(id)
+    (id) =>
+      reactorIds.has(id) &&
+      (batchIds.has(id) || (fromAnyFeed.has(id) && toAnyProduct.has(id)))
   );
 }
 

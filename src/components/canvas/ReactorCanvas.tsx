@@ -24,6 +24,7 @@ import '@xyflow/react/dist/style.css';
 
 import CSTRNode from './CSTRNode';
 import PFRNode from './PFRNode';
+import BatchNode from './BatchNode';
 import FeedNode from './FeedNode';
 import ProductNode from './ProductNode';
 import MixerNode from './MixerNode';
@@ -36,6 +37,7 @@ import { useSimulation } from '../../hooks/useSimulation';
 const nodeTypes = {
   cstr: CSTRNode,
   pfr: PFRNode,
+  batch: BatchNode,
   feed: FeedNode,
   product: ProductNode,
   mixer: MixerNode,
@@ -109,6 +111,7 @@ export default function ReactorCanvas() {
       const type = event.dataTransfer.getData('application/reactflow') as
         | 'CSTR'
         | 'PFR'
+        | 'Batch'
         | 'Mixer'
         | 'Splitter'
         | 'Feed'
@@ -126,7 +129,7 @@ export default function ReactorCanvas() {
         y: event.clientY - reactFlowBounds.top - 40,
       };
 
-      if (type === 'CSTR' || type === 'PFR') {
+      if (type === 'CSTR' || type === 'PFR' || type === 'Batch') {
         addReactor(type, position);
       } else if (type === 'Feed') {
         addFeedNode(position);
@@ -149,7 +152,7 @@ export default function ReactorCanvas() {
 
   const onNodeClick = useCallback(
     (_event: React.MouseEvent, node: FlowNode) => {
-      if (node.type === 'cstr' || node.type === 'pfr') {
+      if (node.type === 'cstr' || node.type === 'pfr' || node.type === 'batch') {
         setSelectedNodeId(node.id);
       }
     },
@@ -270,6 +273,7 @@ export default function ReactorCanvas() {
           nodeColor={(node) => {
             if (node.type === 'cstr') return '#2563eb';
             if (node.type === 'pfr') return '#d97706';
+            if (node.type === 'batch') return '#be123c';
             if (node.type === 'feed') return '#6b7280';
             if (node.type === 'product') return '#16a34a';
             if (node.type === 'mixer') return '#059669';
