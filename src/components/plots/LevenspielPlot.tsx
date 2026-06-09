@@ -83,12 +83,12 @@ export default function LevenspielPlot() {
   }, [result, yDomain]);
 
   const xAxisDomain = useMemo(() => {
-    if (!result) return [0, 1];
-    let maxX = 0.1;
+    if (!result || result.segments.length === 0) return [0, 1];
+    let maxX = 0;
     for (const seg of result.segments) {
       maxX = Math.max(maxX, seg.Xa_out);
     }
-    return [0, Math.min(1, maxX * 1.15)];
+    return [0, Math.min(1, Math.max(maxX * 1.15, 0.1))];
   }, [result]);
 
   if (!result) {

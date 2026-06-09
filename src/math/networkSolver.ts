@@ -13,7 +13,7 @@ import { cstrModel, pfrModel, type UnitParams } from './unitModels';
 import type { AnnotatedStream } from '../types/stream';
 import type { ChemistryModel } from '../types/chemistry';
 
-import { findTearEdgeIds, topoSort } from './topology';
+import { findTearEdgeIds, topoSort, reachableFrom, reachableTo } from './topology';
 import { buildOperatingDiagram, type OperatingDiagramData } from './operatingDiagramModel';
 
 function getInletStream(
@@ -258,7 +258,11 @@ function findReactorOrder(nodes: Node[], edges: Edge[], tearIds: Set<string>): s
   const reactorIds = new Set(
     nodes.filter((n) => n.type === 'cstr' || n.type === 'pfr').map((n) => n.id)
   );
-  return topoSort(nodes, edges, tearIds).filter((id) => reactorIds.has(id));
+  const fromFeed = reachableFrom('feed', edges);
+  const toProduct = reachableTo('product', edges);
+  return topoSort(nodes, edges, tearIds).filter(
+    (id) => reactorIds.has(id) && fromFeed.has(id) && toProduct.has(id)
+  );
 }
 
 export function solveNetwork(
@@ -271,6 +275,8 @@ export function solveNetwork(
     !nodes.find((n) => n.id === 'product')
   )
     return null;
+
+  if (!reachableFrom('feed', edges).has('product')) return null;
 
   const chemistry = buildChemistry(params);
 

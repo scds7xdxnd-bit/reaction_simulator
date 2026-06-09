@@ -57,3 +57,35 @@ export function topoSort(nodes: Node[], edges: Edge[], tearIds: Set<string>): st
 
   return order;
 }
+
+export function reachableFrom(startId: string, edges: Edge[]): Set<string> {
+  const visited = new Set<string>();
+  const queue: string[] = [startId];
+  while (queue.length > 0) {
+    const curr = queue.shift()!;
+    if (visited.has(curr)) continue;
+    visited.add(curr);
+    for (const e of edges) {
+      if (e.source === curr && !visited.has(e.target)) {
+        queue.push(e.target);
+      }
+    }
+  }
+  return visited;
+}
+
+export function reachableTo(endId: string, edges: Edge[]): Set<string> {
+  const visited = new Set<string>();
+  const queue: string[] = [endId];
+  while (queue.length > 0) {
+    const curr = queue.shift()!;
+    if (visited.has(curr)) continue;
+    visited.add(curr);
+    for (const e of edges) {
+      if (e.target === curr && !visited.has(e.source)) {
+        queue.push(e.source);
+      }
+    }
+  }
+  return visited;
+}

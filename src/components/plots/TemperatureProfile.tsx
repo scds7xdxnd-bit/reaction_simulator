@@ -35,6 +35,14 @@ export default function TemperatureProfile() {
     );
   }
 
+  if (result.segments.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-full text-[#6b7280] text-sm text-center px-4">
+        Add reactors to the flowsheet to see the temperature profile
+      </div>
+    );
+  }
+
   const T_feed = params.T_feed ?? 300;
 
   return (
@@ -64,7 +72,7 @@ export default function TemperatureProfile() {
           labelFormatter={(t: number) => `τ = ${t.toFixed(2)} s`}
         />
         <Line
-          type="stepAfter"
+          type="linear"
           dataKey="T"
           stroke="#d97706"
           strokeWidth={2}

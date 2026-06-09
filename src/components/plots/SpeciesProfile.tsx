@@ -43,6 +43,14 @@ export default function SpeciesProfile() {
     );
   }
 
+  if (result.segments.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-full text-[#6b7280] text-sm text-center px-4">
+        Add reactors to the flowsheet to see the species profile
+      </div>
+    );
+  }
+
   const maxTau = profileData.allPoints.length > 0
     ? profileData.allPoints[profileData.allPoints.length - 1].cumTau
     : 5;
