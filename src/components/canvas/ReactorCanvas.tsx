@@ -24,6 +24,7 @@ import FeedNode from './FeedNode';
 import ProductNode from './ProductNode';
 import MixerNode from './MixerNode';
 import SplitterNode from './SplitterNode';
+import ContextMenu from './ContextMenu';
 import { useSimulatorStore } from '../../store/simulatorStore';
 import { useSimulation } from '../../hooks/useSimulation';
 
@@ -51,6 +52,8 @@ export default function ReactorCanvas() {
   const result = useSimulatorStore((s) => s.result);
   const pushHistory = useSimulatorStore((s) => s.pushHistory);
   const setSelectedNodeId = useSimulatorStore((s) => s.setSelectedNodeId);
+  const openMenu  = useSimulatorStore((s) => s.openMenu);
+  const closeMenu = useSimulatorStore((s) => s.closeMenu);
 
   const nodes = useSimulatorStore((s) => s.nodes) as FlowNode[];
   const edges = useSimulatorStore((s) => s.edges);
@@ -135,6 +138,22 @@ export default function ReactorCanvas() {
     [setSelectedNodeId]
   );
 
+  const onNodeContextMenu = useCallback(
+    (event: React.MouseEvent, node: FlowNode) => {
+      event.preventDefault();
+      const { nodes: current } = useSimulatorStore.getState();
+      storeSetNodes(
+        current.map((n) => ({ ...n, selected: n.id === node.id, data: { ...n.data } }))
+      );
+      openMenu(event.clientX, event.clientY, node.id);
+    },
+    [storeSetNodes, openMenu]
+  );
+
+  const onPaneClick = useCallback(() => {
+    closeMenu();
+  }, [closeMenu]);
+
   // Recycle edge styling is DISPLAY-ONLY — never written back to `edges` state.
   // Keeping style out of the base `edges` state breaks the feedback loop:
   //   result → setEdges → storeSetEdges → simulation → result → ...
@@ -174,6 +193,8 @@ export default function ReactorCanvas() {
         onDrop={onDrop}
         onNodesDelete={onDelete}
         onNodeClick={onNodeClick}
+        onNodeContextMenu={onNodeContextMenu}
+        onPaneClick={onPaneClick}
         nodeTypes={nodeTypes}
         defaultEdgeOptions={defaultEdgeOptions}
         deleteKeyCode={['Delete', 'Backspace']}
@@ -208,6 +229,7 @@ export default function ReactorCanvas() {
           }}
         />
       </ReactFlow>
+      <ContextMenu />
     </div>
   );
 }

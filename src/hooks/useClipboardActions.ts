@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import type { Node, Edge } from '@xyflow/react';
 import { useSimulatorStore } from '../store/simulatorStore';
 
@@ -10,7 +10,8 @@ function getConnectedEdgesInternal(selectedNodes: Node[], allEdges: Edge[]): Edg
 }
 
 export function useClipboardActions() {
-  const [clipboard, setClipboard] = useState<{ nodes: Node[]; edges: Edge[] } | null>(null);
+  const clipboard    = useSimulatorStore((s) => s.clipboard);
+  const setClipboard = useSimulatorStore((s) => s.setClipboard);
 
   const storeNodes = useSimulatorStore((s) => s.nodes);
   const storeEdges = useSimulatorStore((s) => s.edges);
