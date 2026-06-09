@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ReactorToolbar from './components/controls/ReactorToolbar';
 import ParameterPanel from './components/controls/ParameterPanel';
 import ReactorCanvas from './components/canvas/ReactorCanvas';
@@ -15,6 +15,10 @@ import DynamicControls from './components/controls/DynamicControls';
 import { useSimulatorStore } from './store/simulatorStore';
 import { useClipboardActions } from './hooks/useClipboardActions';
 import { useDynamicSimulation } from './hooks/useDynamicSimulation';
+import { serializeState, deserializeState } from './io/serializer';
+import Toaster from './components/Toaster';
+
+const LS_KEY = 'reaction-simulator-v1';
 
 type RightTab = 'levenspiel' | 'profiles' | 'thermal' | 'dynamic';
 
@@ -25,10 +29,19 @@ export default function App() {
   const undo = useSimulatorStore((s) => s.undo);
   const redo = useSimulatorStore((s) => s.redo);
   const selectedNodeId = useSimulatorStore((s) => s.selectedNodeId);
+  const nodes        = useSimulatorStore((s) => s.nodes);
+  const edges        = useSimulatorStore((s) => s.edges);
+  const params       = useSimulatorStore((s) => s.params);
+  const setNodes     = useSimulatorStore((s) => s.setNodes);
+  const setEdges     = useSimulatorStore((s) => s.setEdges);
+  const updateParams = useSimulatorStore((s) => s.updateParams);
+  const addToast     = useSimulatorStore((s) => s.addToast);
   const { copySelected, paste, cut, duplicate } = useClipboardActions();
   const dynamic = useDynamicSimulation();
 
   const [rightTab, setRightTab] = useState<RightTab>('levenspiel');
+
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const tabs: { id: RightTab; label: string }[] = [
     { id: 'levenspiel', label: 'Levenspiel' },
@@ -52,6 +65,36 @@ export default function App() {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [undo, redo, copySelected, paste, cut, duplicate]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (!raw) return;
+      const state = deserializeState(raw);
+      if (!state) return;
+      setNodes(state.nodes);
+      setEdges(state.edges);
+      updateParams(state.params);
+      setSimulationMode(state.mode);
+      addToast('info', 'Session restored from last save.');
+    } catch {
+      // localStorage unavailable (private mode, storage errors)
+    }
+  }, [setNodes, setEdges, updateParams, setSimulationMode, addToast]);
+
+  useEffect(() => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      try {
+        localStorage.setItem(LS_KEY, serializeState(nodes, edges, params, simulationMode));
+      } catch {
+        // storage quota exceeded or unavailable
+      }
+    }, 300);
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, [nodes, edges, params, simulationMode]);
 
   return (
     <div className="h-full min-w-[1280px] flex flex-col bg-[#f0f4ff]">
@@ -154,6 +197,7 @@ export default function App() {
       ) : (
         <StatusBar />
       )}
+      <Toaster />
     </div>
   );
 }
