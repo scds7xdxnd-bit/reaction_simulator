@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { Copy, Clipboard, Scissors, CopyPlus, Trash2, SlidersHorizontal } from 'lucide-react';
+import { Copy, Scissors, CopyPlus, Trash2, SlidersHorizontal } from 'lucide-react';
 import { useSimulatorStore } from '../../store/simulatorStore';
 import { useClipboardActions } from '../../hooks/useClipboardActions';
 import { Button, Divider } from '../ui';
@@ -10,14 +10,13 @@ export default function ContextMenu() {
   const menuY             = useSimulatorStore((s) => s.menuY);
   const menuTargetId      = useSimulatorStore((s) => s.menuTargetId);
   const closeMenu         = useSimulatorStore((s) => s.closeMenu);
-  const clipboard         = useSimulatorStore((s) => s.clipboard);
   const nodes             = useSimulatorStore((s) => s.nodes);
   const setNodes          = useSimulatorStore((s) => s.setNodes);
   const setEdges          = useSimulatorStore((s) => s.setEdges);
   const pushHistory       = useSimulatorStore((s) => s.pushHistory);
   const setSelectedNodeId = useSimulatorStore((s) => s.setSelectedNodeId);
 
-  const { copySelected, paste, cut, duplicate } = useClipboardActions();
+  const { copySelected, cut, duplicate } = useClipboardActions();
   const menuRef = useRef<HTMLDivElement>(null);
 
   const targetNode   = nodes.find((n) => n.id === menuTargetId);
@@ -72,17 +71,6 @@ export default function ContextMenu() {
         <Copy size={13} />
         <span className="flex-1 text-left">Copy</span>
         <span className="text-[10px] text-text-muted ml-2">⌘C</span>
-      </Button>
-
-      <Button
-        variant="ghost" size="sm"
-        className="w-full justify-start px-3 py-1.5 rounded-none"
-        disabled={clipboard === null}
-        onClick={() => run(paste)}
-      >
-        <Clipboard size={13} />
-        <span className="flex-1 text-left">Paste</span>
-        <span className="text-[10px] text-text-muted ml-2">⌘V</span>
       </Button>
 
       <Button

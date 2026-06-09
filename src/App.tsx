@@ -36,7 +36,8 @@ export default function App() {
   const setEdges     = useSimulatorStore((s) => s.setEdges);
   const updateParams = useSimulatorStore((s) => s.updateParams);
   const addToast     = useSimulatorStore((s) => s.addToast);
-  const closeMenu    = useSimulatorStore((s) => s.closeMenu);
+  const closeMenu       = useSimulatorStore((s) => s.closeMenu);
+  const closeCanvasMenu = useSimulatorStore((s) => s.closeCanvasMenu);
   const { copySelected, paste, cut, duplicate } = useClipboardActions();
   const dynamic = useDynamicSimulation();
 
@@ -53,7 +54,7 @@ export default function App() {
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { closeMenu(); return; }
+      if (e.key === 'Escape') { closeMenu(); closeCanvasMenu(); return; }
       const cmd = e.metaKey || e.ctrlKey;
       if (!cmd) return;
       const key = e.key.toLowerCase();
@@ -66,7 +67,7 @@ export default function App() {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [undo, redo, copySelected, paste, cut, duplicate, closeMenu]);
+  }, [undo, redo, copySelected, paste, cut, duplicate, closeMenu, closeCanvasMenu]);
 
   useEffect(() => {
     try {

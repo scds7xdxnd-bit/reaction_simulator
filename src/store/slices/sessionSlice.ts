@@ -17,6 +17,14 @@ export interface SessionSlice {
   menuTargetId: string | null;
   openMenu: (x: number, y: number, targetId: string) => void;
   closeMenu: () => void;
+
+  canvasMenuVisible: boolean;
+  canvasMenuX: number;
+  canvasMenuY: number;
+  canvasMenuFlowX: number;
+  canvasMenuFlowY: number;
+  openCanvasMenu: (screenX: number, screenY: number, flowX: number, flowY: number) => void;
+  closeCanvasMenu: () => void;
 }
 
 export const createSessionSlice: StateCreator<SimulatorStore, [], [], SessionSlice> =
@@ -34,6 +42,15 @@ export const createSessionSlice: StateCreator<SimulatorStore, [], [], SessionSli
     menuX:        0,
     menuY:        0,
     menuTargetId: null,
-    openMenu:  (x, y, targetId) => set({ menuVisible: true,  menuX: x, menuY: y, menuTargetId: targetId }),
-    closeMenu: ()               => set({ menuVisible: false, menuTargetId: null }),
-  });
+  openMenu:  (x, y, targetId) => set({ menuVisible: true,  menuX: x, menuY: y, menuTargetId: targetId }),
+  closeMenu: ()               => set({ menuVisible: false, menuTargetId: null }),
+
+  canvasMenuVisible:  false,
+  canvasMenuX:        0,
+  canvasMenuY:        0,
+  canvasMenuFlowX:    0,
+  canvasMenuFlowY:    0,
+  openCanvasMenu:  (screenX, screenY, flowX, flowY) =>
+    set({ canvasMenuVisible: true, canvasMenuX: screenX, canvasMenuY: screenY, canvasMenuFlowX: flowX, canvasMenuFlowY: flowY }),
+  closeCanvasMenu: () => set({ canvasMenuVisible: false }),
+});

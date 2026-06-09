@@ -94,5 +94,30 @@ export function useClipboardActions() {
     setEdges([...storeEdges, ...newEdges]);
   }, [storeNodes, storeEdges, setNodes, setEdges, pushHistory]);
 
-  return { copySelected, paste, cut, duplicate };
+  const pasteAt = useCallback((flowX: number, flowY: number) => {
+    if (!clipboard) return;
+    pushHistory();
+    const centroidX = clipboard.nodes.reduce((s, n) => s + n.position.x, 0) / clipboard.nodes.length;
+    const centroidY = clipboard.nodes.reduce((s, n) => s + n.position.y, 0) / clipboard.nodes.length;
+    const dx = flowX - centroidX;
+    const dy = flowY - centroidY;
+    const idMap = new Map<string, string>();
+    const timestamp = Date.now();
+    const newNodes = clipboard.nodes.map((n, i) => {
+      const newId = `${n.type}-paste-${timestamp}-${i}`;
+      idMap.set(n.id, newId);
+      return { ...n, id: newId, position: { x: n.position.x + dx, y: n.position.y + dy }, selected: true, data: { ...n.data } };
+    });
+    const newEdges: Edge[] = clipboard.edges.map((e, i) => ({
+      ...e,
+      id: `e-paste-${timestamp}-${i}`,
+      source: idMap.get(e.source) ?? e.source,
+      target: idMap.get(e.target) ?? e.target,
+      selected: false,
+    }));
+    setNodes([...storeNodes.map(n => ({ ...n, selected: false, data: { ...n.data } })), ...newNodes]);
+    setEdges([...storeEdges, ...newEdges]);
+  }, [clipboard, storeNodes, storeEdges, setNodes, setEdges, pushHistory]);
+
+  return { copySelected, paste, cut, duplicate, pasteAt };
 }

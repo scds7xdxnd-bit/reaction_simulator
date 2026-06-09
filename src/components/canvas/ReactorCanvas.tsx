@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import {
   ReactFlow,
   Background,
@@ -15,6 +15,8 @@ import {
   type Node as FlowNode,
   type NodeChange,
   type EdgeChange,
+  type Viewport,
+  type ReactFlowInstance,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -25,6 +27,7 @@ import ProductNode from './ProductNode';
 import MixerNode from './MixerNode';
 import SplitterNode from './SplitterNode';
 import ContextMenu from './ContextMenu';
+import CanvasContextMenu from './CanvasContextMenu';
 import { useSimulatorStore } from '../../store/simulatorStore';
 import { useSimulation } from '../../hooks/useSimulation';
 
@@ -54,9 +57,14 @@ export default function ReactorCanvas() {
   const setSelectedNodeId = useSimulatorStore((s) => s.setSelectedNodeId);
   const openMenu  = useSimulatorStore((s) => s.openMenu);
   const closeMenu = useSimulatorStore((s) => s.closeMenu);
+  const openCanvasMenu  = useSimulatorStore((s) => s.openCanvasMenu);
+  const closeCanvasMenu = useSimulatorStore((s) => s.closeCanvasMenu);
 
   const nodes = useSimulatorStore((s) => s.nodes) as FlowNode[];
   const edges = useSimulatorStore((s) => s.edges);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const viewportRef  = useRef<Viewport>({ x: 0, y: 0, zoom: 1 });
 
   useSimulation();
 
@@ -138,21 +146,44 @@ export default function ReactorCanvas() {
     [setSelectedNodeId]
   );
 
+  const onMove = useCallback(
+    (_event: MouseEvent | TouchEvent | null, viewport: Viewport) => {
+      viewportRef.current = viewport;
+    },
+    []
+  );
+
+  const onInit = useCallback((instance: any) => {
+    viewportRef.current = instance.getViewport();
+  }, []);
+
+  const onPaneContextMenu = useCallback((event: MouseEvent | React.MouseEvent) => {
+    event.preventDefault();
+    const rect = containerRef.current?.getBoundingClientRect() ?? { left: 0, top: 0 };
+    const { x: vx, y: vy, zoom } = viewportRef.current;
+    const flowX = (event.clientX - rect.left - vx) / zoom;
+    const flowY = (event.clientY - rect.top - vy) / zoom;
+    closeMenu();
+    openCanvasMenu(event.clientX, event.clientY, flowX, flowY);
+  }, [closeMenu, openCanvasMenu]);
+
   const onNodeContextMenu = useCallback(
     (event: React.MouseEvent, node: FlowNode) => {
       event.preventDefault();
+      closeCanvasMenu();
       const { nodes: current } = useSimulatorStore.getState();
       storeSetNodes(
         current.map((n) => ({ ...n, selected: n.id === node.id, data: { ...n.data } }))
       );
       openMenu(event.clientX, event.clientY, node.id);
     },
-    [storeSetNodes, openMenu]
+    [storeSetNodes, openMenu, closeCanvasMenu]
   );
 
   const onPaneClick = useCallback(() => {
     closeMenu();
-  }, [closeMenu]);
+    closeCanvasMenu();
+  }, [closeMenu, closeCanvasMenu]);
 
   // Recycle edge styling is DISPLAY-ONLY — never written back to `edges` state.
   // Keeping style out of the base `edges` state breaks the feedback loop:
@@ -180,7 +211,7 @@ export default function ReactorCanvas() {
   }, [edges, recycleIdsKey]);
 
   return (
-    <div className="w-full h-full bg-[#e8eeff]">
+    <div ref={containerRef} className="w-full h-full bg-[#e8eeff]">
       <ReactFlow
         nodes={nodes}
         edges={displayEdges}
@@ -195,6 +226,9 @@ export default function ReactorCanvas() {
         onNodeClick={onNodeClick}
         onNodeContextMenu={onNodeContextMenu}
         onPaneClick={onPaneClick}
+        onMove={onMove}
+        onInit={onInit}
+        onPaneContextMenu={onPaneContextMenu}
         nodeTypes={nodeTypes}
         defaultEdgeOptions={defaultEdgeOptions}
         deleteKeyCode={['Delete', 'Backspace']}
@@ -230,6 +264,7 @@ export default function ReactorCanvas() {
         />
       </ReactFlow>
       <ContextMenu />
+      <CanvasContextMenu />
     </div>
   );
 }
