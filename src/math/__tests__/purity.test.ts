@@ -27,6 +27,7 @@ const PURE_FILES = [
   'src/io/serializer.ts',
   'src/math/networkSolver.ts',
   'src/math/sweepEngine.ts',
+  'src/math/targetSolver.ts',
 ] as const;
 
 describe('purity invariants — zero store/React runtime imports', () => {
