@@ -158,6 +158,25 @@ export default function ParameterPanel() {
         <span className="text-[10px] text-[#6b7280]">{kUnit}</span>
       </div>
 
+      {isSingle && params.kinetics === 'reversible' && (
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className="text-[11px] text-[#374151] font-mono">K<sub>eq,ref</sub> =</span>
+          <Input
+            type="number"
+            min="0.1"
+            max="100"
+            step="0.1"
+            value={params.Keq_ref}
+            onChange={(e) => {
+              const v = parseFloat(e.target.value);
+              if (!isNaN(v)) updateParams({ Keq_ref: Math.max(0.1, Math.min(100, v)) });
+            }}
+            className="w-16"
+          />
+          <span className="text-[10px] text-[#6b7280]">—</span>
+        </div>
+      )}
+
       {!isSingle && (
         <div className="flex items-center gap-1.5 shrink-0">
           <span className="text-[11px] text-[#374151] font-mono">k₂ =</span>

@@ -40,6 +40,15 @@ export function getRate(
       return k_eff * params.Ca0 ** 2 * (1 - clamped) ** 2;
     case 'autocatalytic':
       return k_eff * params.Ca0 ** 2 * (1 - clamped) * (clamped + params.Cr0_fraction);
+    case 'reversible': {
+      const R_kJ = 8.314e-3;
+      const Keq = params.Keq_ref * Math.exp(
+        Math.max(-30, Math.min(30,
+          (-params.delta_H / R_kJ) * (1 / Math.max(T, 50) - 1 / params.T_ref)
+        ))
+      );
+      return Math.max(0, k_eff * params.Ca0 * ((1 - clamped) - clamped / Math.max(Keq, 1e-9)));
+    }
   }
 }
 
@@ -49,14 +58,16 @@ export function buildLevenspielCurve(params: SimulationParams): { Xa: number; in
     : params.k;
   const levenspielParams: SimulationParams = {
     ...params,
-    kinetics: 'first-order',
+    kinetics: params.kinetics === 'reversible' ? 'reversible' : 'first-order',
     k: effectiveK,
   };
 
   const points: { Xa: number; inv_rA_norm: number }[] = [];
   const n = 200;
   const XaStart = 0.001;
-  const XaEnd = 0.995;
+  const XaEnd = params.kinetics === 'reversible'
+    ? Math.min(0.995, (params.Keq_ref / (1 + params.Keq_ref)) * 0.995)
+    : 0.995;
   const step = (XaEnd - XaStart) / (n - 1);
 
   for (let i = 0; i < n; i++) {

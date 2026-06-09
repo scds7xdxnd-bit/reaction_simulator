@@ -2,7 +2,7 @@ import type { AnnotatedStream } from './stream';
 import type { ChemistryModel } from './chemistry';
 import type { OperatingDiagramData } from '../math/operatingDiagramModel';
 
-export type KineticsType = 'first-order' | 'second-order' | 'autocatalytic';
+export type KineticsType = 'first-order' | 'second-order' | 'autocatalytic' | 'reversible';
 export type ReactorType = 'CSTR' | 'PFR';
 export type ReactionMode = 'single' | 'series' | 'parallel';
 export type UnitType = 'CSTR' | 'PFR' | 'Mixer' | 'Splitter';
@@ -24,6 +24,7 @@ export interface SimulationParams {
   kinetics: KineticsType;
   k: number;
   k2: number;
+  Keq_ref: number;
   Ca0: number;
   Cr0_fraction: number;
   T_ref: number;

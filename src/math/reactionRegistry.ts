@@ -98,6 +98,52 @@ const autocatalyticPreset: ReactionPreset = {
   computeDa: (k, tau, Ca0) => k * Ca0 * tau,
 };
 
+const reversiblePreset: ReactionPreset = {
+  id: 'single-reversible',
+  label: 'A ⇌ R  (reversible)',
+  mode: 'single',
+  isSingle: true,
+  uiLabel: 'Reversible A⇌R',
+  kinetics: 'reversible',
+  kUnit: 's⁻¹',
+
+  buildSpecies: () => [
+    { id: 'A', label: 'Reactant A' },
+    { id: 'R', label: 'Product R' },
+  ],
+
+  buildReactions: (params: SimulationParams): ReactionSet => [{
+    id: 'rxn-1',
+    label: 'A ⇌ R',
+    stoichiometry: { A: -1, R: +1, S: 0 },
+    rateLaw: (C, T, kP) => {
+      const R_kJ = 8.314e-3;
+      const Ea = kP['Ea'] ?? 0;
+      const T_ref = kP['T_ref'] ?? 300;
+      const k_eff = Ea > 0
+        ? (kP['k'] ?? 0) * Math.exp(
+            Math.max(-30, Math.min(30, (Ea / R_kJ) * (1 / T_ref - 1 / Math.max(T, 50))))
+          )
+        : (kP['k'] ?? 0);
+      const Keq_ref = kP['Keq_ref'] ?? 4;
+      const delta_H = kP['delta_H'] ?? 0;
+      const Keq = Keq_ref * Math.exp(
+        Math.max(-30, Math.min(30, (-delta_H / R_kJ) * (1 / Math.max(T, 50) - 1 / T_ref)))
+      );
+      return Math.max(0, k_eff * ((C['A'] ?? 0) - (C['R'] ?? 0) / Math.max(Keq, 1e-9)));
+    },
+    kineticParams: {
+      k: params.k,
+      Ea: params.Ea,
+      T_ref: params.T_ref,
+      Keq_ref: params.Keq_ref,
+      delta_H: params.delta_H,
+    },
+  }],
+
+  computeDa: (k, tau) => k * tau,
+};
+
 const seriesPreset: ReactionPreset = {
   id: 'series',
   label: 'A → R → S  (series)',
@@ -172,6 +218,7 @@ export const PRESETS: ReactionPreset[] = [
   firstOrderPreset,
   secondOrderPreset,
   autocatalyticPreset,
+  reversiblePreset,
   seriesPreset,
   parallelPreset,
 ];
@@ -185,5 +232,6 @@ export function getPreset(
     case 'first-order':   return firstOrderPreset;
     case 'second-order':  return secondOrderPreset;
     case 'autocatalytic': return autocatalyticPreset;
+    case 'reversible':    return reversiblePreset;
   }
 }

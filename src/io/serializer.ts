@@ -38,7 +38,12 @@ export function deserializeState(json: string): SavedState | null {
     for (const key of required) {
       if (!(key in p)) return null;
     }
-    return raw as unknown as SavedState;
+    const s = raw as unknown as SavedState;
+    // Back-compat: older saves lack Keq_ref — fill in the default
+    if (!(typeof p.Keq_ref === 'number')) {
+      s.params = { ...s.params, Keq_ref: 4.0 };
+    }
+    return s;
   } catch {
     return null;
   }

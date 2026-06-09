@@ -48,9 +48,11 @@ interface TargetResultCardProps {
   targetXa: number;
   variable: SweepVariable;
   reactorLabel: string | null;
+  lo: number;
+  hi: number;
 }
 
-function TargetResultCard({ result, targetXa, variable, reactorLabel }: TargetResultCardProps) {
+function TargetResultCard({ result, targetXa, variable, reactorLabel, lo, hi }: TargetResultCardProps) {
   if (result === null) {
     return (
       <div className="flex items-center justify-center h-full text-[#6b7280] text-sm text-center px-4">
@@ -77,7 +79,7 @@ function TargetResultCard({ result, targetXa, variable, reactorLabel }: TargetRe
             padding: '8px 12px', fontSize: 11, color: '#92400e', lineHeight: 1.5,
           }}
         >
-          Xₐ does not cross the target in [{fmt(result.solvedValue)}, {unit}]. The best estimate is shown — try widening the search bounds.
+          Xₐ does not cross the target in [{fmt(lo)}, {fmt(hi)}] {unit}. The best estimate is shown — try widening the search bounds.
         </div>
       )}
 
@@ -580,6 +582,8 @@ export default function SweepPanel() {
                   )?.data as { label?: string })?.label ?? null
                 : null
             }
+            lo={sweepConfig.from}
+            hi={sweepConfig.to}
           />
         )}
       </div>

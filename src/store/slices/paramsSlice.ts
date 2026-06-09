@@ -14,6 +14,7 @@ export const createParamsSlice: StateCreator<SimulatorStore, [], [], ParamsSlice
       kinetics: 'first-order',
       k: 0.5,
       k2: 0.3,
+      Keq_ref: 4.0,
       Ca0: 1.0,
       Cr0_fraction: 0.01,
       T_ref: 300,
