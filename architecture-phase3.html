@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reaction Simulator — Phase 3 Roadmap</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #f1f5f9;
+  color: #1e293b;
+  padding: 32px;
+  min-height: 100vh;
+}
+
+h1 { font-size: 22px; font-weight: 800; color: #0f172a; margin-bottom: 4px; letter-spacing: -0.3px; }
+.subtitle { font-size: 13px; color: #64748b; margin-bottom: 24px; }
+
+/* Legend */
+.legend {
+  display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap;
+  background: white; padding: 10px 16px; border-radius: 8px; border: 1px solid #e2e8f0;
+}
+.legend-item { display: flex; align-items: center; gap: 7px; font-size: 11px; color: #475569; font-weight: 500; }
+.legend-swatch { width: 14px; height: 14px; border-radius: 3px; border: 2px solid; flex-shrink: 0; }
+
+/* Done banner */
+.done-banner {
+  background: #dbeafe; border: 2px solid #3b82f6; border-radius: 10px;
+  padding: 14px 18px; margin-bottom: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.done-banner-title {
+  font-size: 12px; font-weight: 800; color: #1e3a5f;
+  text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.done-banner-body { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.done-item {
+  background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px;
+  padding: 7px 11px; font-size: 10.5px; color: #1e40af; line-height: 1.5;
+}
+.done-item strong { display: block; font-weight: 700; color: #1e3a5f; margin-bottom: 2px; }
+
+/* Layers */
+.layer { margin-bottom: 6px; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+.layer-header { padding: 9px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+.layer-body { display: grid; gap: 10px; padding: 10px; }
+
+/* Pillar colours */
+.p1 { background: #fff7ed; }
+.p1 .layer-header { background: #c2410c; color: white; }
+.p1 .card-num { background: #c2410c !important; }
+
+.p2 { background: #eff6ff; }
+.p2 .layer-header { background: #1d4ed8; color: white; }
+.p2 .card-num { background: #1d4ed8 !important; }
+
+.p3 { background: #f0fdfa; }
+.p3 .layer-header { background: #0f766e; color: white; }
+.p3 .card-num { background: #0f766e !important; }
+
+.p4 { background: #fdf4ff; }
+.p4 .layer-header { background: #7e22ce; color: white; }
+.p4 .card-num { background: #7e22ce !important; }
+
+.p5 { background: #f0fdf4; }
+.p5 .layer-header { background: #166534; color: white; }
+.p5 .card-num { background: #166534 !important; }
+
+.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+/* Cards */
+.card {
+  background: white; border-radius: 8px; padding: 13px 13px 11px;
+  border: 1.5px solid #e2e8f0; position: relative;
+  display: flex; flex-direction: column; min-height: 158px;
+  transition: box-shadow 0.15s, transform 0.15s; cursor: default;
+}
+.card:hover { box-shadow: 0 4px 18px rgba(0,0,0,0.13); transform: translateY(-2px); z-index: 2; }
+.card.key { border: 2px solid #7c3aed; background: #faf5ff; }
+
+.card-top { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+.card-num {
+  font-size: 10px; font-weight: 900; width: 22px; height: 22px;
+  border-radius: 50%; display: inline-flex; align-items: center;
+  justify-content: center; color: white; flex-shrink: 0; margin-top: 1px;
+}
+.card-name { font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.3; }
+.card-job { font-size: 11px; color: #64748b; line-height: 1.45; flex: 1; padding-bottom: 8px; }
+
+.card-note {
+  font-size: 9.5px; color: #0369a1; background: #eff6ff;
+  border: 1px solid #bfdbfe; border-radius: 4px;
+  padding: 3px 8px; margin-bottom: 6px; font-weight: 600; line-height: 1.4;
+}
+.card-note.orange { color: #9a3412; background: #fff7ed; border-color: #fed7aa; }
+.card-note.purple { color: #5b21b6; background: #faf5ff; border-color: #ddd6fe; }
+.card-note.teal { color: #134e4a; background: #f0fdfa; border-color: #99f6e4; }
+.card-note.green { color: #14532d; background: #f0fdf4; border-color: #bbf7d0; }
+.card-note.red { color: #7f1d1d; background: #fef2f2; border-color: #fecaca; }
+
+.depth-axis { margin-top: auto; padding-top: 8px; border-top: 1px solid #f1f5f9; }
+.depth-label { font-size: 9px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; font-weight: 600; }
+.depth-row { display: flex; align-items: flex-start; gap: 4px; font-size: 10px; line-height: 1.35; }
+.depth-from { color: #94a3b8; flex: 1; }
+.depth-arrow { color: #cbd5e1; padding-top: 1px; flex-shrink: 0; }
+.depth-to { color: #475569; font-weight: 600; flex: 1; text-align: right; }
+
+/* Badges */
+.badge { font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.05em; display: inline-block; }
+.badge-done  { background: #0369a1; color: white; }
+.badge-next  { background: #c2410c; color: white; box-shadow: 0 0 0 2px #fed7aa; }
+.badge-key   { background: #6d28d9; color: white; }
+.badge-later { background: #e2e8f0; color: #64748b; }
+
+/* Bug callout */
+.bug-callout {
+  background: #fef2f2; border: 2px solid #f87171; border-radius: 10px;
+  padding: 14px 18px; margin-bottom: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.bug-callout-title {
+  font-size: 12px; font-weight: 800; color: #7f1d1d;
+  text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.bug-body { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.bug-item {
+  background: white; border: 1px solid #fca5a5; border-radius: 6px;
+  padding: 8px 11px; font-size: 10.5px; color: #1e293b; line-height: 1.55;
+}
+.bug-item strong { display: block; font-weight: 700; color: #7f1d1d; margin-bottom: 3px; }
+code {
+  background: #f1f5f9; border-radius: 3px; padding: 0 4px;
+  font-family: 'SF Mono','Fira Code',monospace; font-size: 10px;
+}
+
+/* Dep arrows */
+.dep-arrow {
+  text-align: center; padding: 5px; font-size: 11px; color: #94a3b8;
+  display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 500;
+}
+.dep-arrow::before, .dep-arrow::after { content: ''; flex: 1; height: 1px; background: #cbd5e1; }
+
+/* Build order */
+.hardening {
+  margin-top: 12px; background: white; border: 1.5px solid #e2e8f0;
+  border-radius: 10px; padding: 14px 18px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.section-title { font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
+.order-flow { display: flex; align-items: stretch; gap: 0; flex-wrap: wrap; overflow-x: auto; padding-bottom: 2px; row-gap: 6px; }
+.order-step {
+  background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 7px;
+  padding: 7px 12px; font-size: 11px; font-weight: 600; color: #334155;
+  text-align: center; line-height: 1.4; white-space: nowrap; flex-shrink: 0;
+}
+.order-step small { display: block; font-size: 9.5px; font-weight: 400; color: #94a3b8; margin-top: 1px; }
+.order-step.done  { background: #dbeafe; border-color: #3b82f6; color: #1e3a5f; opacity: 0.75; }
+.order-step.p1c   { background: #fff7ed; border-color: #f97316; color: #7c2d12; }
+.order-step.p2c   { background: #eff6ff; border-color: #3b82f6; color: #1e3a5f; }
+.order-step.p3c   { background: #f0fdfa; border-color: #0d9488; color: #134e4a; }
+.order-step.p4c   { background: #fdf4ff; border-color: #a855f7; color: #581c87; }
+.order-step.p5c   { background: #f0fdf4; border-color: #16a34a; color: #14532d; }
+.order-arrow { color: #94a3b8; font-size: 14px; font-weight: 700; display: flex; align-items: center; padding: 0 6px; flex-shrink: 0; }
+
+/* Decisions */
+.decisions {
+  margin-top: 12px; background: #faf5ff; border: 2px solid #7c3aed;
+  border-radius: 10px; padding: 14px 18px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.decisions-title { font-size: 11px; font-weight: 800; color: #4c1d95; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 12px; }
+.decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.decision { background: white; border: 1px solid #ddd6fe; border-radius: 7px; padding: 10px 13px; font-size: 11px; line-height: 1.5; }
+.decision-name { font-weight: 700; color: #4c1d95; margin-bottom: 4px; font-size: 11.5px; }
+.decision-wrong { color: #dc2626; margin-bottom: 3px; }
+.decision-right { color: #059669; font-weight: 600; }
+.rule-box { background: #ede9fe; border-radius: 6px; padding: 9px 14px; font-size: 11px; color: #3b0764; line-height: 1.5; margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<h1>Reaction Simulator — Phase 3 Roadmap</h1>
+<p class="subtitle">5 pillars · 18 items · built on Phase 2 (18 items ✓) &nbsp;·&nbsp; theme: <strong>Polished Instrument</strong> — fix solver correctness for all topologies, elevate UI from prototype to formal engineering tool</p>
+
+<!-- Legend -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-swatch" style="background:#fff7ed;border-color:#c2410c;"></div>P1 · Solver Hardening</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#eff6ff;border-color:#1d4ed8;"></div>P2 · Visual System v2</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#f0fdfa;border-color:#0f766e;"></div>P3 · Panels &amp; Analysis</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#fdf4ff;border-color:#7e22ce;"></div>P4 · Domain Expansion</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#f0fdf4;border-color:#166534;"></div>P5 · Data &amp; Workflow</div>
+  <div class="legend-item" style="color:#6d28d9;font-weight:700">🔑 Key architectural decision</div>
+  <div class="legend-item" style="color:#0369a1;font-weight:700">✓ Phase 2 complete</div>
+</div>
+
+<!-- Phase 2 done banner -->
+<div class="done-banner">
+  <div class="done-banner-title">
+    <span class="badge badge-done">✓ Phase 2 Done — 18/18 items</span>
+    All P1–P5 items shipped · 15 purity-checked tests green · Vercel deployed
+  </div>
+  <div class="done-banner-body">
+    <div class="done-item"><strong>Foundation (P1)</strong>Vitest suite · Toast system · localStorage autosave</div>
+    <div class="done-item"><strong>Design System (P2)</strong>Design tokens · ui/ primitives · full migration</div>
+    <div class="done-item"><strong>Interaction (P3)</strong>Context menus · drag-select · trackpad pan · arrow nudge</div>
+    <div class="done-item"><strong>Analysis (P4)</strong>Sweep engine · Target solver (bisection) · CSTR/PFR/N-CSTR comparison</div>
+    <div class="done-item"><strong>Domain Depth (P5)</strong>Multi-feed/product · Adjustable axes · Reversible A⇌R · Batch reactor</div>
+    <div class="done-item"><strong>Architecture</strong>Pure-function core · Zustand 8-slice store · purity invariant enforced by test</div>
+    <div class="done-item"><strong>Node colours</strong>CSTR #2563eb · PFR #d97706 · Batch #be123c · Mixer #059669 · Splitter #7c3aed</div>
+    <div class="done-item"><strong>Solver</strong>RK4 integration · Wegstein tear-edge iteration · recycle convergence · Levenspiel curve</div>
+  </div>
+</div>
+
+<!-- Bug callout -->
+<div class="bug-callout">
+  <div class="bug-callout-title">⚠ Known bugs entering Phase 3</div>
+  <div class="bug-body">
+    <div class="bug-item">
+      <strong>Parallel network returns null</strong>
+      <code>solveNetwork</code> returns <code>null</code> for diamond topologies (Feed→Splitter→{A,B}→Mixer→Product). Status bar shows "Connect Feed → Units → Product". Root cause is in <code>forwardPass</code>: splitter only sets edge streams when <code>sourceHandle === 'out-top'/'out-bot'</code> — if user connects via the generic handle, no stream is written. Downstream nodes fall back to fresh params. Compounded by a potential runtime crash in <code>topoSort</code> when stale edges from copy-paste reference non-existent node IDs. Fix: (1) robust splitter stream-set by edge order, not handle name; (2) guard stale edges in <code>topoSort</code>.
+    </div>
+    <div class="bug-item">
+      <strong>Duplicate node labels after copy-paste</strong>
+      Copy-pasted nodes keep the original label ("CSTR-2" appears twice). No store counter increment on paste, so new nodes don't get incremented names. Cosmetic only but confusing. Fix: increment <code>cstrCount</code> / <code>pfrCount</code> in the paste action.
+    </div>
+    <div class="bug-item">
+      <strong>Xa: — on nodes not in flow path</strong>
+      Reactors not reachable feed→product show "Xa: —" without explanation. Nodes in an island show no diagnostic message. Could mislead user into thinking the reactor ran. Fix: topology validator should show per-node warnings; nodes outside the flow path should show a distinct visual state (orange border, tooltip).
+    </div>
+  </div>
+</div>
+
+<div class="dep-arrow">↓ &nbsp;&nbsp; P1 (Solver Hardening) before everything — broken topology blocks all other testing &nbsp;&nbsp; ↓</div>
+
+<!-- P1: Solver Hardening -->
+<div class="layer p1">
+  <div class="layer-header">🔧 &nbsp;Pillar 1 — Solver Hardening &nbsp;·&nbsp; correctness floor · broken parallel networks and stale edges must be fixed first</div>
+  <div class="layer-body cols-3">
+
+    <div class="card key">
+      <div style="margin-bottom:4px"><span class="badge badge-next">▶ Start here</span></div>
+      <div class="card-top">
+        <div class="card-num">1</div>
+        <div class="card-name">Parallel Network Fix</div>
+      </div>
+      <div class="card-note red">🔑 Blocks all parallel/split topologies — most common advanced use case</div>
+      <div class="card-job">Two-part fix in <code>networkSolver.ts</code>. <strong>(a)</strong> Robust splitter stream-writing: instead of matching <code>sourceHandle === 'out-top'</code>, fall back to index-based assignment — first outgoing edge gets <code>alpha</code> fraction, second gets <code>(1-alpha)</code>. <strong>(b)</strong> Guard stale edges: before <code>topoSort</code>, filter out any edge whose <code>source</code> or <code>target</code> is not in the <code>nodes</code> array. Both fixes are 2–3 line changes in pure functions. Tests: add 2 golden tests — one diamond topology, one series-parallel hybrid.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">only series chains work</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">all DAG topologies: parallel, bypass, multi-feed mixing</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-later">Later</span></div>
+      <div class="card-top">
+        <div class="card-num">2</div>
+        <div class="card-name">Topology Error UX</div>
+      </div>
+      <div class="card-job">Per-node and per-edge visual diagnostics. Nodes outside the feed→product flow path get a dashed orange border and a tooltip "Not in active flow path". Invalid/stale edges (dangling, wrong direction) are highlighted in red. The validation hook currently only fires global warnings — extend it to return <code>nodeIssues: Map&lt;nodeId, issue[]&gt;</code> passed as a context to each node component. Zero new pure files needed: validation stays pure, nodes read from context.</div>
+      <div class="card-note orange">Pairs with P1.1 — user needs to see WHY a topology fails, not just that it does</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">silent failures, "Xa: —" with no explanation</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">per-node inline error badges · orange border on orphans</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-later">Later</span></div>
+      <div class="card-top">
+        <div class="card-num">3</div>
+        <div class="card-name">Recycle Stream Panel</div>
+      </div>
+      <div class="card-job">Make recycle loops a first-class UI feature. Currently tear edges are detected automatically and shown in purple — but there's no panel showing convergence progress. Add a collapsible "Recycle Convergence" panel in the Analysis tab: table of tear edges with assumed vs. computed Xa, error per iteration, convergence plot (error vs. iteration). Also fix label increment on copy-paste (bonus: detect when the same node ID exists twice after paste and rename).</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">recycle streams work but convergence is invisible</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">visible convergence · error per iteration · tear edge table</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="dep-arrow">↓ &nbsp;&nbsp; solver correct → safe to redesign UI on top of it &nbsp;&nbsp; ↓</div>
+
+<!-- P2: Visual System v2 -->
+<div class="layer p2">
+  <div class="layer-header">🎨 &nbsp;Pillar 2 — Visual System v2 &nbsp;·&nbsp; formal engineering tool look · consistent visual language across all components</div>
+  <div class="layer-body cols-4">
+
+    <div class="card key">
+      <div style="margin-bottom:4px"><span class="badge badge-later">Later</span></div>
+      <div class="card-top">
+        <div class="card-num">4</div>
+        <div class="card-name">Node Cards v2</div>
+      </div>
+      <div class="card-note" style="color:#1e40af">🔑 Single biggest visual impact — cards are the most-viewed element</div>
+      <div class="card-job">Redesign all 5 reactor/unit nodes: <strong>(1)</strong> 3px color accent strip along the entire top edge (replacing left-border-only), <strong>(2)</strong> header row: type badge left, label centre, Da/status right — all on a very-light-tinted header area, <strong>(3)</strong> τ/t input gets a styled pill (light tinted bg, no box shadow), <strong>(4)</strong> Xa display: coloured conversion bar (0–100% width fill, green/amber/red) instead of plain text, <strong>(5)</strong> uniform height per thermal mode: isothermal=110px, adiabatic=130px, cooled=170px. Same structure for CSTR, PFR, Batch.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">inconsistent heights, cramped inputs</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">polished cards · conversion bar · consistent layout</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-later">Later</span></div>
+      <div class="card-top">
+        <div class="card-num">5</div>
+        <div class="card-name">Toolbar v2</div>
+      </div>
+      <div class="card-job">Widen toolbar from 64px → 80px. Replace minimal SVG icons with proper <strong>chemical engineering P&ID symbols</strong>: CSTR = stirred tank with agitator, PFR = horizontal cylinder with flow arrows, Batch = flask, Mixer = T-junction, Splitter = Y-junction. Add <code>title</code> tooltips that show on hover: "CSTR — Continuous Stirred Tank Reactor". Move Save/Load/Examples to a footer section with text labels instead of icon-only buttons. Add a thin grey section divider between reactor tools and utility tools.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">icon-only toolbar, no labels</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">P&ID-style symbols · hover tooltips · labelled save/load</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-later">Later</span></div>
+      <div class="card-top">
+        <div class="card-num">6</div>
+        <div class="card-name">Top Parameter Bar</div>
+      </div>
+      <div class="card-job">Redesign the dense single-row parameter bar into a <strong>two-section compact bar</strong>: left group = MODE + KINETICS dropdowns (wider, better spacing), centre group = k / Ca0 / Keq inputs with clear unit labels, right = THERMAL toggle becomes a distinct pill switch. Add a subtle left-border accent per reaction mode (blue=single, teal=series, purple=parallel). Height stays at 48px — just better internal layout and typography. Pure CSS/layout change, zero logic change.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">crowded single-row bar</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">grouped layout · mode accent · clear unit labels</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-later">Later</span></div>
+      <div class="card-top">
+        <div class="card-num">7</div>
+        <div class="card-name">Canvas Polish</div>
+      </div>
+      <div class="card-job">Four targeted canvas improvements: <strong>(1)</strong> selection glow — selected nodes get a <code>box-shadow: 0 0 0 3px {nodeColor}40</code> halo, <strong>(2)</strong> edge flow direction — animated dash direction follows source→target (currently all dashes move same direction), <strong>(3)</strong> recycle edges already purple — add a small ♻ label in the middle of tear edges, <strong>(4)</strong> MiniMap improvement — show node type icons in minimap instead of just colour squares. All display-only changes, no solver impact.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">plain canvas with no visual hierarchy</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">selection glow · directional flow · recycle labels</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="dep-arrow">↓ &nbsp;&nbsp; visual layer stable → extend panels on top &nbsp;&nbsp; ↓</div>
+
+<!-- P3: Panels & Analysis -->
+<div class="layer p3">
+  <div class="layer-header">📊 &nbsp;Pillar 3 — Panels &amp; Analysis &nbsp;·&nbsp; richer data presentation · stream table · plot upgrades</div>
+  <div class="layer-body cols-3">
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-later">Later</span></div>
+      <div class="card-top">
+        <div class="card-num">8</div>
+        <div class="card-name">Stream Table v2</div>
+      </div>
+      <div class="card-job">Full sortable stream table in its own panel tab. Columns: Stream ID, From→To, Flowrate, T (K), Xₐ, Cₐ (mol/L), Cᵣ, Cₛ. Rows for all edges + one row per reactor outlet. Colour-code the Xₐ column (green/amber/red). Highlight recycle streams (purple row). Add a "Copy as CSV" button. Currently the stream table section exists in the panel but is minimal — this replaces it with a proper engineering mass-balance table. Pure display change; all data comes from <code>result.streams</code> already computed.</div>
+      <div class="card-note teal">All data already in result.streams — pure rendering work, zero solver change</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">minimal stream section</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">full mass-balance table · CSV copy · recycle highlighted</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-later">Later</span></div>
+      <div class="card-top">
+        <div class="card-num">9</div>
+        <div class="card-name">Profiles Panel v2</div>
+      </div>
+      <div class="card-job">Upgrade the Profiles tab: <strong>(1)</strong> click on a reactor segment in the chart to highlight it and show a detail card below (Xa_in → Xa_out, T_in → T_out, Da, τ), <strong>(2)</strong> add crosshair cursor with tooltip showing exact (τ, Xₐ) or (τ, T) at hover position, <strong>(3)</strong> toggle between C(τ) and Xₐ(τ) view — a "Show: Conversion / Concentration" switch above the chart, <strong>(4)</strong> overlay grid lines aligned to each reactor's τ boundaries. All within the existing Recharts ComposedChart.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">static profile chart</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">interactive hover · click-to-select segment · C(τ) toggle</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-later">Later</span></div>
+      <div class="card-top">
+        <div class="card-num">10</div>
+        <div class="card-name">Parameter Panel v2</div>
+      </div>
+      <div class="card-job">Restructure the right-click/selected-node parameter panel into <strong>collapsible sections</strong>: <em>Kinetics</em> (k, k2, Keq, Ea), <em>Feed</em> (Ca0, Cr0_fraction, T_feed), <em>Thermal</em> (rho_Cp, delta_H, T_ref). Each section has a chevron toggle and remembers its open/closed state in localStorage. Section headers are colour-coded to the pillar they belong to. Currently all params are flat; this groups them logically without changing any data. Add a small unit label next to each field (s⁻¹, mol/L, kJ/mol, etc.) that's always visible.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">flat undifferentiated parameter list</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">sectioned + collapsible · always-visible units · persistent state</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="dep-arrow">↓ &nbsp;&nbsp; panels stable → safe to add new physics on top &nbsp;&nbsp; ↓</div>
+
+<!-- P4: Domain Expansion -->
+<div class="layer p4">
+  <div class="layer-header">⚗️ &nbsp;Pillar 4 — Domain Expansion &nbsp;·&nbsp; new physics · gas-phase · pressure drop · multiple steady states</div>
+  <div class="layer-body cols-4">
+
+    <div class="card key">
+      <div style="margin-bottom:4px"><span class="badge badge-later">Later</span></div>
+      <div class="card-top">
+        <div class="card-num">11</div>
+        <div class="card-name">Pressure Drop — PFR</div>
+      </div>
+      <div class="card-note purple">🔑 Momentum balance adds a 3rd ODE to the PFR system — architecture decision needed</div>
+      <div class="card-job">Add optional Ergun equation to the PFR ODE system: <code>dP/dz = -G/ρ·(1-φ)/φ³ · (150(1-φ)μ/Dp² + 1.75G/Dp)</code>. New PFR node toggle "Pressure Drop" with inputs: catalyst particle size Dp, void fraction φ, inlet pressure P0. The ODE becomes [Ca, Cr, Cs, T, P] (5-vector). The rate law is multiplied by (P/P0)ⁿ for gas-phase. Architecture: <code>pfrModel</code> already integrates a vector ODE — extend the state vector from [Ca,Cr,Cs,T] to [Ca,Cr,Cs,T,P] when pressure-drop mode is enabled.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">constant-pressure PFR only</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">packed bed PFR · Ergun ΔP · optimal bed length design</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-later">Later</span></div>
+      <div class="card-top">
+        <div class="card-num">12</div>
+        <div class="card-name">Gas-Phase Reactions</div>
+      </div>
+      <div class="card-job">Add <strong>volumetric expansion</strong> for gas-phase reactions. New parameter ε (expansion factor, dimensionless). Concentration becomes <code>Ca = Ca0·(1-Xa)/(1+ε·Xa)</code>. New kinetics mode "Gas-phase 1st order" alongside the existing modes. For CSTR: modified CSTR design equation. For PFR: modify the ODE <code>dFa/dV = -ra</code> form (Fa-based, not Ca-based). Architecture: add <code>gasPhase: boolean</code> and <code>epsilon: number</code> to <code>SimulationParams</code>; rate laws receive the gas-corrected concentration.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">liquid-phase reactions only</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">gas-phase with volumetric expansion · Fa-based design</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-later">Later</span></div>
+      <div class="card-top">
+        <div class="card-num">13</div>
+        <div class="card-name">Multiple Steady States</div>
+      </div>
+      <div class="card-job">For a <strong>non-isothermal CSTR with cooling</strong>, the heat-removal line can intersect the heat-generation curve at 3 points (ignition, unstable, extinction). Add a "Steady-State Map" button on cooled CSTR nodes: runs the operating diagram model, detects 1 or 3 intersections using a bisection sweep, marks the stable/unstable states on the Thermal tab. The existing <code>buildOperatingDiagram</code> already computes the G(T) and R(T) curves — extend it to count and return all intersection points.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">single steady state assumed</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">ignition/extinction · multiplicity detection · stability marking</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-later">Later</span></div>
+      <div class="card-top">
+        <div class="card-num">14</div>
+        <div class="card-name">Reactor Sizing Mode</div>
+      </div>
+      <div class="card-job">Add a "Sizing" toggle to the top bar. In sizing mode, the user specifies <strong>volumetric flow rate Q (L/s)</strong> and the simulator computes reactor volume <code>V = τ · Q</code> for each unit, displaying V alongside τ. Adds a "Volume" row to each node card. Also adds a network-level cost estimator: V_total = ΣVᵢ, displayed in the status bar as "Total V: X.X L". Pure derived-value computation — V = τ·Q, no new solver logic. New parameter: <code>Q_feed: number</code> in <code>SimulationParams</code>.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">dimensionless Damköhler / τ only</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">physical volumes (L) · total cost proxy · design basis</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="dep-arrow">↓ &nbsp;&nbsp; physics complete → wrap it in data tools and polish &nbsp;&nbsp; ↓</div>
+
+<!-- P5: Data & Workflow -->
+<div class="layer p5">
+  <div class="layer-header">💾 &nbsp;Pillar 5 — Data &amp; Workflow &nbsp;·&nbsp; export · scenarios · dark mode · UX completeness</div>
+  <div class="layer-body cols-4">
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-later">Later</span></div>
+      <div class="card-top">
+        <div class="card-num">15</div>
+        <div class="card-name">Export Engine</div>
+      </div>
+      <div class="card-job">Three export targets: <strong>(1) PNG canvas</strong> — ReactFlow's <code>toBlob()</code> API captures the current flowsheet as an image (already available in ReactFlow v12); <strong>(2) CSV streams</strong> — dumps the stream table to a downloadable .csv; <strong>(3) Simulation report</strong> — a simple HTML-to-PDF 1-pager with flowsheet screenshot + stream table + segment summary + plot screenshot. Button in the toolbar footer. New <code>useExport</code> hook. Zero solver change — all data from <code>result</code>.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">no output beyond the screen</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">PNG · CSV · 1-page PDF report for lab/coursework</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-later">Later</span></div>
+      <div class="card-top">
+        <div class="card-num">16</div>
+        <div class="card-name">Saved Scenarios</div>
+      </div>
+      <div class="card-job">Named snapshots of the full simulation state (nodes, edges, params, result summary). Up to 10 scenarios stored in <code>localStorage</code>. A "Scenarios" panel shows a comparison table: Scenario name · Kinetics · Xa · Yield · Selectivity. Click a scenario to restore it. Enables the classic ChE teaching exercise of "compare isothermal vs. adiabatic vs. cooled at same τ." Architecture: reuse the existing save/load serializer (<code>src/io/serializer.ts</code>) — a scenario is just a named <code>SavedState</code> with a <code>Xa</code> summary field.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">one state at a time — no history</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">named snapshots · side-by-side Xa comparison · restore</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-later">Later</span></div>
+      <div class="card-top">
+        <div class="card-num">17</div>
+        <div class="card-name">Dark Mode</div>
+      </div>
+      <div class="card-job">System-preference-based dark theme using Tailwind's <code>dark:</code> variant. Background: <code>#0f172a</code>, card: <code>#1e293b</code>, border: <code>#334155</code>, text: <code>#e2e8f0</code>. Canvas background: deep navy with lighter dots. Node card backgrounds darken but accent colours stay the same (CSTR blue, PFR amber, etc.). Plots: dark background with light axis text, same line colours. One <code>dark</code> class on <code>&lt;html&gt;</code> driven by <code>window.matchMedia('(prefers-color-scheme: dark)')</code> + manual toggle in toolbar. Architecture: Tailwind dark-mode config set to <code>class</code> strategy.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">light mode only</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">system-adaptive dark theme · manual toggle · eye comfort</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-later">Later</span></div>
+      <div class="card-top">
+        <div class="card-num">18</div>
+        <div class="card-name">Keyboard Shortcuts &amp; Onboarding</div>
+      </div>
+      <div class="card-job">Two completeness items: <strong>(1) Keyboard shortcuts overlay</strong> — press <code>?</code> to show a modal listing all shortcuts (⌘Z undo, ⌘C copy, Del delete, Arrow nudge, etc.). Overlays like this are the standard way to teach a canvas tool's shortcuts. <strong>(2) First-run onboarding tooltip sequence</strong> — 5-step highlight sequence shown once (dismissed to localStorage): toolbar → canvas → parameter bar → plot panel → status bar. Both are pure UI additions. Zero solver or store changes.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">no discoverability for shortcuts</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">? shortcut modal · 5-step first-run tour · self-documenting</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Build Order -->
+<div class="hardening">
+  <div class="section-title">⬇ Build order — dependency-first</div>
+  <div class="order-flow">
+    <div class="order-step done">✓ Phase 2<br/><small>18 items done</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p1c"><strong>▶ P1.1</strong><br/><small>Parallel fix</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p1c">P1.2<br/><small>Error UX</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p1c">P1.3<br/><small>Recycle panel</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p2c">P2.1<br/><small>Node cards v2</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p2c">P2.2<br/><small>Toolbar v2</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p2c">P2.3<br/><small>Param bar</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p2c">P2.4<br/><small>Canvas polish</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p3c">P3.1<br/><small>Stream table</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p3c">P3.2<br/><small>Profiles v2</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p3c">P3.3<br/><small>Param panel v2</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p4c">P4.1<br/><small>Pressure drop</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p4c">P4.2<br/><small>Gas-phase</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p4c">P4.3<br/><small>Multi SS</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p4c">P4.4<br/><small>Sizing mode</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p5c">P5.1<br/><small>Export</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p5c">P5.2<br/><small>Scenarios</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p5c">P5.3<br/><small>Dark mode</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p5c">P5.4<br/><small>Shortcuts</small></div>
+  </div>
+  <div style="margin-top:10px;font-size:11px;color:#64748b;line-height:1.6;padding:8px 12px;background:#f8fafc;border-radius:6px;border:1px solid #e2e8f0">
+    <strong>Hard constraint:</strong> P1 (Solver Hardening) must land before P2 (Visual System) — visual rework on top of a broken solver makes testing impossible. &nbsp;
+    <strong>P2 before P3:</strong> Panel redesign builds on stable node layouts — wait for Node Cards v2 to settle before redesigning the side panels. &nbsp;
+    <strong>Flexible:</strong> P4 domain items are independent of each other. P5 data tools are independent of P4 — can be worked in parallel once P3 is done. &nbsp;
+    <strong>P4.1 (Pressure Drop) key decision:</strong> extending the ODE state vector must be done before P4.2 (gas-phase) since both share the vector extension pattern.
+  </div>
+</div>
+
+<!-- Architectural Decisions -->
+<div class="decisions">
+  <div class="decisions-title">🔑 Architectural decisions to get right upfront</div>
+  <div class="decision-grid">
+
+    <div class="decision">
+      <div class="decision-name">Splitter stream assignment: handle-name vs. edge-order</div>
+      <div class="decision-wrong">✗ Continue matching <code>sourceHandle === 'out-top'/'out-bot'</code> — breaks when user connects via any other handle</div>
+      <div class="decision-right">✓ Fall back to edge-index: <code>outEdges[0]</code> gets α fraction, <code>outEdges[1]</code> gets (1−α). Keep handle-name check as the primary path, add index fallback. Guard stale edges (<code>source/target not in nodeMap</code>) before topoSort.</div>
+      <p style="color:#64748b;font-size:10.5px;margin-top:5px;line-height:1.5">The splitter has always had two distinct source handles for a reason (top/bot fraction assignment). But the index fallback makes it robust to ReactFlow handle connection behaviour variance.</p>
+    </div>
+
+    <div class="decision">
+      <div class="decision-name">Per-node validation: pure vs. context</div>
+      <div class="decision-wrong">✗ Import validation results inside each node component — breaks purity test for validation.ts</div>
+      <div class="decision-right">✓ <code>validation.ts</code> stays pure (returns <code>nodeIssues: Map&lt;id, issue[]&gt;</code>). A new <code>ValidationContext</code> (React context, not Zustand) distributes the map to nodes. Nodes read from context, not store.</div>
+      <p style="color:#64748b;font-size:10.5px;margin-top:5px;line-height:1.5">Validation context is the right seam: topology-local information flows naturally as React context, not global Zustand state.</p>
+    </div>
+
+    <div class="decision">
+      <div class="decision-name">PFR ODE state vector extension for pressure drop</div>
+      <div class="decision-wrong">✗ Add a separate pressure-drop ODE pass after the main integration — doubles the integration cost and makes T/P coupling incorrect</div>
+      <div class="decision-right">✓ Extend the RK4 state vector from <code>[Ca, Cr, Cs, T]</code> to <code>[Ca, Cr, Cs, T, P]</code> when pressure-drop is enabled. The existing <code>rk4Step</code> already handles arbitrary-length vectors. Add a <code>pressureDrop</code> flag to <code>UnitParams</code>.</div>
+      <p style="color:#64748b;font-size:10.5px;margin-top:5px;line-height:1.5">The correct approach: T and P are coupled (temperature affects viscosity, which affects ΔP). They must be integrated together in one RK4 step.</p>
+    </div>
+
+    <div class="decision">
+      <div class="decision-name">Dark mode strategy: Tailwind class vs. CSS variables</div>
+      <div class="decision-wrong">✗ Use <code>prefers-color-scheme</code> media query in CSS only — can't be overridden by the user's manual toggle</div>
+      <div class="decision-right">✓ Tailwind <code>darkMode: 'class'</code> strategy. A <code>themeSlice</code> in Zustand holds <code>'light' | 'dark' | 'system'</code>. On mount, check <code>matchMedia</code>; on toggle, flip the <code>dark</code> class on <code>&lt;html&gt;</code>. Persisted in localStorage.</div>
+      <p style="color:#64748b;font-size:10.5px;margin-top:5px;line-height:1.5">Class-based dark mode is the only approach that supports both system-preference detection AND user override with a single toggle.</p>
+    </div>
+
+  </div>
+  <div class="rule-box">
+    <strong>Phase 3 purity rule:</strong> The pure-function invariant is preserved. New pure files added in P4 (<code>pressureDropModel.ts</code>, <code>gasPhaseFactor.ts</code>, <code>steadyStateMapper.ts</code>) get added to <code>PURE_FILES</code> in <code>purity.test.ts</code>. The validation map return from <code>validation.ts</code> is type-only; the <code>ValidationContext</code> React context lives in a separate <code>src/context/</code> file. Tests target: <strong>21+ tests</strong> (current 15 + 2 golden for parallel network + 4 for new pure math files).
+  </div>
+</div>
+
+</body>
+</html>
