@@ -3,6 +3,7 @@ import { useSimulatorStore } from '../../store/simulatorStore';
 import type { ReactionMode } from '../../types/reactor';
 import { PRESETS, getPreset } from '../../math/reactionRegistry';
 import { Gauge, X } from 'lucide-react';
+import { Input } from '../ui';
 
 const kineticsOptions = PRESETS
   .filter((p) => p.kinetics != null)
@@ -142,7 +143,7 @@ export default function ParameterPanel() {
 
       <div className="flex items-center gap-1.5 shrink-0">
         <span className="text-[11px] text-[#374151] font-mono">{kLabel} =</span>
-        <input
+        <Input
           type="number"
           min="0.01"
           max="10"
@@ -152,7 +153,7 @@ export default function ParameterPanel() {
             const v = parseFloat(e.target.value);
             if (!isNaN(v)) updateParams({ k: Math.max(0.01, Math.min(10, v)) });
           }}
-          className="w-16 text-[11px] font-mono bg-[#f8faff] border border-[#dde3f0] rounded px-1.5 py-0.5 text-[#0f1730] outline-none focus:border-[#2563eb]"
+          className="w-16"
         />
         <span className="text-[10px] text-[#6b7280]">{kUnit}</span>
       </div>
@@ -160,7 +161,7 @@ export default function ParameterPanel() {
       {!isSingle && (
         <div className="flex items-center gap-1.5 shrink-0">
           <span className="text-[11px] text-[#374151] font-mono">k₂ =</span>
-          <input
+          <Input
             type="number"
             min="0.01"
             max="10"
@@ -170,7 +171,7 @@ export default function ParameterPanel() {
               const v = parseFloat(e.target.value);
               if (!isNaN(v)) updateParams({ k2: Math.max(0.01, Math.min(10, v)) });
             }}
-            className="w-16 text-[11px] font-mono bg-[#f8faff] border border-[#dde3f0] rounded px-1.5 py-0.5 text-[#0f1730] outline-none focus:border-[#2563eb]"
+            className="w-16"
           />
           <span className="text-[10px] text-[#6b7280]">s⁻¹</span>
         </div>
@@ -178,7 +179,7 @@ export default function ParameterPanel() {
 
       <div className="flex items-center gap-1.5 shrink-0">
         <span className="text-[11px] text-[#374151] font-mono">Cₐ₀ =</span>
-        <input
+        <Input
           type="number"
           min="0.1"
           max="100"
@@ -188,7 +189,7 @@ export default function ParameterPanel() {
             const v = parseFloat(e.target.value);
             if (!isNaN(v)) updateParams({ Ca0: Math.max(0.1, Math.min(100, v)) });
           }}
-          className="w-16 text-[11px] font-mono bg-[#f8faff] border border-[#dde3f0] rounded px-1.5 py-0.5 text-[#0f1730] outline-none focus:border-[#2563eb]"
+          className="w-16"
         />
         <span className="text-[10px] text-[#6b7280]">mol/L</span>
       </div>
@@ -196,7 +197,7 @@ export default function ParameterPanel() {
       {preset.id === 'single-autocatalytic' && (
         <div className="flex items-center gap-1.5 shrink-0">
           <span className="text-[11px] text-[#374151] font-mono">Cᵣ₀/Cₐ₀ =</span>
-          <input
+          <Input
             type="number"
             min="0.001"
             max="0.5"
@@ -206,7 +207,7 @@ export default function ParameterPanel() {
               const v = parseFloat(e.target.value);
               if (!isNaN(v)) updateParams({ Cr0_fraction: Math.max(0.001, Math.min(0.5, v)) });
             }}
-            className="w-16 text-[11px] font-mono bg-[#f8faff] border border-[#dde3f0] rounded px-1.5 py-0.5 text-[#0f1730] outline-none focus:border-[#2563eb]"
+            className="w-16"
           />
         </div>
       )}
@@ -223,7 +224,7 @@ export default function ParameterPanel() {
         <div className="flex items-center gap-3 shrink-0 pl-2 pr-1 py-1 border-l border-[#dde3f0]">
           <div className="flex items-center gap-1">
             <span className="text-[10px] text-[#6b7280]">T_feed</span>
-            <input
+            <Input
               type="number"
               min="200"
               max="600"
@@ -233,13 +234,13 @@ export default function ParameterPanel() {
                 const v = parseFloat(e.target.value);
                 if (!isNaN(v)) updateParams({ T_feed: Math.max(200, Math.min(600, v)) });
               }}
-              className="w-12 text-[11px] font-mono bg-[#f8faff] border border-[#dde3f0] rounded px-1 py-0.5 text-[#0f1730] outline-none focus:border-[#2563eb]"
+              className="w-12"
             />
             <span className="text-[9px] text-[#6b7280]">K</span>
           </div>
           <div className="flex items-center gap-1">
             <span className="text-[10px] text-[#6b7280]">Eₐ</span>
-            <input
+            <Input
               type="number"
               min="0"
               max="500"
@@ -249,13 +250,13 @@ export default function ParameterPanel() {
                 const v = parseFloat(e.target.value);
                 if (!isNaN(v)) updateParams({ Ea: Math.max(0, Math.min(500, v)) });
               }}
-              className="w-12 text-[11px] font-mono bg-[#f8faff] border border-[#dde3f0] rounded px-1 py-0.5 text-[#0f1730] outline-none focus:border-[#2563eb]"
+              className="w-12"
             />
             <span className="text-[9px] text-[#6b7280]">kJ/mol</span>
           </div>
           <div className="flex items-center gap-1">
             <span className="text-[10px] text-[#6b7280]">ΔH</span>
-            <input
+            <Input
               type="number"
               min="-500"
               max="500"
@@ -265,13 +266,13 @@ export default function ParameterPanel() {
                 const v = parseFloat(e.target.value);
                 if (!isNaN(v)) updateParams({ delta_H: Math.max(-500, Math.min(500, v)) });
               }}
-              className="w-12 text-[11px] font-mono bg-[#f8faff] border border-[#dde3f0] rounded px-1 py-0.5 text-[#0f1730] outline-none focus:border-[#2563eb]"
+              className="w-12"
             />
             <span className="text-[9px] text-[#6b7280]">kJ/mol</span>
           </div>
           <div className="flex items-center gap-1">
             <span className="text-[10px] text-[#6b7280]">ρCp</span>
-            <input
+            <Input
               type="number"
               min="0.1"
               max="20"
@@ -281,7 +282,7 @@ export default function ParameterPanel() {
                 const v = parseFloat(e.target.value);
                 if (!isNaN(v)) updateParams({ rho_Cp: Math.max(0.1, Math.min(20, v)) });
               }}
-              className="w-12 text-[11px] font-mono bg-[#f8faff] border border-[#dde3f0] rounded px-1 py-0.5 text-[#0f1730] outline-none focus:border-[#2563eb]"
+              className="w-12"
             />
             <span className="text-[9px] text-[#6b7280]">kJ/(m³·K)</span>
           </div>

@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { Save, FolderOpen, BookOpen } from 'lucide-react';
 import { useSaveFile, useLoadFile, useLoadExample } from '../../hooks/useFileIO';
 import { EXAMPLES } from '../../io/examples';
+import { IconButton, Divider } from '../ui';
 
 function CstRIcon() {
   return (
@@ -142,35 +143,24 @@ export default function ReactorToolbar() {
       </div>
 
       <div className="mt-auto" />
-      <div style={{ width: 40, height: 1, background: '#dde3f0', marginBottom: 4 }} />
+      <Divider className="w-10 mb-1" />
 
-      <button
-        onClick={handleSave}
-        title="Save flowsheet"
-        className="flex items-center justify-center rounded-md border mb-2"
-        style={{ width: 44, height: 44, borderColor: '#dde3f0', background: '#f8faff' }}
-      >
+      <IconButton onClick={handleSave} title="Save flowsheet" className="mb-2">
         <Save size={18} color="#374151" />
-      </button>
+      </IconButton>
 
-      <button
-        onClick={handleLoad}
-        title="Load flowsheet"
-        className="flex items-center justify-center rounded-md border mb-2"
-        style={{ width: 44, height: 44, borderColor: '#dde3f0', background: '#f8faff' }}
-      >
+      <IconButton onClick={handleLoad} title="Load flowsheet" className="mb-2">
         <FolderOpen size={18} color="#374151" />
-      </button>
+      </IconButton>
 
       <div style={{ position: 'relative' }} className="mb-4">
-        <button
+        <IconButton
           onClick={() => setExamplesOpen((v) => !v)}
           title="Load example"
-          className="flex items-center justify-center rounded-md border"
-          style={{ width: 44, height: 44, borderColor: '#dde3f0', background: '#f8faff' }}
+          active={examplesOpen}
         >
           <BookOpen size={18} color="#374151" />
-        </button>
+        </IconButton>
 
         {examplesOpen && (
           <div
