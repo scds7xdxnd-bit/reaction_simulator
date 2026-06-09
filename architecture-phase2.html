@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reaction Simulator — Phase 2 Roadmap</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #f1f5f9;
+  color: #1e293b;
+  padding: 32px;
+  min-height: 100vh;
+}
+
+h1 {
+  font-size: 22px; font-weight: 800; color: #0f172a;
+  margin-bottom: 4px; letter-spacing: -0.3px;
+}
+.subtitle { font-size: 13px; color: #64748b; margin-bottom: 24px; }
+
+/* Legend */
+.legend {
+  display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap;
+  background: white; padding: 10px 16px; border-radius: 8px; border: 1px solid #e2e8f0;
+}
+.legend-item { display: flex; align-items: center; gap: 7px; font-size: 11px; color: #475569; font-weight: 500; }
+.legend-swatch { width: 14px; height: 14px; border-radius: 3px; border: 2px solid; flex-shrink: 0; }
+
+/* Done banner */
+.done-banner {
+  background: #dbeafe; border: 2px solid #3b82f6; border-radius: 10px;
+  padding: 14px 18px; margin-bottom: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.done-banner-title {
+  font-size: 12px; font-weight: 800; color: #1e3a5f;
+  text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.done-banner-body {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;
+}
+.done-item {
+  background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px;
+  padding: 7px 11px; font-size: 10.5px; color: #1e40af; line-height: 1.5;
+}
+.done-item strong { display: block; font-weight: 700; color: #1e3a5f; margin-bottom: 2px; }
+
+/* Layers */
+.layer { margin-bottom: 6px; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+.layer-header {
+  padding: 9px 16px; font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+.layer-body { display: grid; gap: 10px; padding: 10px; }
+
+/* Pillar colours */
+.p1 { background: #fffbeb; }
+.p1 .layer-header { background: #b45309; color: white; }
+.p1 .card-num { background: #b45309 !important; }
+
+.p2 { background: #f8fafc; }
+.p2 .layer-header { background: #475569; color: white; }
+.p2 .card-num { background: #475569 !important; }
+
+.p3 { background: #f0fdfa; }
+.p3 .layer-header { background: #0f766e; color: white; }
+.p3 .card-num { background: #0f766e !important; }
+
+.p4 { background: #eef2ff; }
+.p4 .layer-header { background: #4338ca; color: white; }
+.p4 .card-num { background: #4338ca !important; }
+
+.p5 { background: #f0fdf4; }
+.p5 .layer-header { background: #166534; color: white; }
+.p5 .card-num { background: #166534 !important; }
+
+.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.cols-4 { grid-template-columns: repeat(4, 1fr); }
+.cols-5 { grid-template-columns: repeat(5, 1fr); }
+
+/* Cards */
+.card {
+  background: white; border-radius: 8px; padding: 13px 13px 11px;
+  border: 1.5px solid #e2e8f0; position: relative;
+  display: flex; flex-direction: column; min-height: 148px;
+  transition: box-shadow 0.15s, transform 0.15s; cursor: default;
+}
+.card:hover { box-shadow: 0 4px 18px rgba(0,0,0,0.13); transform: translateY(-2px); z-index: 2; }
+.card.key { border: 2px solid #7c3aed; background: #faf5ff; }
+
+.card-top { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+.card-num {
+  font-size: 10px; font-weight: 900; width: 22px; height: 22px;
+  border-radius: 50%; display: inline-flex; align-items: center;
+  justify-content: center; color: white; flex-shrink: 0; margin-top: 1px;
+}
+.card-name { font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.3; }
+.card-job { font-size: 11px; color: #64748b; line-height: 1.45; flex: 1; padding-bottom: 8px; }
+
+.card-note {
+  font-size: 9.5px; color: #0369a1; background: #eff6ff;
+  border: 1px solid #bfdbfe; border-radius: 4px;
+  padding: 3px 8px; margin-bottom: 6px; font-weight: 600; line-height: 1.4;
+}
+.card-note.amber { color: #92400e; background: #fffbeb; border-color: #fde68a; }
+.card-note.purple { color: #5b21b6; background: #faf5ff; border-color: #ddd6fe; }
+.card-note.teal { color: #134e4a; background: #f0fdfa; border-color: #99f6e4; }
+.card-note.indigo { color: #312e81; background: #eef2ff; border-color: #c7d2fe; }
+.card-note.green { color: #14532d; background: #f0fdf4; border-color: #bbf7d0; }
+
+.depth-axis { margin-top: auto; padding-top: 8px; border-top: 1px solid #f1f5f9; }
+.depth-label {
+  font-size: 9px; color: #94a3b8; text-transform: uppercase;
+  letter-spacing: 0.05em; margin-bottom: 3px; font-weight: 600;
+}
+.depth-row { display: flex; align-items: flex-start; gap: 4px; font-size: 10px; line-height: 1.35; }
+.depth-from { color: #94a3b8; flex: 1; }
+.depth-arrow { color: #cbd5e1; padding-top: 1px; flex-shrink: 0; }
+.depth-to { color: #475569; font-weight: 600; flex: 1; text-align: right; }
+
+/* Badges */
+.badge {
+  font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px;
+  text-transform: uppercase; letter-spacing: 0.05em; display: inline-block;
+}
+.badge-done   { background: #0369a1; color: white; }
+.badge-next   { background: #b45309; color: white; box-shadow: 0 0 0 2px #fde68a; }
+.badge-key    { background: #6d28d9; color: white; }
+.badge-later  { background: #e2e8f0; color: #64748b; }
+
+/* Dep arrows */
+.dep-arrow {
+  text-align: center; padding: 5px; font-size: 11px; color: #94a3b8;
+  display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 500;
+}
+.dep-arrow::before, .dep-arrow::after {
+  content: ''; flex: 1; height: 1px; background: #cbd5e1;
+}
+
+/* Build order */
+.hardening {
+  margin-top: 12px; background: white; border: 1.5px solid #e2e8f0;
+  border-radius: 10px; padding: 14px 18px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.section-title {
+  font-size: 11px; font-weight: 800; color: #475569;
+  text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px;
+}
+.order-flow {
+  display: flex; align-items: stretch; gap: 0;
+  flex-wrap: wrap; overflow-x: auto; padding-bottom: 2px; row-gap: 6px;
+}
+.order-step {
+  background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 7px;
+  padding: 7px 12px; font-size: 11px; font-weight: 600; color: #334155;
+  text-align: center; line-height: 1.4; white-space: nowrap; flex-shrink: 0;
+}
+.order-step small {
+  display: block; font-size: 9.5px; font-weight: 400; color: #94a3b8; margin-top: 1px;
+}
+.order-step.done   { background: #dbeafe; border-color: #3b82f6; color: #1e3a5f; opacity: 0.82; }
+.order-step.p1c    { background: #fffbeb; border-color: #d97706; color: #78350f; }
+.order-step.p2c    { background: #f8fafc; border-color: #64748b; color: #1e293b; }
+.order-step.p3c    { background: #f0fdfa; border-color: #0d9488; color: #134e4a; }
+.order-step.p4c    { background: #eef2ff; border-color: #4338ca; color: #312e81; }
+.order-step.p5c    { background: #f0fdf4; border-color: #16a34a; color: #14532d; }
+.order-arrow {
+  color: #94a3b8; font-size: 14px; font-weight: 700;
+  display: flex; align-items: center; padding: 0 6px; flex-shrink: 0;
+}
+
+/* Decisions */
+.decisions {
+  margin-top: 12px; background: #faf5ff;
+  border: 2px solid #7c3aed; border-radius: 10px; padding: 14px 18px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.decisions-title {
+  font-size: 11px; font-weight: 800; color: #4c1d95;
+  text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 12px;
+}
+.decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.decision {
+  background: white; border: 1px solid #ddd6fe; border-radius: 7px;
+  padding: 10px 13px; font-size: 11px; line-height: 1.5;
+}
+.decision-name { font-weight: 700; color: #4c1d95; margin-bottom: 4px; font-size: 11.5px; }
+.decision-wrong { color: #dc2626; margin-bottom: 3px; }
+.decision-right { color: #059669; font-weight: 600; }
+.decision code {
+  background: #f1f5f9; border-radius: 3px; padding: 0 4px;
+  font-family: 'SF Mono','Fira Code',monospace; font-size: 10px;
+}
+.rule-box {
+  background: #ede9fe; border-radius: 6px; padding: 9px 14px;
+  font-size: 11px; color: #3b0764; line-height: 1.5; margin-top: 10px;
+}
+</style>
+</head>
+<body>
+
+<h1>Reaction Simulator — Phase 2 Roadmap</h1>
+<p class="subtitle">5 pillars · 18 items · built on Phase 1 (12-compartment hardening ✓) &nbsp;·&nbsp; Vercel deployed ✓ &nbsp;·&nbsp; controlled mode migration ✓</p>
+
+<!-- Legend -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-swatch" style="background:#fffbeb;border-color:#b45309;"></div>P1 · Foundation</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#f8fafc;border-color:#475569;"></div>P2 · Design System</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#f0fdfa;border-color:#0f766e;"></div>P3 · Interaction</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#eef2ff;border-color:#4338ca;"></div>P4 · Analysis</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#f0fdf4;border-color:#166534;"></div>P5 · Domain Depth</div>
+  <div class="legend-item" style="color:#6d28d9;font-weight:700">🔑 Key architectural decision</div>
+  <div class="legend-item" style="color:#0369a1;font-weight:700">✓ Already done</div>
+</div>
+
+<!-- Item 0: Done -->
+<div class="done-banner">
+  <div class="done-banner-title">
+    <span class="badge badge-done">✓ Done</span>
+    Item 0 — Controlled Mode Migration &nbsp;·&nbsp; ReactorCanvas.tsx −160 lines &nbsp;·&nbsp; commit 2679750
+  </div>
+  <div class="done-banner-body">
+    <div class="done-item">
+      <strong>Root bug fixed</strong>
+      Dual node/edge state (useNodesState + Zustand) was synced one-way only. Canvas never saw paste, undo, or cut. All three now work because the canvas reads directly from the store.
+    </div>
+    <div class="done-item">
+      <strong>Callbacks unified</strong>
+      onNodesChange, onEdgesChange, onConnect, onReconnect, onDelete, onDrop all write to store via <code style="font-family:monospace;background:#dbeafe;padding:1px 4px;border-radius:3px">getState()</code>. No stale closures. No manual sync.
+    </div>
+    <div class="done-item">
+      <strong>cut() fixed</strong>
+      Previously copied to clipboard but never deleted. Now copies then filters selected nodes from the store. Undo/redo already worked via topologySlice — now the canvas actually reflects it.
+    </div>
+  </div>
+</div>
+
+<div class="dep-arrow">↓ &nbsp;&nbsp; Foundation must land before any new feature work &nbsp;&nbsp; ↓</div>
+
+<!-- P1: Foundation -->
+<div class="layer p1">
+  <div class="layer-header">🛡 &nbsp;Pillar 1 — Foundation &nbsp;·&nbsp; stability floor · nothing else is safe without this</div>
+  <div class="layer-body cols-3">
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-next">Next</span></div>
+      <div class="card-top">
+        <div class="card-num">1</div>
+        <div class="card-name">Test Suite (Vitest)</div>
+      </div>
+      <div class="card-job">Golden tests that lock every Phase 1 invariant: run <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">solveNetwork(example.state)</code> for each entry in <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">examples.ts</code> and assert known outputs. Any future domain change that breaks the solver fails immediately.</div>
+      <div class="card-note amber">examples.ts was designed for this — 3 golden cases already ship with the app</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">invariants held by discipline alone</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">CI-caught regressions · confident domain changes</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-next">Next</span></div>
+      <div class="card-top">
+        <div class="card-num">2</div>
+        <div class="card-name">Toast Notifications</div>
+      </div>
+      <div class="card-job">A <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">toastSlice</code> in Zustand: queue of <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">{id, level, message, ttl}</code> with auto-dismiss. One floating <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">Toaster</code> component. Replaces <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">alert()</code> in useLoadFile, solver convergence warnings, and all future error reporting from sweep/analysis.</div>
+      <div class="card-note amber">alert() is already in useLoadFile — needs replacing before analysis tooling adds more failure modes</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">alert() + silent failures</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">unified error surface · consistent UX across all features</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-next">Next</span></div>
+      <div class="card-top">
+        <div class="card-num">3</div>
+        <div class="card-name">LocalStorage Autosave</div>
+      </div>
+      <div class="card-job">One debounced <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">useEffect</code> in App.tsx: serialize on every store change (500 ms debounce), hydrate on mount if localStorage has a saved session. ~20 lines. <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">serializeState</code> already exists — just needs wiring.</div>
+      <div class="card-note amber">The controlled mode migration now makes this safe — the store is the single source of truth</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">refresh wipes the session</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">work persists · feels like real software</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="dep-arrow">↓ &nbsp;&nbsp; Design System before any new UI surfaces are built &nbsp;&nbsp; ↓</div>
+
+<!-- P2: Design System -->
+<div class="layer p2">
+  <div class="layer-header">🎨 &nbsp;Pillar 2 — Design System &nbsp;·&nbsp; foundational · every new UI component builds on this</div>
+  <div class="layer-body cols-3">
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge" style="background:#475569;color:white;">P2</span></div>
+      <div class="card-top">
+        <div class="card-num">4</div>
+        <div class="card-name">Design Tokens</div>
+      </div>
+      <div class="card-job">Lift the 40+ scattered hex values into Tailwind <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">theme.extend.colors</code>: <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">primary</code>, <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">surface</code>, <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">border</code>, <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">text-muted</code>, <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">text-strong</code>. One-line theming and dark mode then become a stylesheet switch, not a 400-line patch.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">#2563eb × 15 files, manual consistency</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">token-driven, dark mode ready</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card key">
+      <div style="margin-bottom:4px"><span class="badge badge-key">🔑 Key</span></div>
+      <div class="card-top">
+        <div class="card-num">5</div>
+        <div class="card-name">Primitive Components</div>
+      </div>
+      <div class="card-job">New <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">src/components/ui/</code>: <strong>Button</strong> (variants: primary, secondary, ghost, danger; sizes: sm, md), <strong>IconButton</strong> (icon-only + title tooltip), <strong>Dropdown/Select</strong>, <strong>Input</strong>, <strong>Slider</strong>, <strong>Divider</strong>. Thin Tailwind wrappers — each ~15–30 lines.</div>
+      <div class="card-note purple">Context menu (P3.1), Analysis panel (P4), and Feed inspector (P5) all use these — build them FIRST</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">ad-hoc &lt;button style={{}}> everywhere</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">every new surface is consistent by default</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge" style="background:#475569;color:white;">P2</span></div>
+      <div class="card-top">
+        <div class="card-num">6</div>
+        <div class="card-name">Component Migration</div>
+      </div>
+      <div class="card-job">Migrate existing UI surfaces to use the new primitives: StatusBar, ReactorToolbar, ParameterPanel, tab buttons in App.tsx, DynamicControls. Replace inline <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">style={{}}</code> objects with token-based Tailwind classes. No behavioral changes — purely cosmetic consistency pass.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">old and new UI visually inconsistent</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">unified look · design debt cleared</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="dep-arrow">↓ &nbsp;&nbsp; Interaction features use ui/ primitives for menus and controls &nbsp;&nbsp; ↓</div>
+
+<!-- P3: Interaction -->
+<div class="layer p3">
+  <div class="layer-header">⌨ &nbsp;Pillar 3 — Interaction &amp; Canvas &nbsp;·&nbsp; keyboard shortcuts wired · context menu and gesture config are the gaps</div>
+  <div class="layer-body cols-4">
+
+    <div class="card key">
+      <div style="margin-bottom:4px"><span class="badge badge-key">🔑 Key</span></div>
+      <div class="card-top">
+        <div class="card-num">7</div>
+        <div class="card-name">Right-click Context Menu</div>
+      </div>
+      <div class="card-job">State in <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">sessionSlice</code>: <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">{menuVisible, menuX, menuY, menuTargetId}</code>. Right-clicking a node sets these; clicking anywhere else clears them. Floating card anchored to click position (using ui/ Button). Items: Copy, Paste, Cut, Duplicate, ─, Delete, Properties.</div>
+      <div class="card-note teal">Cmd+C/V/X/D/Z/Y already wired in App.tsx — this is only the visual menu, wired to the same useClipboardActions functions</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">keyboard-only, no discoverable actions</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">right-click menu · discoverable shortcuts</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge" style="background:#0f766e;color:white;">P3</span></div>
+      <div class="card-top">
+        <div class="card-num">8</div>
+        <div class="card-name">Drag Selection Box</div>
+      </div>
+      <div class="card-job">Enable React Flow's built-in drag-to-select: add <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">selectionOnDrag</code> prop. With Shift held: drag creates a selection rectangle. Without Shift: canvas pans. <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">useClipboardActions</code> already reads <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">n.selected</code> for multi-node operations — no clipboard changes needed.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">Shift+click per node only</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">drag box · bulk copy/delete/move</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge" style="background:#0f766e;color:white;">P3</span></div>
+      <div class="card-top">
+        <div class="card-num">9</div>
+        <div class="card-name">Trackpad Gesture Config</div>
+      </div>
+      <div class="card-job">Verify and configure React Flow props: <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">panOnScroll</code>, <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">panOnScrollMode="free"</code> (all directions), <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">zoomOnPinch</code>. These are native to @xyflow/react v12 — likely just need enabling. Two-finger pan left/right/up/down + pinch-to-zoom should work with 1–3 prop changes.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">scroll-wheel zoom only</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">two-finger pan all directions · pinch zoom</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge" style="background:#0f766e;color:white;">P3</span></div>
+      <div class="card-top">
+        <div class="card-num">10</div>
+        <div class="card-name">Arrow-key Nudge</div>
+      </div>
+      <div class="card-job">In the existing <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">keydown</code> handler in App.tsx: when a node is selected and no modifier, arrow keys move it ±10px. With Shift: ±1px (precision nudge). Calls <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">storeSetNodes</code> with updated position directly. ~12 lines added to the existing handler.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">mouse-only positioning</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">precise keyboard placement · 1px alignment</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="dep-arrow">↓ &nbsp;&nbsp; Analysis and Domain are independent of each other — can be specced in parallel &nbsp;&nbsp; ↓</div>
+
+<!-- P4: Analysis -->
+<div class="layer p4">
+  <div class="layer-header">📊 &nbsp;Pillar 4 — Analysis Tooling &nbsp;·&nbsp; the payoff of the pure-function architecture · solveNetwork called in a loop</div>
+  <div class="layer-body cols-3">
+
+    <div class="card key">
+      <div style="margin-bottom:4px"><span class="badge badge-key">🔑 Key</span></div>
+      <div class="card-top">
+        <div class="card-num">11</div>
+        <div class="card-name">Parameter Sweep Engine</div>
+      </div>
+      <div class="card-job">New pure module <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">src/math/sweepEngine.ts</code>: takes <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">(nodes, edges, params, config)</code>, loops <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">solveNetwork</code>, returns <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">SweepResult[]</code>. New <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">sweepSlice</code> holds config + results. New <strong>Analysis tab</strong> (5th tab in right panel): variable picker, range inputs, Recharts output.</div>
+      <div class="card-note indigo">sweepEngine.ts must be pure — no store reads. useSweep hook dispatches config and reads sweepSlice. Mirrors networkSolver/useSimulation split.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">one static result per parameter set</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">X vs τ, X vs T_feed, X vs Ca0 — any variable</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge" style="background:#4338ca;color:white;">P4</span></div>
+      <div class="card-top">
+        <div class="card-num">12</div>
+        <div class="card-name">Target Solver (Sizing)</div>
+      </div>
+      <div class="card-job">"What τ gives X = 0.90?" — wrap <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">bisect</code> from <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">numerics.ts</code> around <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">sweepEngine</code>. ~20 additional lines. Same Analysis panel — extra mode with a target conversion input and a "solve" button. These are the actual homework questions.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">user manually guesses reactor size</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">inverse design — given target, find τ</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge" style="background:#4338ca;color:white;">P4</span></div>
+      <div class="card-top">
+        <div class="card-num">13</div>
+        <div class="card-name">Reactor Comparison Overlay</div>
+      </div>
+      <div class="card-job">Three <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">solveNetwork</code> calls with computed node arrays for single CSTR, PFR, and N CSTRs-in-series. Overlay all three conversion profiles on the existing Levenspiel plot. No new math — pure composition of existing functions. Shows "why does a PFR beat a CSTR?" visually.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">compare reactor types mentally</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">CSTR vs PFR vs N-CSTRs — overlaid on same plot</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- P5: Domain Depth -->
+<div class="layer p5" style="margin-top:6px">
+  <div class="layer-header">⚗ &nbsp;Pillar 5 — Domain Depth &nbsp;·&nbsp; academic credibility · most items are additive — seams already cut in Phase 1</div>
+  <div class="layer-body cols-5">
+
+    <div class="card key">
+      <div style="margin-bottom:4px"><span class="badge badge-key">🔑 Key</span></div>
+      <div class="card-top">
+        <div class="card-num">14</div>
+        <div class="card-name">Multiple Feed Nodes</div>
+      </div>
+      <div class="card-job">Per-node overrides: <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">FeedNode.data</code> gains optional <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">{Ca0?, T_feed?, flowrate?}</code>. Resolver in <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">networkSolver</code>: <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">nodeData.Ca0 ?? params.Ca0</code>. Global params remain as defaults — existing flowsheets unaffected. Feed node inspector exposes override fields.</div>
+      <div class="card-note green">Non-breaking: existing saves use global params. Per-node only when explicitly set.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">one global Ca0/T_feed for all feeds</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">independent inlets · blending / mixing studies</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge" style="background:#166534;color:white;">P5</span></div>
+      <div class="card-top">
+        <div class="card-num">15</div>
+        <div class="card-name">Multiple Product Nodes</div>
+      </div>
+      <div class="card-job">Solver already routes to product-type nodes. With multiple products, <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">result.finalConversion</code> becomes <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">Record&lt;nodeId, number&gt;</code>. StatusBar shows the primary exit. StreamTable naturally covers all outlets (already per-edge). Useful for side-draw and bypass configurations.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">single finalConversion scalar</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">per-exit reporting · side-draw · bypass</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge" style="background:#166534;color:white;">P5</span></div>
+      <div class="card-top">
+        <div class="card-num">16</div>
+        <div class="card-name">Adjustable Plot Axes</div>
+      </div>
+      <div class="card-job">New <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">plotConfigSlice</code>: <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">Record&lt;plotId, {xMin?, xMax?, yMin?, yMax?, xLog?}&gt;</code>. Each of the 7 existing Recharts plots reads its config from the slice and adds a small axis-config bar (Input + log toggle) at the top of each panel. Purely additive — zero math layer changes.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">fixed auto-ranges on all 7 plots</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">min/max/log per plot · zoom into regions of interest</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge" style="background:#166534;color:white;">P5</span></div>
+      <div class="card-top">
+        <div class="card-num">17</div>
+        <div class="card-name">Reversible Reactions</div>
+      </div>
+      <div class="card-job">Biggest realism gap. <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">thermoModel.ts</code> already accepts <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">(reactionId, T)</code> for van't Hoff K(T). Add one preset to <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">reactionRegistry.ts</code> with rate law <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">r = k(T) · (Ca − Cr/Keq(T))</code>. Injected via ChemistryModel — zero solver changes.</div>
+      <div class="card-note green">Also forces operatingDiagramModel.ts to use ChemistryModel instead of params.kinetics branching — the right cleanup</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">irreversible kinetics only</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">A⇌R with Keq(T) · equilibrium-limited design</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-later">Later</span></div>
+      <div class="card-top">
+        <div class="card-num">18</div>
+        <div class="card-name">Batch Reactor Node</div>
+      </div>
+      <div class="card-job">A dynamic PFR with no through-flow — integrates forward in time rather than space. New canvas node type <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">BatchReactor</code>. <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">batchModel</code> reuses <code style="font-family:monospace;background:#f1f5f9;padding:1px 4px;border-radius:3px">rk4Step</code> from numerics.ts — no new math. Enables batch-vs-flow comparison.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">flow reactors only</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">time-domain batch · batch vs CSTR vs PFR</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Build Order -->
+<div class="hardening">
+  <div class="section-title">⬇ Build order — dependency-first</div>
+  <div class="order-flow">
+    <div class="order-step done">✓ Item 0<br/><small>Controlled mode</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p1c">P1.1<br/><small>Vitest tests</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p1c">P1.2<br/><small>Toast system</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p1c">P1.3<br/><small>Autosave</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p2c">P2.1<br/><small>Design tokens</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p2c">P2.2<br/><small>ui/ components</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p2c">P2.3<br/><small>Migration</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p3c">P3.1<br/><small>Context menu</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p3c">P3.2–4<br/><small>Canvas config</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p4c">P4.1<br/><small>Sweep engine</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p5c">P5.1–2<br/><small>Multi-feed/product</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p5c">P5.3<br/><small>Adj. axes</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p4c">P4.2<br/><small>Target solver</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p5c">P5.4<br/><small>Reversible rxns</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p4c">P4.3<br/><small>Comparison</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p5c">P5.5<br/><small>Batch reactor</small></div>
+  </div>
+  <div style="margin-top:10px;font-size:11px;color:#64748b;line-height:1.6;padding:8px 12px;background:#f8fafc;border-radius:6px;border:1px solid #e2e8f0">
+    <strong>Hard constraint:</strong> P1 (Foundation) before P2 (Design System) before P3 (Interaction). The context menu uses ui/ buttons — build them first. &nbsp;
+    <strong>Flexible after P3:</strong> P4 and P5 are independent of each other — they can be specced and worked in parallel. P4.1 (sweep engine) before P4.2 (target solver) before P4.3 (comparison). P5.4 (reversible) is the deepest domain item — leave it until Phase 1 tests are green.
+  </div>
+</div>
+
+<!-- Architectural Decisions -->
+<div class="decisions">
+  <div class="decisions-title">🔑 Architectural decisions to get right upfront</div>
+  <div class="decision-grid">
+
+    <div class="decision">
+      <div class="decision-name">Feed overrides, not replacement</div>
+      <div class="decision-wrong">✗ Move Ca0/T_feed entirely off SimulationParams onto FeedNode.data</div>
+      <div class="decision-right">✓ Per-node <code>FeedNode.data.Ca0?</code> resolved as <code>nodeData.Ca0 ?? params.Ca0</code> — global stays as default</div>
+      <p style="color:#64748b;font-size:10.5px;margin-top:5px;line-height:1.5">Breaking change risks every saved file and example. The override pattern is non-breaking, unambiguous, and lets the user share a global default while customising individual feeds.</p>
+    </div>
+
+    <div class="decision">
+      <div class="decision-name">Sweep engine is pure — results live in the slice</div>
+      <div class="decision-wrong">✗ Put sweep logic inside useSweep hook with store reads inside the engine</div>
+      <div class="decision-right">✓ <code>sweepEngine.ts</code> is a pure function (data in, data out). <code>useSweep</code> dispatches config and reads <code>sweepSlice</code>.</div>
+      <p style="color:#64748b;font-size:10.5px;margin-top:5px;line-height:1.5">Mirrors the networkSolver/useSimulation split that already works. Pure function is testable in one line. Hook is thin. No entanglement.</p>
+    </div>
+
+    <div class="decision">
+      <div class="decision-name">Context menu state goes in sessionSlice</div>
+      <div class="decision-wrong">✗ Create a new contextMenuSlice for the menu's visible/x/y/targetId</div>
+      <div class="decision-right">✓ Add <code>{menuVisible, menuX, menuY, menuTargetId}</code> to the existing <code>sessionSlice</code></div>
+      <p style="color:#64748b;font-size:10.5px;margin-top:5px;line-height:1.5">This is transient UI state — exactly what sessionSlice already holds (selectedNodeId, simulationMode). No need for a new slice for a floating menu that has no domain meaning.</p>
+    </div>
+
+    <div class="decision">
+      <div class="decision-name">Design System before Interaction features</div>
+      <div class="decision-wrong">✗ Build context menu now using ad-hoc inline styles, migrate later</div>
+      <div class="decision-right">✓ P2 (design tokens + ui/ components) lands first, then P3 uses the primitives</div>
+      <p style="color:#64748b;font-size:10.5px;margin-top:5px;line-height:1.5">The context menu is the first net-new UI surface in Phase 2. If built before ui/Button exists it accumulates debt immediately. One week of design system pays off on every feature that follows.</p>
+    </div>
+
+  </div>
+  <div class="rule-box" style="margin-top:10px">
+    <strong>The operating principle for Phase 2:</strong> Phase 1 cut seams — Phase 2 exploits them.
+    <code style="background:#ddd6fe;padding:1px 5px;border-radius:3px">solveNetwork</code> is pure → sweep is a loop.
+    <code style="background:#ddd6fe;padding:1px 5px;border-radius:3px">ChemistryModel</code> is injected → reversible reactions are a new preset, not a new solver.
+    <code style="background:#ddd6fe;padding:1px 5px;border-radius:3px">rk4Step</code> is isolated → batch reactor reuses it directly.
+    Every new feature should feel like plugging into an existing socket, not cutting a new one.
+  </div>
+</div>
+
+</body>
+</html>
