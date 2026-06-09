@@ -52,8 +52,15 @@ export function useClipboardActions() {
   }, [clipboard, storeNodes, storeEdges, setNodes, setEdges, pushHistory]);
 
   const cut = useCallback(() => {
-    copySelected();
-  }, [copySelected]);
+    const sel = storeNodes.filter((n) => n.selected && (n as any).deletable !== false);
+    if (sel.length === 0) return;
+    const internal = getConnectedEdgesInternal(sel, storeEdges);
+    setClipboard({ nodes: sel, edges: internal });
+    pushHistory();
+    const selIds = new Set(sel.map((n) => n.id));
+    setNodes(storeNodes.filter((n) => !selIds.has(n.id)));
+    setEdges(storeEdges.filter((e) => !selIds.has(e.source) && !selIds.has(e.target)));
+  }, [storeNodes, storeEdges, setNodes, setEdges, pushHistory]);
 
   const duplicate = useCallback(() => {
     const sel = storeNodes.filter(n => n.selected && (n as any).deletable !== false);

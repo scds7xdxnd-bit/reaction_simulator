@@ -1,11 +1,9 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   ReactFlow,
   Background,
   Controls,
   MiniMap,
-  useNodesState,
-  useEdgesState,
   addEdge,
   reconnectEdge,
   applyNodeChanges,
@@ -28,73 +26,6 @@ import MixerNode from './MixerNode';
 import SplitterNode from './SplitterNode';
 import { useSimulatorStore } from '../../store/simulatorStore';
 import { useSimulation } from '../../hooks/useSimulation';
-
-const initialNodes = [
-  {
-    id: 'feed',
-    type: 'feed',
-    position: { x: 60, y: 230 },
-    data: {},
-    draggable: false,
-    deletable: false,
-  },
-  {
-    id: 'cstr-0',
-    type: 'cstr',
-    position: { x: 230, y: 220 },
-    data: { reactorType: 'CSTR' as const, label: 'CSTR-1', tau: 2.0 },
-  },
-  {
-    id: 'pfr-0',
-    type: 'pfr',
-    position: { x: 470, y: 220 },
-    data: { reactorType: 'PFR' as const, label: 'PFR-1', tau: 2.0 },
-  },
-  {
-    id: 'product',
-    type: 'product',
-    position: { x: 720, y: 230 },
-    data: {},
-    draggable: false,
-    deletable: false,
-  },
-];
-
-const initialEdges: Edge[] = [
-  {
-    id: 'feed-cstr-0',
-    source: 'feed',
-    target: 'cstr-0',
-    sourceHandle: 'out',
-    targetHandle: 'in',
-    type: 'smoothstep',
-    style: { stroke: '#94a3b8', strokeWidth: 2 },
-    animated: true,
-    markerEnd: { type: MarkerType.ArrowClosed, color: '#94a3b8' },
-  },
-  {
-    id: 'cstr-0-pfr-0',
-    source: 'cstr-0',
-    target: 'pfr-0',
-    sourceHandle: 'out',
-    targetHandle: 'in',
-    type: 'smoothstep',
-    style: { stroke: '#94a3b8', strokeWidth: 2 },
-    animated: true,
-    markerEnd: { type: MarkerType.ArrowClosed, color: '#94a3b8' },
-  },
-  {
-    id: 'pfr-0-product',
-    source: 'pfr-0',
-    target: 'product',
-    sourceHandle: 'out',
-    targetHandle: 'in',
-    type: 'smoothstep',
-    style: { stroke: '#94a3b8', strokeWidth: 2 },
-    animated: true,
-    markerEnd: { type: MarkerType.ArrowClosed, color: '#94a3b8' },
-  },
-];
 
 const nodeTypes = {
   cstr: CSTRNode,
@@ -121,71 +52,36 @@ export default function ReactorCanvas() {
   const pushHistory = useSimulatorStore((s) => s.pushHistory);
   const setSelectedNodeId = useSimulatorStore((s) => s.setSelectedNodeId);
 
-  const [nodes, setNodes, _onNodesChangeBase] = useNodesState<FlowNode>(initialNodes as FlowNode[]);
-  const [edges, setEdges, _onEdgesChangeBase] = useEdgesState<Edge>(initialEdges);
-
-  useEffect(() => {
-    storeSetNodes(initialNodes);
-    storeSetEdges(initialEdges);
-  }, []);
+  const nodes = useSimulatorStore((s) => s.nodes) as FlowNode[];
+  const edges = useSimulatorStore((s) => s.edges);
 
   useSimulation();
 
-  const onNodesChange = useCallback(
-    (changes: NodeChange[]) => {
-      setNodes((nds) => applyNodeChanges(changes, nds));
-    },
-    [setNodes]
-  );
+  const onNodesChange = useCallback((changes: NodeChange[]) => {
+    const latest = useSimulatorStore.getState().nodes as FlowNode[];
+    storeSetNodes(applyNodeChanges(changes, latest) as FlowNode[]);
+  }, [storeSetNodes]);
 
-  const onEdgesChange = useCallback(
-    (changes: EdgeChange[]) => {
-      setEdges((eds) => applyEdgeChanges(changes, eds) as Edge[]);
-    },
-    [setEdges]
-  );
+  const onEdgesChange = useCallback((changes: EdgeChange[]) => {
+    const latest = useSimulatorStore.getState().edges;
+    storeSetEdges(applyEdgeChanges(changes, latest) as Edge[]);
+  }, [storeSetEdges]);
 
-  useEffect(() => {
-    storeSetNodes(nodes);
-  }, [nodes, storeSetNodes]);
+  const onConnect = useCallback((connection: Connection) => {
+    const { nodes: n, edges: e } = useSimulatorStore.getState();
+    const sourceNode = n.find((nd) => nd.id === connection.source);
+    const targetNode = n.find((nd) => nd.id === connection.target);
+    if (!sourceNode || !targetNode) return;
+    if (targetNode.type === 'mixer' && e.filter((ed) => ed.target === targetNode.id).length >= 2) return;
+    if (sourceNode.type === 'splitter' && e.filter((ed) => ed.source === sourceNode.id).length >= 2) return;
+    pushHistory();
+    storeSetEdges(addEdge(connection, e) as Edge[]);
+  }, [pushHistory, storeSetEdges]);
 
-  useEffect(() => {
-    storeSetEdges(edges);
-  }, [edges, storeSetEdges]);
-
-  const onConnect = useCallback(
-    (connection: Connection) => {
-      const sourceNode = nodes.find((n) => n.id === connection.source);
-      const targetNode = nodes.find((n) => n.id === connection.target);
-      if (!sourceNode || !targetNode) return;
-
-      if (targetNode.type === 'mixer') {
-        const incomingCount = edges.filter(
-          (e) => e.target === targetNode.id
-        ).length;
-        if (incomingCount >= 2) return;
-      }
-
-      if (sourceNode.type === 'splitter') {
-        const outgoingCount = edges.filter(
-          (e) => e.source === sourceNode.id
-        ).length;
-        if (outgoingCount >= 2) return;
-      }
-
-      pushHistory();
-      setEdges((eds) => addEdge(connection, eds) as Edge[]);
-    },
-    [edges, nodes, setEdges, pushHistory]
-  );
-
-  const onReconnect = useCallback(
-    (oldEdge: Edge, newConnection: Connection) => {
-      pushHistory();
-      setEdges((eds) => reconnectEdge(oldEdge, newConnection, eds) as Edge[]);
-    },
-    [setEdges, pushHistory]
-  );
+  const onReconnect = useCallback((oldEdge: Edge, newConnection: Connection) => {
+    pushHistory();
+    storeSetEdges(reconnectEdge(oldEdge, newConnection, useSimulatorStore.getState().edges) as Edge[]);
+  }, [pushHistory, storeSetEdges]);
 
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
@@ -218,33 +114,17 @@ export default function ReactorCanvas() {
       } else {
         addUnit(type, position);
       }
-
-      const latestNodes = useSimulatorStore.getState().nodes;
-      setNodes(latestNodes as FlowNode[]);
     },
-    [addReactor, addUnit, setNodes]
+    [addReactor, addUnit]
   );
 
-  const onDelete = useCallback(
-    (deletedNodes: { id: string }[]) => {
-      const deletedIds = new Set(deletedNodes.map((n) => n.id));
-      pushHistory();
-      setNodes((nds) =>
-        nds.filter(
-          (n) =>
-            !deletedIds.has(n.id) ||
-            n.id === 'feed' ||
-            n.id === 'product'
-        )
-      );
-      setEdges((eds) =>
-        eds.filter(
-          (e) => !deletedIds.has(e.source) && !deletedIds.has(e.target)
-        )
-      );
-    },
-    [setNodes, setEdges, pushHistory]
-  );
+  const onDelete = useCallback((deletedNodes: { id: string }[]) => {
+    const deletedIds = new Set(deletedNodes.map((n) => n.id));
+    const { nodes: n, edges: e } = useSimulatorStore.getState();
+    pushHistory();
+    storeSetNodes(n.filter((nd) => !deletedIds.has(nd.id) || nd.id === 'feed' || nd.id === 'product'));
+    storeSetEdges(e.filter((ed) => !deletedIds.has(ed.source) && !deletedIds.has(ed.target)));
+  }, [pushHistory, storeSetNodes, storeSetEdges]);
 
   const onNodeClick = useCallback(
     (_event: React.MouseEvent, node: FlowNode) => {

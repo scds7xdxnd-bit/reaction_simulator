@@ -1,7 +1,28 @@
 import type { StateCreator } from 'zustand';
 import type { Node, Edge } from '@xyflow/react';
+import { MarkerType } from '@xyflow/react';
 import type { ReactorType, UnitType, ThermalMode } from '../../types/reactor';
 import type { SimulatorStore } from '../simulatorStore';
+
+const initialNodes: Node[] = [
+  { id: 'feed',    type: 'feed',    position: { x: 60,  y: 230 }, data: {},                                                                                      draggable: false, deletable: false },
+  { id: 'cstr-0',  type: 'cstr',    position: { x: 230, y: 220 }, data: { reactorType: 'CSTR', label: 'CSTR-1', tau: 2.0, thermalMode: 'isothermal', Tc: 300, kappa_v: 0.5, ic_Ca: 1.0, ic_T: 300 } },
+  { id: 'pfr-0',   type: 'pfr',     position: { x: 470, y: 220 }, data: { reactorType: 'PFR',  label: 'PFR-1',  tau: 2.0, thermalMode: 'isothermal', Tc: 300, kappa_v: 0.5, ic_Ca: 1.0, ic_T: 300 } },
+  { id: 'product', type: 'product', position: { x: 720, y: 230 }, data: {},                                                                                      draggable: false, deletable: false },
+];
+
+const edgeDefaults = {
+  type: 'smoothstep',
+  style: { stroke: '#94a3b8', strokeWidth: 2 },
+  animated: true,
+  markerEnd: { type: MarkerType.ArrowClosed, color: '#94a3b8' },
+};
+
+const initialEdges: Edge[] = [
+  { id: 'feed-cstr-0',  source: 'feed',   target: 'cstr-0', sourceHandle: 'out', targetHandle: 'in', ...edgeDefaults },
+  { id: 'cstr-0-pfr-0', source: 'cstr-0', target: 'pfr-0',  sourceHandle: 'out', targetHandle: 'in', ...edgeDefaults },
+  { id: 'pfr-0-product', source: 'pfr-0', target: 'product', sourceHandle: 'out', targetHandle: 'in', ...edgeDefaults },
+];
 
 export interface TopologySlice {
   nodes: Node[];
@@ -24,12 +45,13 @@ export interface TopologySlice {
   redo: () => void;
   canUndo: () => boolean;
   canRedo: () => boolean;
+  resetCanvas: () => void;
 }
 
 export const createTopologySlice: StateCreator<SimulatorStore, [], [], TopologySlice> =
   (set, get) => ({
-    nodes: [],
-    edges: [],
+    nodes: initialNodes,
+    edges: initialEdges,
     cstrCount: 1,
     pfrCount: 1,
     mixerCount: 0,
@@ -166,4 +188,6 @@ export const createTopologySlice: StateCreator<SimulatorStore, [], [], TopologyS
 
     canUndo: () => get()._historyIndex > 0,
     canRedo: () => get()._historyIndex < get()._history.length - 1,
+
+    resetCanvas: () => set({ nodes: initialNodes, edges: initialEdges, cstrCount: 1, pfrCount: 1, mixerCount: 0, splitterCount: 0 }),
   });
