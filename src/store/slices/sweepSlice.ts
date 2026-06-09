@@ -1,8 +1,9 @@
 import type { StateCreator } from 'zustand';
 import type { SweepConfig, SweepPoint } from '../../math/sweepEngine';
 import type { TargetResult } from '../../math/targetSolver';
+import type { CompareConfig, ComparePoint } from '../../math/comparisonEngine';
 
-export type AnalysisMode = 'sweep' | 'target';
+export type AnalysisMode = 'sweep' | 'target' | 'compare';
 
 export interface SweepSlice {
   sweepConfig: SweepConfig;
@@ -15,6 +16,10 @@ export interface SweepSlice {
   setAnalysisMode: (mode: AnalysisMode) => void;
   setTargetXa: (xa: number) => void;
   setTargetResult: (result: TargetResult | null) => void;
+  compareCfg: CompareConfig;
+  compareResults: ComparePoint[] | null;
+  setCompareCfg: (partial: Partial<CompareConfig>) => void;
+  setCompareResults: (r: ComparePoint[] | null) => void;
 }
 
 export const createSweepSlice: StateCreator<SweepSlice, [], [], SweepSlice> = (set) => ({
@@ -36,4 +41,10 @@ export const createSweepSlice: StateCreator<SweepSlice, [], [], SweepSlice> = (s
   setAnalysisMode: (mode) => set({ analysisMode: mode }),
   setTargetXa: (xa) => set({ targetXa: xa }),
   setTargetResult: (result) => set({ targetResult: result }),
+
+  compareCfg: { tau_to: 10.0, steps: 60, N: 4 },
+  compareResults: null,
+  setCompareCfg: (partial) =>
+    set((s) => ({ compareCfg: { ...s.compareCfg, ...partial } })),
+  setCompareResults: (r) => set({ compareResults: r }),
 });

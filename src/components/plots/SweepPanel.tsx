@@ -5,6 +5,7 @@ import {
   XAxis,
   YAxis,
   ReferenceLine,
+  Legend,
   ResponsiveContainer,
   Tooltip,
 } from 'recharts';
@@ -13,6 +14,8 @@ import { runSweep } from '../../math/sweepEngine';
 import type { SweepVariable } from '../../math/sweepEngine';
 import { solveTarget } from '../../math/targetSolver';
 import type { TargetConfig, TargetResult } from '../../math/targetSolver';
+import { runComparison } from '../../math/comparisonEngine';
+import type { CompareConfig } from '../../math/comparisonEngine';
 import type { AnalysisMode } from '../../store/slices/sweepSlice';
 
 const VARIABLE_LABELS: Record<SweepVariable, string> = {
@@ -150,6 +153,10 @@ export default function SweepPanel() {
   const setAnalysisMode = useSimulatorStore((s) => s.setAnalysisMode);
   const setTargetXa    = useSimulatorStore((s) => s.setTargetXa);
   const setTargetResult = useSimulatorStore((s) => s.setTargetResult);
+  const compareCfg     = useSimulatorStore((s) => s.compareCfg);
+  const compareResults = useSimulatorStore((s) => s.compareResults);
+  const setCompareCfg  = useSimulatorStore((s) => s.setCompareCfg);
+  const setCompareResults = useSimulatorStore((s) => s.setCompareResults);
 
   const isSingle = params.reactionMode === 'single';
   const xAxisLabel = VARIABLE_LABELS[sweepConfig.variable];
@@ -223,11 +230,21 @@ export default function SweepPanel() {
     setTargetResult(res);
   };
 
+  const handleCompare = () => {
+    const results = runComparison(params, compareCfg);
+    setCompareResults(results);
+  };
+
+  const headerLabel =
+    analysisMode === 'sweep' ? 'PARAMETER SWEEP' :
+    analysisMode === 'target' ? 'TARGET SOLVER' :
+    'REACTOR COMPARISON';
+
   return (
     <div className="flex flex-col h-full">
       {/* Mode toggle */}
       <div style={{ display: 'flex', background: '#ffffff', borderBottom: '1px solid #dde3f0', flexShrink: 0 }}>
-        {(['sweep', 'target'] as AnalysisMode[]).map((mode) => (
+        {(['sweep', 'target', 'compare'] as AnalysisMode[]).map((mode) => (
           <button
             key={mode}
             onClick={() => setAnalysisMode(mode)}
@@ -254,22 +271,25 @@ export default function SweepPanel() {
           className="text-[11px] font-semibold tracking-wider"
           style={{ color: '#6b7280', textTransform: 'uppercase' }}
         >
-          {analysisMode === 'sweep' ? 'PARAMETER SWEEP' : 'TARGET SOLVER'}
+          {headerLabel}
         </div>
 
-        <select
-          value={sweepConfig.variable}
-          onChange={(e) => handleVariableChange(e.target.value as SweepVariable)}
-          className="w-full rounded text-[12px] px-2 py-1.5"
-          style={{ border: '1px solid #dde3f0', background: '#fff', color: '#374151' }}
-        >
-          <option value="k">Rate Constant (k)</option>
-          <option value="Ca0">Initial Concentration (Ca₀)</option>
-          <option value="T_feed">Feed Temperature (T_feed)</option>
-          <option value="tau">Residence Time (τ)</option>
-        </select>
+        {/* Variable picker — only for sweep/target modes */}
+        {analysisMode !== 'compare' && (
+          <select
+            value={sweepConfig.variable}
+            onChange={(e) => handleVariableChange(e.target.value as SweepVariable)}
+            className="w-full rounded text-[12px] px-2 py-1.5"
+            style={{ border: '1px solid #dde3f0', background: '#fff', color: '#374151' }}
+          >
+            <option value="k">Rate Constant (k)</option>
+            <option value="Ca0">Initial Concentration (Ca₀)</option>
+            <option value="T_feed">Feed Temperature (T_feed)</option>
+            <option value="tau">Residence Time (τ)</option>
+          </select>
+        )}
 
-        {showReactorPicker && (
+        {analysisMode !== 'compare' && showReactorPicker && (
           <div>
             <div className="text-[10px] text-[#6b7280] mb-1">Reactor:</div>
             <select
@@ -459,11 +479,167 @@ export default function SweepPanel() {
             </div>
           </>
         )}
+
+        {/* ── COMPARE MODE config ── */}
+        {analysisMode === 'compare' && (
+          <>
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <div className="text-[10px] text-[#6b7280]">τ max</div>
+                <input
+                  type="number"
+                  min="0.5"
+                  max="100"
+                  step="0.5"
+                  value={compareCfg.tau_to}
+                  onChange={(e) => {
+                    const v = parseFloat(e.target.value);
+                    if (!isNaN(v) && v > 0) setCompareCfg({ tau_to: v });
+                  }}
+                  className="w-full rounded text-[12px] px-2 py-1"
+                  style={{ border: '1px solid #dde3f0', background: '#fff', color: '#374151' }}
+                />
+                <div className="text-[9px] text-[#9ca3af]">s</div>
+              </div>
+              <div className="flex-1">
+                <div className="text-[10px] text-[#6b7280]">N CSTRs</div>
+                <input
+                  type="number"
+                  min="1"
+                  max="10"
+                  step="1"
+                  value={compareCfg.N}
+                  onChange={(e) => {
+                    const v = parseInt(e.target.value);
+                    if (!isNaN(v) && v >= 1 && v <= 10) setCompareCfg({ N: v });
+                  }}
+                  className="w-full rounded text-[12px] px-2 py-1"
+                  style={{ border: '1px solid #dde3f0', background: '#fff', color: '#374151' }}
+                />
+                <div className="text-[9px] text-[#9ca3af]">in series</div>
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-[#6b7280] shrink-0">
+                  Steps: {compareCfg.steps}
+                </span>
+                <input
+                  type="range"
+                  min={20}
+                  max={100}
+                  value={compareCfg.steps}
+                  onChange={(e) => setCompareCfg({ steps: parseInt(e.target.value) })}
+                  className="flex-1"
+                  style={{ accentColor: '#2563eb' }}
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={handleCompare}
+              className="w-full rounded text-[12px] font-medium py-1.5"
+              style={{ background: '#2563eb', color: '#ffffff', cursor: 'pointer' }}
+            >
+              Run Comparison
+            </button>
+          </>
+        )}
       </div>
 
       {/* Display section */}
       <div className="flex-1 min-h-0">
-        {analysisMode === 'sweep' ? (
+        {analysisMode === 'compare' ? (
+          compareResults === null || compareResults.length === 0 ? (
+            <div className="flex items-center justify-center h-full text-[#6b7280] text-sm text-center px-4">
+              Configure and click Run Comparison
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart
+                data={compareResults}
+                margin={{ top: 8, right: 16, left: -10, bottom: 30 }}
+              >
+                <XAxis
+                  dataKey="tau"
+                  type="number"
+                  tick={{ fontSize: 10, fill: '#6b7280' }}
+                  tickLine={false}
+                  axisLine={{ stroke: '#dde3f0' }}
+                  label={{
+                    value: 'τ (s)',
+                    position: 'insideBottom',
+                    offset: -5,
+                    fontSize: 10,
+                    fill: '#6b7280',
+                  }}
+                />
+                <YAxis
+                  domain={[0, 1]}
+                  tickFormatter={(v: number) => `${(v * 100).toFixed(0)}%`}
+                  tick={{ fontSize: 10, fill: '#6b7280' }}
+                  tickLine={false}
+                  axisLine={{ stroke: '#dde3f0' }}
+                  label={{
+                    value: 'Xₐ',
+                    angle: -90,
+                    position: 'insideLeft',
+                    offset: 12,
+                    fontSize: 10,
+                    fill: '#6b7280',
+                  }}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: '#ffffff',
+                    border: '1px solid #dde3f0',
+                    borderRadius: 4,
+                    fontSize: 11,
+                  }}
+                  labelFormatter={(v: number) => `τ = ${v.toFixed(2)} s`}
+                  formatter={(value: number, name: string) => [
+                    `${(value * 100).toFixed(1)}%`,
+                    name === 'cstr' ? 'Single CSTR'
+                      : name === 'pfr' ? 'Single PFR'
+                      : `${compareCfg.N} CSTRs`,
+                  ]}
+                />
+                <Legend
+                  wrapperStyle={{ fontSize: 10, paddingTop: 4 }}
+                  formatter={(name) =>
+                    name === 'cstr' ? 'Single CSTR'
+                      : name === 'pfr' ? 'Single PFR'
+                      : `${compareCfg.N} CSTRs in series`
+                  }
+                />
+                <Line
+                  dataKey="cstr"
+                  stroke="#2563eb"
+                  strokeWidth={2}
+                  strokeDasharray="6 3"
+                  dot={false}
+                  isAnimationActive={false}
+                />
+                <Line
+                  dataKey="pfr"
+                  stroke="#16a34a"
+                  strokeWidth={2}
+                  dot={false}
+                  isAnimationActive={false}
+                />
+                <Line
+                  dataKey="nCstr"
+                  stroke="#d97706"
+                  strokeWidth={2}
+                  strokeDasharray="3 3"
+                  dot={false}
+                  isAnimationActive={false}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          )
+        ) : analysisMode === 'sweep' ? (
           sweepResults === null ? (
             <div className="flex items-center justify-center h-full text-[#6b7280] text-sm text-center px-4">
               Configure and click Run to start a sweep

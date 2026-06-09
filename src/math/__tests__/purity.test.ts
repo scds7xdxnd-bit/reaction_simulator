@@ -28,6 +28,7 @@ const PURE_FILES = [
   'src/math/networkSolver.ts',
   'src/math/sweepEngine.ts',
   'src/math/targetSolver.ts',
+  'src/math/comparisonEngine.ts',
 ] as const;
 
 describe('purity invariants — zero store/React runtime imports', () => {
