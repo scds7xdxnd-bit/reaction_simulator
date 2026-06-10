@@ -228,7 +228,7 @@ export const createTopologySlice: StateCreator<SimulatorStore, [], [], TopologyS
 
     addReactor: (type, position) => {
       const state = get();
-      const prefix = type === 'CSTR' ? 'CSTR' : type === 'PFR' ? 'PFR' : type === 'Semibatch' ? 'SB' : 'Batch';
+      const prefix = type === 'CSTR' ? 'CSTR' : type === 'PFR' ? 'PFR' : type === 'Semibatch' ? 'SB' : type === 'FixedBed' ? 'FB' : 'Batch';
       const typeKey = type.toLowerCase() as string;
       const num = findLowestAvailable(state.nodes, prefix);
       const id = `${typeKey}-${num}`;
@@ -252,6 +252,7 @@ export const createTopologySlice: StateCreator<SimulatorStore, [], [], TopologyS
         ic_Ca: state.params.Ca0,
         ic_T: state.params.T_feed,
         ...(type === 'Semibatch' ? { FB0: 0.1, CB_feed: 1.0 } : {}),
+        ...(type === 'FixedBed' ? { W_cat: 5.0, rho_bulk: 1200, epsilon_bed: 0.4 } : {}),
       };
 
       const newNode: Node = { id, type: typeKey, position, data: baseData };

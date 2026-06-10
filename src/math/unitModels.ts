@@ -536,3 +536,22 @@ export const sideFeedPFR: (
 
   return { outlet, profile, diagnostics: { converged: true, iterations: nSteps, warnings: [] } };
 };
+
+export interface CatalyticPFRParams extends UnitParams {
+  W_cat: number;        // catalyst weight (kg)
+  rho_bulk?: number;    // bulk density (kg/m³), default 1200
+  epsilon_bed?: number; // void fraction, default 0.4
+}
+
+export const catalyticPFR: (
+  inlet: Stream,
+  params: CatalyticPFRParams,
+  chemistry: ChemistryModel
+) => UnitResult = (inlet, params, chemistry) => {
+  const rho_bulk    = params.rho_bulk    ?? 1200;
+  const epsilon_bed = params.epsilon_bed ?? 0.4;
+  // V_bed = W_cat / (rho_bulk * (1 - epsilon_bed)), τ_equiv = V_bed / Q_ref
+  const V_bed   = params.W_cat / (rho_bulk * (1 - epsilon_bed));
+  const pfrParams: UnitParams = { ...params, tau: V_bed };
+  return pfrModel(inlet, pfrParams, chemistry);
+};

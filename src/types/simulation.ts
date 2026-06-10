@@ -1,5 +1,5 @@
 export type KineticsType = 'first-order' | 'second-order' | 'autocatalytic' | 'reversible' | 'gas-phase-1st-order';
-export type ReactorType  = 'CSTR' | 'PFR' | 'Batch' | 'Semibatch';
+export type ReactorType  = 'CSTR' | 'PFR' | 'Batch' | 'Semibatch' | 'FixedBed';
 export type ReactionMode = 'single' | 'series' | 'parallel' | 'custom';
 export type UnitType     = 'CSTR' | 'PFR' | 'Mixer' | 'Splitter' | 'Batch' | 'Semibatch';
 export type ThermalMode  = 'isothermal' | 'adiabatic' | 'cooled';

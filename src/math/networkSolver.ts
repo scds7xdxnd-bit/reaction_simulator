@@ -11,7 +11,7 @@ import { buildLevenspielCurve } from './kinetics';
 import { type StreamState, streamToState, stateToStream, annotateStream } from './streamBridge';
 import { buildChemistry } from './chemistryFactory';
 import { getPreset } from './reactionRegistry';
-import { cstrModel, pfrModel, sideFeedPFR, type UnitParams, type SideFeedParams } from './unitModels';
+import { cstrModel, pfrModel, sideFeedPFR, catalyticPFR, type UnitParams, type SideFeedParams, type CatalyticPFRParams } from './unitModels';
 import { semibatchSolve } from './semibatchModel';
 import type { AnnotatedStream } from '../types/stream';
 import type { ChemistryModel } from '../types/chemistry';
@@ -107,6 +107,19 @@ function forwardPass(
     } else if (node.type === 'product') {
       const inEdges = incomingEdges.get(nodeId) ?? [];
       outState = getInletStream(inEdges, streams, params);
+    } else if (node.type === 'fixedbed') {
+      const inEdges = incomingEdges.get(nodeId) ?? [];
+      const inlet = getInletStream(inEdges, streams, params);
+      const fbData = node.data as { W_cat?: number; rho_bulk?: number; epsilon_bed?: number; thermalMode?: ThermalMode; Tc?: number; kappa_v?: number };
+      const tauEff = 1.0 / Math.max(inlet.flow, 0.001);
+      const catParams: CatalyticPFRParams = {
+        tau: tauEff, thermalMode: fbData.thermalMode ?? 'isothermal',
+        Tc: fbData.Tc ?? 300, kappa_v: fbData.kappa_v ?? 0.5, Ca0: params.Ca0,
+        W_cat: fbData.W_cat ?? 5.0, rho_bulk: fbData.rho_bulk, epsilon_bed: fbData.epsilon_bed,
+      };
+      const inletStream = stateToStream(inlet);
+      const unitResult = catalyticPFR(inletStream, catParams, chemistry);
+      outState = streamToState(unitResult.outlet, params.Ca0);
     } else if (node.type === 'semibatch') {
       const sbData = node.data as { tau: number; FB0?: number; CB_feed?: number };
       const sbResult = semibatchSolve(
@@ -213,7 +226,7 @@ function buildSegments(
   params: SimulationParams,
   chemistry: ChemistryModel
 ): ReactorSegmentResult[] {
-  const reactorNodes = nodes.filter((n) => n.type === 'cstr' || n.type === 'pfr' || n.type === 'batch' || n.type === 'semibatch');
+  const reactorNodes = nodes.filter((n) => n.type === 'cstr' || n.type === 'pfr' || n.type === 'batch' || n.type === 'semibatch' || n.type === 'fixedbed');
   const order = findReactorOrder(nodes, edges, tearIds);
   const segments: ReactorSegmentResult[] = [];
   let cumTauOffset = 0;
@@ -223,7 +236,7 @@ function buildSegments(
     if (!node) continue;
 
     const data = node.data as {
-      reactorType: 'CSTR' | 'PFR' | 'Batch' | 'Semibatch';
+      reactorType: 'CSTR' | 'PFR' | 'Batch' | 'Semibatch' | 'FixedBed';
       label: string;
       tau: number;
       thermalMode?: ThermalMode;
@@ -236,6 +249,9 @@ function buildSegments(
       u0?: number;
       FB0?: number;
       CB_feed?: number;
+      W_cat?: number;
+      rho_bulk?: number;
+      epsilon_bed?: number;
     };
     const output = pass.nodeOutputs.get(nodeId);
     if (!output) continue;
@@ -258,7 +274,25 @@ function buildSegments(
     let P_out: number | undefined;
     let V: number | undefined;
 
-    if (node.type === 'semibatch') {
+    if (node.type === 'fixedbed') {
+      const tauEff = data.tau / Math.max(inlet.flow, 0.001);
+      const catParams: CatalyticPFRParams = {
+        tau: tauEff, thermalMode: data.thermalMode ?? 'isothermal',
+        Tc: data.Tc ?? 300, kappa_v: data.kappa_v ?? 0.5, Ca0: params.Ca0,
+        W_cat: data.W_cat ?? 5.0, rho_bulk: data.rho_bulk, epsilon_bed: data.epsilon_bed,
+      };
+      const inletStream = stateToStream(inlet);
+      const unitResult = catalyticPFR(inletStream, catParams, chemistry);
+      const rawProfile = unitResult.profile.map(p => ({
+        cumTau: p.cumTau,
+        Xa: Math.max(0, Math.min(0.9999, 1 - (p.C[chemistry.keyReactantId] ?? 0) / Math.max(params.Ca0, 1e-9))),
+        Ca: p.C['A'] ?? 0, Cr: p.C['R'] ?? 0, Cs: p.C['S'] ?? 0, T: p.T,
+      }));
+      profile = rawProfile.map((p) => ({ ...p, cumTau: cumTauOffset + p.cumTau }));
+      cumTauOffset += tauEff;
+      P_out = unitResult.outlet.P;
+      V = data.W_cat ? data.W_cat / ((data.rho_bulk ?? 1200) * (1 - (data.epsilon_bed ?? 0.4))) : undefined;
+    } else if (node.type === 'semibatch') {
       const sbResult = semibatchSolve(
         { tau_batch: data.tau, FB0: data.FB0 ?? 0.1, CB_feed: data.CB_feed ?? 1.0,
           Na0: params.Ca0, V0: 1.0 },
@@ -343,7 +377,7 @@ function buildSegments(
 
 function findReactorOrder(nodes: Node[], edges: Edge[], tearIds: Set<string>): string[] {
   const reactorIds = new Set(
-    nodes.filter((n) => n.type === 'cstr' || n.type === 'pfr' || n.type === 'batch' || n.type === 'semibatch').map((n) => n.id)
+    nodes.filter((n) => n.type === 'cstr' || n.type === 'pfr' || n.type === 'batch' || n.type === 'semibatch' || n.type === 'fixedbed').map((n) => n.id)
   );
   const batchIds = new Set(
     nodes.filter((n) => n.type === 'batch' || n.type === 'semibatch').map((n) => n.id)

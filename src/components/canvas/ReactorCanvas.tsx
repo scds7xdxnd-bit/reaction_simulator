@@ -26,6 +26,7 @@ import CSTRNode from './CSTRNode';
 import PFRNode from './PFRNode';
 import BatchNode from './BatchNode';
 import SemibatchNode from './SemibatchNode';
+import FixedBedNode from './FixedBedNode';
 import FeedNode from './FeedNode';
 import ProductNode from './ProductNode';
 import MixerNode from './MixerNode';
@@ -41,6 +42,7 @@ const nodeTypes = {
   pfr: PFRNode,
   batch: BatchNode,
   semibatch: SemibatchNode,
+  fixedbed: FixedBedNode,
   feed: FeedNode,
   product: ProductNode,
   mixer: MixerNode,
