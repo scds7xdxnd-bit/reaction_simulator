@@ -27,11 +27,6 @@ function BatchNode({ id, data, selected }: BatchNodeProps) {
   useEffect(() => { setLabelStr(data.label); }, [data.label]);
   useEffect(() => { setTauStr(String(data.tau)); }, [data.tau]);
 
-  const base = !isSingle
-    ? 88
-    : thermalMode === 'cooled' ? 170 : thermalMode === 'adiabatic' ? 130 : 110;
-  const nodeHeight = simulationMode === 'dynamic' ? base + 48 : base;
-
   const { isOffPath } = useNodeIssues(id);
 
   return (
@@ -40,7 +35,7 @@ function BatchNode({ id, data, selected }: BatchNodeProps) {
       title={isOffPath ? 'Not in active flow path' : undefined}
       style={{
         width: 160,
-        height: nodeHeight,
+        height: 'auto',
         borderRadius: 8,
         background: '#ffffff',
         borderTop:    isOffPath ? '2px dashed #f97316' : selected ? `2px solid ${ACCENT}` : `3px solid ${ACCENT}`,
