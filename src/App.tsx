@@ -15,6 +15,8 @@ import StreamTablePanel from './components/panels/StreamTablePanel';
 import ScenariosPanel from './components/panels/ScenariosPanel';
 import StatusBar from './components/StatusBar';
 import DynamicControls from './components/controls/DynamicControls';
+import ShortcutsModal from './components/ShortcutsModal';
+import OnboardingTour, { shouldShowTour } from './components/OnboardingTour';
 import { useSimulatorStore } from './store/simulatorStore';
 import { useClipboardActions } from './hooks/useClipboardActions';
 import { useDynamicSimulation } from './hooks/useDynamicSimulation';
@@ -28,6 +30,8 @@ type RightTab = 'levenspiel' | 'profiles' | 'thermal' | 'dynamic' | 'analysis' |
 
 export default function App() {
   useTheme(); // initialize dark class on <html> from system/localStorage
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showTour, setShowTour] = useState(() => shouldShowTour());
   const reactionMode = useSimulatorStore((s) => s.params.reactionMode);
   const simulationMode = useSimulatorStore((s) => s.simulationMode);
   const setSimulationMode = useSimulatorStore((s) => s.setSimulationMode);
@@ -61,7 +65,10 @@ export default function App() {
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { closeMenu(); closeCanvasMenu(); return; }
+      const t = e.target as HTMLElement;
+      const inInput = t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable;
+      if (e.key === '?' && !inInput) { setShowShortcuts((v) => !v); return; }
+      if (e.key === 'Escape') { closeMenu(); closeCanvasMenu(); setShowShortcuts(false); return; }
 
       if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
         const t = e.target as HTMLElement;
@@ -239,6 +246,8 @@ export default function App() {
         <StatusBar />
       )}
       <Toaster />
+      {showShortcuts && <ShortcutsModal onClose={() => setShowShortcuts(false)} />}
+      {showTour && <OnboardingTour onDone={() => setShowTour(false)} />}
     </div>
   );
 }
