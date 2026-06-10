@@ -7,7 +7,7 @@ import { useReactorNode } from '../../hooks/useReactorNode';
 import { useNodeIssues } from '../../context/ValidationContext';
 import { formatEquation } from '../../math/formatEquation';
 
-type PFRNodeProps = NodeProps & { data: ReactorNodeData };
+type PFRNodeProps = NodeProps & { data: ReactorNodeData & { sideInjection?: boolean; FB0_side?: number } };
 
 const ACCENT = '#d97706';
 const HEADER_BG = '#fffbeb';
@@ -80,6 +80,10 @@ function PFRNode({ id, data, selected }: PFRNodeProps) {
                        background: BADGE_BG, color: BADGE_TEXT, flexShrink: 0 }}>
           PFR
         </span>
+        {(data as { sideInjection?: boolean }).sideInjection && (
+          <span style={{ fontSize: 8, fontWeight: 700, padding: '1px 4px', borderRadius: 3,
+                         background: '#d1fae5', color: '#065f46', flexShrink: 0 }}>⊕B</span>
+        )}
 
         {isEditing ? (
           <input
@@ -237,6 +241,32 @@ function PFRNode({ id, data, selected }: PFRNodeProps) {
             {segment ? `${segment.Xa_in.toFixed(2)} → ${segment.Xa_out.toFixed(2)}` : '—'}
           </span>
         </div>
+      </div>
+
+      {/* Side injection toggle */}
+      <div style={{ padding: '2px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', fontSize: 10, color: '#065f46' }}>
+          <input
+            type="checkbox"
+            checked={(data as { sideInjection?: boolean }).sideInjection ?? false}
+            onChange={(e) => { e.stopPropagation(); updateNodeData(id, { ...data, sideInjection: e.target.checked }); }}
+            style={{ accentColor: '#059669', width: 11, height: 11 }}
+          />
+          Side inject B
+        </label>
+        {(data as { sideInjection?: boolean }).sideInjection && (
+          <input
+            type="number" min="0.001" max="100" step="0.01"
+            value={(data as { FB0_side?: number }).FB0_side ?? 0.1}
+            onChange={(e) => {
+              const v = parseFloat(e.target.value);
+              if (!isNaN(v) && v > 0) updateNodeData(id, { ...data, FB0_side: v });
+            }}
+            title="F_B0 (mol/s)"
+            style={{ width: 48, fontSize: 10, fontFamily: 'monospace', background: '#d1fae5',
+                     border: 'none', borderRadius: 5, padding: '2px 4px', outline: 'none', color: '#0f1730' }}
+          />
+        )}
       </div>
 
       {isSingle && (

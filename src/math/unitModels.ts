@@ -449,3 +449,90 @@ export const pfrModel: UnitModel = (
     diagnostics: { converged: true, iterations: nSteps, warnings: [] },
   };
 };
+
+export interface SideFeedParams extends UnitParams {
+  FB0_side: number;       // total B feed rate (mol/s)
+  CB_feed_side?: number;  // B feed concentration (mol/L), default = Ca0
+}
+
+export const sideFeedPFR: (
+  inlet: Stream,
+  params: SideFeedParams,
+  chemistry: ChemistryModel
+) => UnitResult = (inlet, params, chemistry) => {
+  const { reactions, species, thermo } = chemistry;
+  const speciesIds = species.map((s) => s.id);
+  const hasBinChem = speciesIds.includes('B');
+  // Extend speciesIds with 'B' if not already tracked
+  const allIds: SpeciesId[] = hasBinChem ? speciesIds : [...speciesIds, 'B'];
+
+  const nSteps = 200;
+  const h = params.tau / nSteps;
+  const Q0 = 1.0;  // unit inlet volumetric flow reference
+  const CB_feed_side = params.CB_feed_side ?? params.Ca0;
+  const FB0_dist = params.FB0_side / params.tau;       // distributed B rate per unit τ
+  const dQdtau = FB0_dist / Math.max(CB_feed_side, 1e-12);  // dQ/dτ
+
+  const C_in = toConc(inlet, params.Ca0);
+  const T_in = inlet.T;
+
+  // Initial concentrations: B starts at 0 (no B in feed)
+  const y0: number[] = allIds.map((id) => id === 'B' ? 0 : (C_in[id] ?? 0));
+  y0.push(T_in);  // T at index allIds.length
+
+  const fn = (tau: number, y: number[]): number[] => {
+    const Q = Q0 + dQdtau * tau;
+    const C: Record<SpeciesId, number> = {};
+    for (let i = 0; i < allIds.length; i++) C[allIds[i]] = Math.max(y[i], 0);
+    const T = y[allIds.length];
+
+    const dC = netProductionRate(C, T, reactions, speciesIds);
+
+    const dydt: number[] = allIds.map((id) => {
+      const source = id === 'B' ? FB0_dist : 0;
+      return ((dC[id] ?? 0) * Q0 + source - (C[id] ?? 0) * dQdtau) / Math.max(Q, 1e-12);
+    });
+
+    if (params.thermalMode === 'isothermal') {
+      dydt.push(0);
+    } else {
+      const rates = evaluateRates(C, T, reactions);
+      let heatGen = 0;
+      for (let r = 0; r < reactions.length; r++) {
+        heatGen += (-thermo.deltaH(reactions[r].id, T)) * rates[r];
+      }
+      const rhoCp = thermo.rhoCp(C, T);
+      dydt.push(
+        params.thermalMode === 'adiabatic'
+          ? heatGen / rhoCp
+          : (heatGen - params.kappa_v * (T - params.Tc)) / rhoCp
+      );
+    }
+
+    return dydt;
+  };
+
+  const TIdx = allIds.length;
+  const profile: ProfilePoint[] = [{ cumTau: 0, C: { ...C_in }, T: T_in }];
+
+  let y = [...y0];
+  for (let i = 0; i < nSteps; i++) {
+    y = rk4Step(fn, i * h, y, h);
+    for (let j = 0; j < allIds.length; j++) y[j] = Math.max(0, y[j]);
+    y[TIdx] = Math.max(200, Math.min(1500, y[TIdx]));
+    const C: Record<SpeciesId, number> = {};
+    for (let j = 0; j < allIds.length; j++) C[allIds[j]] = y[j];
+    profile.push({ cumTau: (i + 1) * h, C, T: y[TIdx] });
+  }
+
+  const C_out: Record<SpeciesId, number> = {};
+  for (let j = 0; j < speciesIds.length; j++) C_out[speciesIds[j]] = y[j];
+  const T_out = y[TIdx];
+  const volFlow = (() => {
+    const totalF = Object.values(inlet.F).reduce((a, b) => a + b, 0);
+    return params.Ca0 > 1e-12 ? totalF / params.Ca0 : 1.0;
+  })();
+  const outlet = fromConc(C_out, volFlow, T_out);
+
+  return { outlet, profile, diagnostics: { converged: true, iterations: nSteps, warnings: [] } };
+};

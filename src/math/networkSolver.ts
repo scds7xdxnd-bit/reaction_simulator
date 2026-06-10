@@ -11,7 +11,7 @@ import { buildLevenspielCurve } from './kinetics';
 import { type StreamState, streamToState, stateToStream, annotateStream } from './streamBridge';
 import { buildChemistry } from './chemistryFactory';
 import { getPreset } from './reactionRegistry';
-import { cstrModel, pfrModel, type UnitParams } from './unitModels';
+import { cstrModel, pfrModel, sideFeedPFR, type UnitParams, type SideFeedParams } from './unitModels';
 import { semibatchSolve } from './semibatchModel';
 import type { AnnotatedStream } from '../types/stream';
 import type { ChemistryModel } from '../types/chemistry';
@@ -153,9 +153,17 @@ function forwardPass(
         gasPhase:     params.kinetics === 'gas-phase-1st-order',
         epsilon:      params.epsilon    ?? 0,
       };
+      const isSideInject = node.type === 'pfr' && !!((node.data as { sideInjection?: boolean }).sideInjection);
       const model = node.type === 'cstr' ? cstrModel : pfrModel;
       const inletStream = stateToStream(inlet);
-      const unitResult  = model(inletStream, unitParams, chemistry);
+      let unitResult;
+      if (isSideInject) {
+        const sideFeedData = node.data as { FB0_side?: number; CB_feed_side?: number };
+        const sideParams: SideFeedParams = { ...unitParams, FB0_side: sideFeedData.FB0_side ?? 0.1, CB_feed_side: sideFeedData.CB_feed_side };
+        unitResult = sideFeedPFR(inletStream, sideParams, chemistry);
+      } else {
+        unitResult = model(inletStream, unitParams, chemistry);
+      }
       outState = streamToState(unitResult.outlet, params.Ca0);
     } else if (node.type === 'mixer') {
       const inEdges = incomingEdges.get(nodeId) ?? [];
@@ -275,9 +283,17 @@ function buildSegments(
         P0:           data.P0           ?? 101325,
         u0:           data.u0           ?? 0.01,
       };
+      const isSideInject = node.type === 'pfr' && !!((node.data as { sideInjection?: boolean }).sideInjection);
       const model = node.type === 'cstr' ? cstrModel : pfrModel;
       const inletStream = stateToStream(inlet);
-      const unitResult  = model(inletStream, unitParams, chemistry);
+      let unitResult;
+      if (isSideInject) {
+        const sideFeedData = node.data as { FB0_side?: number; CB_feed_side?: number };
+        const sideParams: SideFeedParams = { ...unitParams, FB0_side: sideFeedData.FB0_side ?? 0.1, CB_feed_side: sideFeedData.CB_feed_side };
+        unitResult = sideFeedPFR(inletStream, sideParams, chemistry);
+      } else {
+        unitResult = model(inletStream, unitParams, chemistry);
+      }
       const rawProfile = unitResult.profile.map(p => ({
         cumTau: p.cumTau,
         Xa:     Math.max(0, Math.min(0.9999, 1 - (p.C[chemistry.keyReactantId] ?? 0) / Math.max(params.Ca0, 1e-9))),
