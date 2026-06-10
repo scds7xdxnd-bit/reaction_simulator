@@ -12,6 +12,7 @@ import PhasePortrait from './components/plots/PhasePortrait';
 import SweepPanel from './components/plots/SweepPanel';
 import RecyclePanel from './components/plots/RecyclePanel';
 import StreamTablePanel from './components/panels/StreamTablePanel';
+import ScenariosPanel from './components/panels/ScenariosPanel';
 import StatusBar from './components/StatusBar';
 import DynamicControls from './components/controls/DynamicControls';
 import { useSimulatorStore } from './store/simulatorStore';
@@ -22,7 +23,7 @@ import Toaster from './components/Toaster';
 
 const LS_KEY = 'reaction-simulator-v1';
 
-type RightTab = 'levenspiel' | 'profiles' | 'thermal' | 'dynamic' | 'analysis';
+type RightTab = 'levenspiel' | 'profiles' | 'thermal' | 'dynamic' | 'analysis' | 'scenarios';
 
 export default function App() {
   const reactionMode = useSimulatorStore((s) => s.params.reactionMode);
@@ -53,6 +54,7 @@ export default function App() {
     { id: 'thermal', label: 'Thermal' },
     { id: 'dynamic', label: 'Dynamic' },
     { id: 'analysis', label: 'Analysis' },
+    { id: 'scenarios', label: 'Scenarios' },
   ];
 
   useEffect(() => {
@@ -206,7 +208,12 @@ export default function App() {
                 </div>
               </div>
             )}
-            {rightTab !== 'dynamic' && rightTab !== 'analysis' && (
+            {rightTab === 'scenarios' && (
+              <div className="flex-1 min-h-0 overflow-hidden">
+                <ScenariosPanel />
+              </div>
+            )}
+            {rightTab !== 'dynamic' && rightTab !== 'analysis' && rightTab !== 'scenarios' && (
               <div className="shrink-0">
                 <StreamTablePanel />
               </div>
