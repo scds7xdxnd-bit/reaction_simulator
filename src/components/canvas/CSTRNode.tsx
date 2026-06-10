@@ -3,7 +3,7 @@ import { Handle, Position, useReactFlow, type NodeProps } from '@xyflow/react';
 import type { ReactorNodeData } from '../../types/reactor';
 import type { ThermalMode } from '../../types/simulation';
 import { useSimulatorStore } from '../../store/simulatorStore';
-import { getPreset } from '../../math/reactionRegistry';
+import { useReactorNode } from '../../hooks/useReactorNode';
 import { useNodeIssues } from '../../context/ValidationContext';
 
 type CSTRNodeProps = NodeProps & { data: ReactorNodeData };
@@ -17,10 +17,8 @@ const PILL_BG = '#dbeafe';
 function CSTRNode({ id, data, selected }: CSTRNodeProps) {
   const { updateNodeData } = useReactFlow();
   const updateNodeThermal = useSimulatorStore((s) => s.updateNodeThermal);
-  const result = useSimulatorStore((s) => s.result);
-  const params = useSimulatorStore((s) => s.params);
-  const simulationMode = useSimulatorStore((s) => s.simulationMode);
-  const sizingMode = useSimulatorStore((s) => s.sizingMode);
+  const d = useReactorNode(id, data);
+  const { segment, Da, params, isSingle, thermalMode, simulationMode, sizingMode, conversionColor } = d;
 
   const [isEditing, setIsEditing] = useState(false);
   const [labelStr, setLabelStr] = useState(data.label);
@@ -29,23 +27,10 @@ function CSTRNode({ id, data, selected }: CSTRNodeProps) {
   useEffect(() => { setLabelStr(data.label); }, [data.label]);
   useEffect(() => { setTauStr(String(data.tau)); }, [data.tau]);
 
-  const segment = result?.segments.find((s) => s.reactorId === id);
-
-  const Da = segment
-    ? segment.Da
-    : getPreset(params).computeDa(params.k, data.tau, params.Ca0);
-
-  const isSingle = params.reactionMode === 'single';
-  const thermalMode = data.thermalMode ?? 'isothermal';
-
   const base = !isSingle
     ? 88
     : thermalMode === 'cooled' ? 170 : thermalMode === 'adiabatic' ? 130 : 110;
   const nodeHeight = simulationMode === 'dynamic' ? base + 48 : base;
-
-  const conversionColor = segment
-    ? segment.Xa_out > 0.7 ? '#16a34a' : segment.Xa_out > 0.4 ? '#d97706' : '#dc2626'
-    : '#94a3b8';
 
   const { isOffPath } = useNodeIssues(id);
 

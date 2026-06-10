@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reaction Simulator — Phase 4 Roadmap</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #f1f5f9;
+  color: #1e293b;
+  padding: 32px;
+  min-height: 100vh;
+}
+
+h1 { font-size: 22px; font-weight: 800; color: #0f172a; margin-bottom: 4px; letter-spacing: -0.3px; }
+.subtitle { font-size: 13px; color: #64748b; margin-bottom: 24px; }
+
+/* Legend */
+.legend {
+  display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap;
+  background: white; padding: 10px 16px; border-radius: 8px; border: 1px solid #e2e8f0;
+}
+.legend-item { display: flex; align-items: center; gap: 7px; font-size: 11px; color: #475569; font-weight: 500; }
+.legend-swatch { width: 14px; height: 14px; border-radius: 3px; border: 2px solid; flex-shrink: 0; }
+
+/* Done banner */
+.done-banner {
+  background: #dbeafe; border: 2px solid #3b82f6; border-radius: 10px;
+  padding: 14px 18px; margin-bottom: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.done-banner-title {
+  font-size: 12px; font-weight: 800; color: #1e3a5f;
+  text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.done-banner-body { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.done-item {
+  background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px;
+  padding: 7px 11px; font-size: 10.5px; color: #1e40af; line-height: 1.5;
+}
+.done-item strong { display: block; font-weight: 700; color: #1e3a5f; margin-bottom: 2px; }
+
+/* Deferred callout */
+.deferred-callout {
+  background: #fffbeb; border: 2px solid #d97706; border-radius: 10px;
+  padding: 14px 18px; margin-bottom: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.deferred-callout-title {
+  font-size: 12px; font-weight: 800; color: #78350f;
+  text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.deferred-body { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; }
+.deferred-item {
+  background: white; border: 1px solid #fcd34d; border-radius: 6px;
+  padding: 8px 11px; font-size: 10.5px; color: #1e293b; line-height: 1.55;
+}
+.deferred-item strong { display: block; font-weight: 700; color: #92400e; margin-bottom: 3px; }
+
+/* Layers */
+.layer { margin-bottom: 6px; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+.layer-header { padding: 9px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+.layer-body { display: grid; gap: 10px; padding: 10px; }
+
+/* Pillar colours — Phase 4 palette */
+.p1 { background: #f0fdfa; }
+.p1 .layer-header { background: #0f766e; color: white; }
+.p1 .card-num { background: #0f766e !important; }
+
+.p2 { background: #fdf4ff; }
+.p2 .layer-header { background: #7e22ce; color: white; }
+.p2 .card-num { background: #7e22ce !important; }
+
+.p3 { background: #fff7ed; }
+.p3 .layer-header { background: #c2410c; color: white; }
+.p3 .card-num { background: #c2410c !important; }
+
+.p4 { background: #eff6ff; }
+.p4 .layer-header { background: #1d4ed8; color: white; }
+.p4 .card-num { background: #1d4ed8 !important; }
+
+.p5 { background: #f0fdf4; }
+.p5 .layer-header { background: #166534; color: white; }
+.p5 .card-num { background: #166534 !important; }
+
+.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.cols-4 { grid-template-columns: repeat(4, 1fr); }
+.cols-5 { grid-template-columns: repeat(5, 1fr); }
+
+/* Cards */
+.card {
+  background: white; border-radius: 8px; padding: 13px 13px 11px;
+  border: 1.5px solid #e2e8f0; position: relative;
+  display: flex; flex-direction: column; min-height: 158px;
+  transition: box-shadow 0.15s, transform 0.15s; cursor: default;
+}
+.card:hover { box-shadow: 0 4px 18px rgba(0,0,0,0.13); transform: translateY(-2px); z-index: 2; }
+.card.key { border: 2px solid #7c3aed; background: #faf5ff; }
+.card.key-orange { border: 2px solid #c2410c; background: #fff7ed; }
+.card.done { opacity: 0.55; border: 2px dashed #93c5fd; background: #f8fafc; }
+
+.card-top { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+.card-num {
+  font-size: 10px; font-weight: 900; width: 22px; height: 22px;
+  border-radius: 50%; display: inline-flex; align-items: center;
+  justify-content: center; color: white; flex-shrink: 0; margin-top: 1px;
+}
+.card-name { font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.3; }
+.card-job { font-size: 11px; color: #64748b; line-height: 1.45; flex: 1; padding-bottom: 8px; }
+
+.card-note {
+  font-size: 9.5px; color: #0369a1; background: #eff6ff;
+  border: 1px solid #bfdbfe; border-radius: 4px;
+  padding: 3px 8px; margin-bottom: 6px; font-weight: 600; line-height: 1.4;
+}
+.card-note.orange { color: #9a3412; background: #fff7ed; border-color: #fed7aa; }
+.card-note.purple { color: #5b21b6; background: #faf5ff; border-color: #ddd6fe; }
+.card-note.teal { color: #134e4a; background: #f0fdfa; border-color: #99f6e4; }
+.card-note.green { color: #14532d; background: #f0fdf4; border-color: #bbf7d0; }
+.card-note.red { color: #7f1d1d; background: #fef2f2; border-color: #fecaca; }
+.card-note.amber { color: #78350f; background: #fffbeb; border-color: #fcd34d; }
+
+.depth-axis { margin-top: auto; padding-top: 8px; border-top: 1px solid #f1f5f9; }
+.depth-label { font-size: 9px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; font-weight: 600; }
+.depth-row { display: flex; align-items: flex-start; gap: 4px; font-size: 10px; line-height: 1.35; }
+.depth-from { color: #94a3b8; flex: 1; }
+.depth-arrow { color: #cbd5e1; padding-top: 1px; flex-shrink: 0; }
+.depth-to { color: #475569; font-weight: 600; flex: 1; text-align: right; }
+
+/* Badges */
+.badge { font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.05em; display: inline-block; }
+.badge-done  { background: #0369a1; color: white; }
+.badge-next  { background: #c2410c; color: white; box-shadow: 0 0 0 2px #fed7aa; }
+.badge-key   { background: #6d28d9; color: white; }
+.badge-later { background: #e2e8f0; color: #64748b; }
+.badge-new   { background: #d97706; color: white; box-shadow: 0 0 0 2px #fde68a; }
+.badge-deferred { background: #0891b2; color: white; }
+
+/* Graphify callout */
+.graphify-callout {
+  background: #fffbeb; border: 2px solid #d97706; border-radius: 10px;
+  padding: 14px 18px; margin-bottom: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.graphify-callout-title {
+  font-size: 12px; font-weight: 800; color: #78350f;
+  text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.graphify-body { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.graphify-risk {
+  background: #fef2f2; border: 1px solid #fca5a5; border-radius: 6px;
+  padding: 8px 11px; font-size: 10.5px; color: #1e293b; line-height: 1.55;
+}
+.graphify-risk strong { display: block; font-weight: 700; color: #991b1b; margin-bottom: 3px; }
+.graphify-warn {
+  background: #fffbeb; border: 1px solid #fcd34d; border-radius: 6px;
+  padding: 8px 11px; font-size: 10.5px; color: #1e293b; line-height: 1.55;
+}
+.graphify-warn strong { display: block; font-weight: 700; color: #78350f; margin-bottom: 3px; }
+.graphify-health {
+  background: #f0fdf4; border: 1px solid #86efac; border-radius: 6px;
+  padding: 8px 11px; font-size: 10.5px; color: #1e293b; line-height: 1.55;
+}
+.graphify-health strong { display: block; font-weight: 700; color: #166534; margin-bottom: 3px; }
+.graphify-stats {
+  display: flex; gap: 12px; margin-bottom: 10px; flex-wrap: wrap;
+}
+.graphify-stat {
+  background: #fff; border: 1px solid #e2e8f0; border-radius: 6px;
+  padding: 6px 14px; font-size: 11px; font-weight: 600; color: #334155;
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+}
+.graphify-stat-val { font-size: 18px; font-weight: 800; color: #0f172a; }
+.graphify-stat-val.good { color: #16a34a; }
+.graphify-stat-val.bad  { color: #dc2626; }
+.graphify-stat-label { font-size: 9px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em; }
+
+code {
+  background: #f1f5f9; border-radius: 3px; padding: 0 4px;
+  font-family: 'SF Mono','Fira Code',monospace; font-size: 10px;
+}
+
+/* Dep arrows */
+.dep-arrow {
+  text-align: center; padding: 5px; font-size: 11px; color: #94a3b8;
+  display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 500;
+}
+.dep-arrow::before, .dep-arrow::after { content: ''; flex: 1; height: 1px; background: #cbd5e1; }
+
+/* Build order */
+.hardening {
+  margin-top: 12px; background: white; border: 1.5px solid #e2e8f0;
+  border-radius: 10px; padding: 14px 18px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.section-title { font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
+.order-flow { display: flex; align-items: stretch; gap: 0; flex-wrap: wrap; overflow-x: auto; padding-bottom: 2px; row-gap: 6px; }
+.order-step {
+  background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 7px;
+  padding: 7px 12px; font-size: 11px; font-weight: 600; color: #334155;
+  text-align: center; line-height: 1.4; white-space: nowrap; flex-shrink: 0;
+}
+.order-step small { display: block; font-size: 9.5px; font-weight: 400; color: #94a3b8; margin-top: 1px; }
+.order-step.done  { background: #dbeafe; border-color: #3b82f6; color: #1e3a5f; opacity: 0.75; }
+.order-step.p1c   { background: #f0fdfa; border-color: #0d9488; color: #134e4a; }
+.order-step.p2c   { background: #fdf4ff; border-color: #a855f7; color: #581c87; }
+.order-step.p3c   { background: #fff7ed; border-color: #f97316; color: #7c2d12; }
+.order-step.p3c.key-step { border-color: #c2410c; box-shadow: 0 0 0 2px #fed7aa; }
+.order-step.p4c   { background: #eff6ff; border-color: #3b82f6; color: #1e3a5f; }
+.order-step.p5c   { background: #f0fdf4; border-color: #16a34a; color: #14532d; }
+.order-arrow { color: #94a3b8; font-size: 14px; font-weight: 700; display: flex; align-items: center; padding: 0 6px; flex-shrink: 0; }
+
+/* Decisions */
+.decisions {
+  margin-top: 12px; background: #faf5ff; border: 2px solid #7c3aed;
+  border-radius: 10px; padding: 14px 18px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.decisions-title { font-size: 11px; font-weight: 800; color: #4c1d95; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 12px; }
+.decision-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.decision { background: white; border: 1px solid #ddd6fe; border-radius: 7px; padding: 10px 13px; font-size: 11px; line-height: 1.5; }
+.decision.new-decision { border: 2px solid #7c3aed; background: #f5f0ff; }
+.decision-name { font-weight: 700; color: #4c1d95; margin-bottom: 4px; font-size: 11.5px; }
+.decision-wrong { color: #dc2626; margin-bottom: 3px; }
+.decision-right { color: #059669; font-weight: 600; }
+.rule-box { background: #ede9fe; border-radius: 6px; padding: 9px 14px; font-size: 11px; color: #3b0764; line-height: 1.5; margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<h1>Reaction Simulator — Phase 4 Roadmap</h1>
+<p class="subtitle">5 pillars · 21 items · 6 architectural decisions (2 from Graphify) · built on Phase 3 (19 items ✓) + all 3 phases done &nbsp;·&nbsp; theme: <strong>Open Chemistry &amp; Intelligent Contacting</strong> — structural debt from Graphify first, then UI polish, then open the chemistry engine to user-defined reactions and Levenspiel Ch. 7 selectivity contacting strategies</p>
+
+<!-- Legend -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-swatch" style="background:#f0fdfa;border-color:#0f766e;"></div>P1 · UI Polish &amp; Deferred Wins</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#fdf4ff;border-color:#7e22ce;"></div>P2 · Dark Mode &amp; Visual</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#fff7ed;border-color:#c2410c;"></div>P3 · Reaction Builder ← main event</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#eff6ff;border-color:#1d4ed8;"></div>P4 · New Reactor Types</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#f0fdf4;border-color:#166534;"></div>P5 · Content &amp; Engineering Depth</div>
+  <div class="legend-item" style="color:#6d28d9;font-weight:700">🔑 Key architectural decision</div>
+  <div class="legend-item" style="color:#c2410c;font-weight:700">🔑 Key reaction builder decision</div>
+</div>
+
+<!-- Phase 3 done banner -->
+<div class="done-banner">
+  <div class="done-banner-title">
+    <span class="badge badge-done">✓ Phase 1 Done — 12/12 items</span>
+    <span class="badge badge-done">✓ Phase 2 Done — 18/18 items</span>
+    <span class="badge badge-done">✓ Phase 3 Done — 19/19 items · 27/27 tests green</span>
+    All three phases complete 🎉 · entering Phase 4 clean
+  </div>
+  <div class="done-banner-body">
+    <div class="done-item"><strong>P3/P1 — Solver &amp; Types</strong>Parallel network fix · type layer split (<code>simulation.ts</code>) · topology error UX · recycle panel</div>
+    <div class="done-item"><strong>P3/P2 — Visual System v2</strong>Node cards · toolbar · parameter bar · canvas polish (MiniMap, grid, trackpad pan)</div>
+    <div class="done-item"><strong>P3/P3 — Panels &amp; Analysis</strong>Stream table · concentration/conversion profiles · parameter panel v2 with accordion sections</div>
+    <div class="done-item"><strong>P3/P4 — Domain Depth</strong>Ergun pressure drop · gas-phase ε · multiple steady states · reactor sizing mode (V = τ·Q)</div>
+    <div class="done-item"><strong>P3/P5 — Data &amp; Workflow</strong>Export engine (PNG/CSV/HTML report) · saved scenarios · dark mode (class strategy) · keyboard shortcuts + onboarding</div>
+    <div class="done-item"><strong>Session B Fixes</strong>Arrhenius in all 5 presets · epsilon field exposed · auto-select on add · context menu narrower · export naming</div>
+    <div class="done-item"><strong>Session B Fixes</strong>Reactor numbering — lowest available scan · dedup() guard in setNodes · click-to-add toolbar · Cmd+A select all</div>
+    <div class="done-item"><strong>Architecture Invariants</strong>PURE_FILES purity enforced · zero import cycles · <code>getPreset()</code> sole branching point · UnitModel interface stable</div>
+  </div>
+</div>
+
+<!-- Deferred items callout -->
+<div class="deferred-callout">
+  <div class="deferred-callout-title">📋 Deferred from testing — 8 items carried into Phase 4 (assigned to P1 &amp; P2)</div>
+  <div class="deferred-body">
+    <div class="deferred-item">
+      <strong>#5 → P1.4 — Scenario rename</strong>
+      Click scenario name to edit inline. <code>ScenariosPanel.tsx</code>: wrap name in a <code>contentEditable</code> span; blur handler saves to <code>scenarioSlice</code>.
+    </div>
+    <div class="deferred-item">
+      <strong>#6 → P1.4 — PDF flowsheet embed</strong>
+      In <code>exportReport()</code>: call <code>toPng('.react-flow')</code> async, embed result as <code>&lt;img src="data:image/png…"&gt;</code> before the stream table. Same <code>window.print()</code> trigger.
+    </div>
+    <div class="deferred-item">
+      <strong>#8 → P1.1 — Floating popover</strong>
+      Replace accordion below the top bar with a ⚙ button that opens a 320px floating panel. Sticks to right edge of left toolbar. Sections still collapsible inside the popover.
+    </div>
+    <div class="deferred-item">
+      <strong>#9 → P1.3 — Edge centre selection</strong>
+      Add <code>interactionWidth: 20</code> to all edges in ReactFlow. <code>edgesFocusable: true</code> on the <code>&lt;ReactFlow&gt;</code> instance. Selected edge gets <code>stroke: #2563eb, strokeWidth: 3</code>.
+    </div>
+    <div class="deferred-item">
+      <strong>#10 → P1.2 — Per-reactor properties panel</strong>
+      "Properties" in context menu opens a right-side detail panel: editable label, τ slider, mini conversion chart, stream in/out table, Da, V estimate.
+    </div>
+    <div class="deferred-item">
+      <strong>#12 → P5.1 — More examples</strong>
+      5 new entries in <code>src/io/examples.ts</code>: recycle loop, adiabatic CSTR chain, series-parallel, gas-phase PFR, optimal split. Each as a full <code>SavedState</code> snapshot.
+    </div>
+    <div class="deferred-item">
+      <strong>#14 → P2.1 + P2.2 — Dark mode</strong>
+      Canvas bg too dark (<code>#0d0f18</code> → <code>#1a1f2e</code>). Levenspiel plot: hardcoded <code>#0f1730</code> stroke → <code>var(--text)</code>. Recharts axis text and grid lines adapt to theme.
+    </div>
+    <div class="deferred-item">
+      <strong>#15 → P1.5 — Node auto-sizing</strong>
+      Replace fixed heights on CSTRNode/PFRNode/BatchNode with <code>min-height + height: auto</code>. Pressure drop row and thermal dropdown no longer clip on small screen.
+    </div>
+  </div>
+</div>
+
+<!-- Graphify Structural Analysis -->
+<div class="graphify-callout">
+  <div class="graphify-callout-title">🔬 Graphify Structural Analysis — 446 nodes · 1002 edges · 26 communities · updated after Phase 3 completion</div>
+  <div class="graphify-stats">
+    <div class="graphify-stat"><div class="graphify-stat-val">446</div><div class="graphify-stat-label">Nodes (+77)</div></div>
+    <div class="graphify-stat"><div class="graphify-stat-val">1002</div><div class="graphify-stat-label">Edges (+169)</div></div>
+    <div class="graphify-stat"><div class="graphify-stat-val">26</div><div class="graphify-stat-label">Communities (+6)</div></div>
+    <div class="graphify-stat"><div class="graphify-stat-val good">72%</div><div class="graphify-stat-label">Intra-comm edges</div></div>
+    <div class="graphify-stat"><div class="graphify-stat-val good">0</div><div class="graphify-stat-label">Import cycles</div></div>
+    <div class="graphify-stat"><div class="graphify-stat-val bad">67</div><div class="graphify-stat-label">useSimStore edges</div></div>
+    <div class="graphify-stat"><div class="graphify-stat-val bad">33</div><div class="graphify-stat-label">Nodes↔Params coupling</div></div>
+    <div class="graphify-stat"><div class="graphify-stat-val bad">0.07</div><div class="graphify-stat-label">Param Panel cohesion</div></div>
+  </div>
+  <div class="graphify-body">
+    <div class="graphify-risk">
+      <strong>🔴 Store monoculture — useSimulatorStore bridges every layer</strong>
+      20 of 41 cross-community <code>calls</code> edges land on <code>useSimulatorStore</code>. Appears in Reactor Nodes, Plots, Panels, Context Menu, Toolbar, StatusBar, File I/O — every visible layer. Each plot component (ConversionProfile, LevenspielPlot, SpeciesProfile, TemperatureProfile, OperatingDiagram, DynamicResponse) calls the store directly. God-node stats: 67 edges, 54 cross-community, bridges 12 communities. <strong>Phase 4 rule: no new direct <code>useSimulatorStore</code> calls in new components — use selector hooks instead.</strong>
+    </div>
+    <div class="graphify-risk">
+      <strong>🔴 "Simulation Parameter Panel" is a catch-all blob (73 nodes, cohesion 0.07)</strong>
+      The largest community absorbs ParameterPanel UI, chemistry math (<code>bisect</code>, <code>kArrhenius</code>), types (SimulationParams), and solver glue (networkSolver). Four conceptually distinct layers co-clustered because they're all downstream of the store. The Reaction Builder (P3) must split this blob, not grow it — chemistry math migrates to its own module group, types to <code>simulation.ts</code>, UI stays in the Panel community.
+    </div>
+    <div class="graphify-warn">
+      <strong>🟡 Reactor nodes repeat a two-call pattern — no shared hook</strong>
+      CSTRNode, PFRNode, BatchNode each independently call both <code>getPreset()</code> and <code>useSimulatorStore</code>. This 3× duplication drives the heaviest coupling pair: <strong>Reactor Nodes ↔ Param Panel: 33 edges</strong>. A <code>useReactorNode(nodeId)</code> hook encapsulates both calls, reducing the coupling significantly. → <strong>P1.6 added.</strong>
+    </div>
+    <div class="graphify-warn">
+      <strong>🟡 App.tsx is a hub-of-hubs (bridges 11 communities, 33 cross-edges)</strong>
+      App.tsx imports <code>useDynamicSimulation</code>, <code>useTheme</code>, <code>useSimulatorStore</code>, and wires everything at the root — 35 edges, 29 cross-community, bridges 11 communities. As Phase 4 adds new hooks and panels, App.tsx must not be the integration point. New reactor panels (P1.2) and the reaction builder modal (P3.1) must be self-wired via their own hooks.
+    </div>
+    <div class="graphify-warn">
+      <strong>🟡 bisect() misclassified into Param Panel community</strong>
+      <code>bisect()</code> from <code>numerics.ts</code> should live in the pure-math community alongside <code>rk4Step</code>. Instead it's clustered into Community 4 (Param Panel) because two Dynamic Engine nodes (<code>isothermalCstrSingle</code>, <code>nonIsothermalCstr</code>) cross-call into it there. This violates the numerics.ts purity invariant in the graph. Fix: ensure <code>bisect()</code> stays in <code>numerics.ts</code> and that Graphify re-clusters it correctly after Phase 4 imports are cleaned up.
+    </div>
+    <div class="graphify-health">
+      <strong>✅ Phase 5 features are cleanly isolated · No cycles · Topology Validation is best-structured</strong>
+      The six P5 communities (Onboarding &amp; Shortcuts, File I/O &amp; Scenarios, Status Bar &amp; Theme, Reactor Comparison, Profile Plots, Test Utilities) all have cohesion ≥ 0.13 and connect only via expected interfaces. Zero cycles across 1002 edges — the math layer (topology.ts, numerics.ts, dynamicEngine.ts) remains strictly below the hook/component layer. Topology Validation is the exemplar: 9 nodes, cohesion 0.30, tight and self-contained. This is the target structure for Phase 4 new modules.
+    </div>
+  </div>
+  <div style="margin-top:8px;font-size:10px;color:#78350f;background:#fef3c7;border:1px solid #fcd34d;border-radius:4px;padding:5px 10px;line-height:1.5">
+    <strong>Phase 4 structural mandate:</strong> The Reaction Builder (P3) is the opportunity to split the Param Panel blob — chemistry math goes to <code>src/math/</code> (new pure files), types stay in <code>simulation.ts</code>, the Panel UI shrinks to just rendering. The <code>useReactorNode</code> hook (P1.6) cuts the 33-edge Reactor↔Params coupling before new reactor types (P4) add more nodes to that community. No new Phase 4 component may call <code>useSimulatorStore</code> directly — it must use a purpose-built selector hook. App.tsx gets zero new imports.
+  </div>
+</div>
+
+<div class="dep-arrow">↓ &nbsp;&nbsp; P1 quick wins land first — clean up UI debt before opening the chemistry engine &nbsp;&nbsp; ↓</div>
+
+<!-- P1: UI Polish -->
+<div class="layer p1">
+  <div class="layer-header">🧹 &nbsp;Pillar 1 — Structural Debt + UI Polish &nbsp;·&nbsp; 6 items · structural refactors from Graphify analysis + targeted UI patches · no solver changes</div>
+  <div class="layer-body cols-3">
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-next">Next — P1.1</span></div>
+      <div class="card-top">
+        <div class="card-num">1</div>
+        <div class="card-name">Floating Parameter Popover</div>
+      </div>
+      <div class="card-note orange">Replaces accordion — <code>ParameterPanel.tsx</code> loses its lower section entirely</div>
+      <div class="card-job">The current accordion sections (Kinetics, Feed, Thermal) below the 48px top bar occupy vertical space permanently. Replace with a ⚙ icon button in the left toolbar that opens a 320px floating panel pinned to the toolbar's right edge. The panel uses the same <code>PARAM_SECTIONS</code> schema — each section header is a collapsible row inside the popover. Panel open/closed state lives in <code>sessionSlice</code> (transient — not persisted). Click outside or press Esc to close. Dark mode: panel uses <code>background: var(--surface); border-color: var(--border-subtle)</code>. Saves ~80–120px of vertical real estate above the canvas.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Transforms</div>
+        <div class="depth-row">
+          <span class="depth-from">accordion always visible · steals canvas height</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">click-to-open floating panel · full canvas height available</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-next">Next — P1.2</span></div>
+      <div class="card-top">
+        <div class="card-num">2</div>
+        <div class="card-name">Per-Reactor Properties Panel</div>
+      </div>
+      <div class="card-note purple">Adds <code>propertiesNodeId: string | null</code> to sessionSlice</div>
+      <div class="card-job">When user clicks "Properties" in the context menu (<code>ContextMenu.tsx</code>), instead of calling <code>setSelectedNodeId</code> (which selects in the right tab), it sets <code>propertiesNodeId</code> in <code>sessionSlice</code>. The right panel checks <code>propertiesNodeId</code> first and renders a <code>PropertiesPanel</code> component instead of the normal tabs. Panel shows: <strong>editable label</strong> (inline input), <strong>reactor type badge</strong>, <strong>τ slider</strong> (0.01–100 s), <strong>thermalMode dropdown</strong>, <strong>mini conversion profile</strong> (100px tall Recharts <code>LineChart</code> using the node's segment data from <code>result.segments</code>), <strong>stream IN/OUT table</strong> (Ca, T, Xa), <strong>Da badge</strong> (<code>Da = k·τ</code>), <strong>Volume estimate</strong> (<code>V = τ · Q_feed</code> if sizing mode on). Close button (×) returns to the previous tab. Label edits immediately update <code>node.data.label</code> via <code>updateNodeData</code>.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Transforms</div>
+        <div class="depth-row">
+          <span class="depth-from">Properties button opens Params tab — not reactor-specific</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">dedicated panel per reactor · mini profile · stream table · Da</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-next">Next — P1.3</span></div>
+      <div class="card-top">
+        <div class="card-num">3</div>
+        <div class="card-name">Edge Centre Selection</div>
+      </div>
+      <div class="card-job">ReactFlow edges currently have a very narrow click target — only the exact stroke pixel registers. Fix by adding <code>interactionWidth: 20</code> to the <code>edgeDefaults</code> object in <code>topologySlice.ts</code>. Also add <code>edgesFocusable: true</code> and <code>edgesReconnectable: false</code> to the <code>&lt;ReactFlow&gt;</code> component props in <code>ReactorCanvas.tsx</code>. Selected edge style: <code>stroke: #2563eb, strokeWidth: 3</code> (set in <code>edgeDefaults</code> via <code>style</code> when <code>selected</code>). Deleting a selected edge via the Delete key should also work — add edge ID to the keyboard handler in <code>App.tsx</code>. Three-line change total; no solver touch.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Transforms</div>
+        <div class="depth-row">
+          <span class="depth-from">click-pixel-perfect only · Delete key ignores edges</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">20px hit zone · Delete removes selected edge · blue highlight</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-next">Next — P1.4</span></div>
+      <div class="card-top">
+        <div class="card-num">4</div>
+        <div class="card-name">Scenario Rename + PDF Flowsheet</div>
+      </div>
+      <div class="card-job">Two targeted fixes to the existing P3/P5 features: <strong>(1) Rename scenarios</strong> — in <code>ScenariosPanel.tsx</code>, replace the static name <code>&lt;span&gt;</code> with a <code>contentEditable</code> span; the <code>onBlur</code> handler calls a new <code>renameScenario(id, newName)</code> action in <code>sessionSlice</code>. Click-once to select, click-again to edit. <strong>(2) PDF flowsheet embed</strong> — in <code>useExport.ts exportReport()</code>, make the function <code>async</code>, call <code>toPng(document.querySelector('.react-flow'))</code> before generating HTML, embed the result as <code>&lt;img src="{dataUrl}" style="width:100%;max-height:380px;object-fit:contain;margin-bottom:16px"&gt;</code> in a new "Flowsheet Diagram" section at the top of the report body. The existing <code>window.print()</code> trigger is unchanged. Both require zero solver changes.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Transforms</div>
+        <div class="depth-row">
+          <span class="depth-from">scenario names fixed · PDF has no diagram</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">inline rename · PDF includes flowsheet PNG at top</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-next">Next — P1.5</span></div>
+      <div class="card-top">
+        <div class="card-num">5</div>
+        <div class="card-name">Reactor Node Auto-Sizing</div>
+      </div>
+      <div class="card-job">CSTRNode, PFRNode, and BatchNode currently have fixed pixel heights set on the outer wrapper div, causing the pressure-drop row and thermalMode dropdown to clip or overflow when in non-isothermal mode. Fix: remove the fixed <code>height</code> and replace with <code>minHeight</code>. In ReactFlow, set <code>nodeAutoHeight: true</code> on the <code>&lt;ReactFlow&gt;</code> component (available in <code>@xyflow/react</code> v12). If the prop is not supported in the installed version, use <code>style={{ height: 'auto' }}</code> on the node wrapper directly and let <code>useNodeDimensions</code> handle reflow. Also ensure that Tailwind classes on the node wrapper use <code>min-h-[120px]</code> instead of <code>h-[120px]</code>. Test: add a CSTR, set thermalMode to "cooled", enable pressure drop — all rows must be visible without scrolling inside the node.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Transforms</div>
+        <div class="depth-row">
+          <span class="depth-from">fixed node height clips thermal rows</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">auto-height · all rows visible · no clipping in any mode</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card done">
+      <div style="margin-bottom:4px"><span class="badge badge-done">✓ Done — P1.6</span> <span class="badge badge-key">🔑 Graphify</span></div>
+      <div class="card-top">
+        <div class="card-num">6</div>
+        <div class="card-name">useReactorNode Shared Hook</div>
+      </div>
+      <div class="card-note purple">Cuts Reactor Nodes ↔ Param Panel from 33 edges → target ≤ 15 · eliminates 3× duplicated pattern flagged by Graphify</div>
+      <div class="card-job">Graphify found that CSTRNode, PFRNode, and BatchNode each independently call both <code>getPreset(params)</code> and <code>useSimulatorStore(s =&gt; s.result)</code> — a 3× duplication that is the sole driver of the 33-edge Reactor ↔ Param Panel coupling (the heaviest pair in the graph). Fix: create <code>src/hooks/useReactorNode.ts</code> — a single hook that accepts <code>nodeId</code> and returns all derived node-level data: <code>{ segment, streamIn, streamOut, Da, Xa, T_out, preset, params }</code>. The hook calls the store once with a memoized selector, calls <code>getPreset()</code> once with the result, and returns a stable object via <code>useMemo</code>. Each reactor node component is rewritten to call <code>const d = useReactorNode(id)</code> and render from <code>d</code>. <strong>Benefit for Phase 4:</strong> new node types (P4.1 Semibatch, P4.3 FixedBed) get the same pattern for free — import the hook, done. No new Reactor ↔ Param Panel edges added by Phase 4. The hook also lays the groundwork for P1.2 Properties Panel, which needs the same derived data.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Transforms</div>
+        <div class="depth-row">
+          <span class="depth-from">3× duplicated getPreset + store call · 33 Reactor↔Param edges</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">single shared hook · ≤15 coupling edges · Phase 4 nodes get it free</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="dep-arrow">↓ &nbsp;&nbsp; dark mode audit before reaction builder — plots must be theme-correct before adding new ones &nbsp;&nbsp; ↓</div>
+
+<!-- P2: Dark Mode & Visual -->
+<div class="layer p2">
+  <div class="layer-header">🌙 &nbsp;Pillar 2 — Dark Mode &amp; Visual &nbsp;·&nbsp; 3 items · comprehensive audit + selectivity analysis UI</div>
+  <div class="layer-body cols-3">
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-next">Next — P2.1</span></div>
+      <div class="card-top">
+        <div class="card-num">6</div>
+        <div class="card-name">CSS Variable Comprehensive Audit</div>
+      </div>
+      <div class="card-note red">Levenspiel plot uses hardcoded <code>#0f1730</code> stroke — near-invisible in dark mode</div>
+      <div class="card-job">Audit every hardcoded color in the codebase and replace with CSS variables. Current issues: <strong>(1) Canvas background</strong> — <code>--canvas-bg</code> is <code>#0d0f18</code> (near-black), should be <code>#1a1f2e</code>; <strong>(2) Canvas dot color</strong> — <code>--canvas-dot</code> needs <code>#2a3040</code>; <strong>(3) Levenspiel SVG</strong> — curve line uses <code>stroke="#0f1730"</code> (hardcoded), must become <code>stroke="var(--text)"</code>; <strong>(4) ReactFlow controls</strong> — the MiniMap and zoom buttons have light backgrounds in dark mode; add <code>.react-flow__controls { background: var(--surface); }</code> to the global CSS; <strong>(5) Parameter panel</strong> — accordion section headers and the new popover (P1.1) use <code>background: #ffffff</code> hardcoded — switch to <code>var(--surface)</code>. Approach: grep for literal hex colors in <code>src/</code> excluding node icons (those intentionally use literal colors for brand identity).</div>
+      <div class="depth-axis">
+        <div class="depth-label">Transforms</div>
+        <div class="depth-row">
+          <span class="depth-from">hardcoded colors throughout · near-black canvas · invisible plot</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">CSS variables everywhere · readable dark canvas · visible Levenspiel curve</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-next">Next — P2.2</span></div>
+      <div class="card-top">
+        <div class="card-num">7</div>
+        <div class="card-name">Recharts Dark Mode</div>
+      </div>
+      <div class="card-job">The Recharts plots (concentration profiles, Levenspiel, operating diagram) all use hardcoded light-background colors for axis text, grid lines, and tooltip. Fix in each plot component: <strong>axis text</strong> — pass <code>tick={{ fill: 'var(--text-muted)' }}</code> to <code>&lt;XAxis&gt;</code> and <code>&lt;YAxis&gt;</code>; <strong>grid lines</strong> — <code>&lt;CartesianGrid stroke="var(--border-subtle)"&gt;</code>; <strong>tooltip</strong> — <code>contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border-subtle)', color: 'var(--text)' }}</code>; <strong>plot background</strong> — wrap each Recharts container in a div with <code>background: var(--plot-bg)</code> (a new CSS variable, value <code>#f8faff</code> light / <code>#1a2035</code> dark). The Levenspiel PFR shading (the area below the 1/(-rA) curve) must also use a semi-transparent version of the theme accent color, not a hardcoded fill. Affects 4 files: <code>LevenspielPlot.tsx</code>, <code>ConcentrationProfile.tsx</code>, <code>OperatingDiagram.tsx</code>, and <code>ConversionProfile.tsx</code>.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Transforms</div>
+        <div class="depth-row">
+          <span class="depth-from">light-only axis text · hardcoded tooltip · white plot bg</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">theme-adaptive axis · dark tooltip · correct plot bg in both modes</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-next">Next — P2.3</span></div>
+      <div class="card-top">
+        <div class="card-num">8</div>
+        <div class="card-name">Selectivity &amp; Yield Analysis Tab</div>
+      </div>
+      <div class="card-job">Add a new "Selectivity" sub-section within the Analysis right panel, visible only when <code>reactionMode !== 'single'</code>. For <strong>parallel reactions</strong> (A→R desired, A→S undesired, equal 1st order): show <code>S_R = k₁/(k₁+k₂)</code> as a constant (for equal-order kinetics, selectivity is independent of Xa) with a tooltip explaining why CSTR and PFR give the same S_R in this case. For <strong>series reactions</strong> (A→R→S): generate a 50-point yield curve <code>C_R/Ca₀ vs. Da</code> using the closed-form solution <code>C_R/Ca₀ = Da·k₁/((1+Da·k₁)(1+Da·k₂))</code> for CSTR and the analogous PFR expression; mark the current operating Da with a vertical dashed line; mark <code>Da_opt = 1/√(k₁·k₂)</code> with a yellow diamond. Data source: extend <code>SimulationResult</code> with <code>selectivityAnalysis?: { SR: number; YR_curve: {Da: number; YR: number}[]; Da_opt?: number }</code>. Computed in <code>solveNetwork()</code> after the main solve, only for series/parallel modes.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Transforms</div>
+        <div class="depth-row">
+          <span class="depth-from">only final Xa/Yield shown · no Da optimum guidance</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">S_R display · series C_R/Ca₀ curve · optimal Da marker</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="dep-arrow">↓ &nbsp;&nbsp; <strong>Phase 4 main event</strong> — open the chemistry engine to user-defined reactions &nbsp;&nbsp; ↓</div>
+
+<!-- P3: Reaction Builder — KEY PILLAR -->
+<div class="layer p3">
+  <div class="layer-header">⚗️ &nbsp;Pillar 3 — Reaction Builder &nbsp;·&nbsp; 4 items · the core new capability · <code>getPreset()</code> stays the sole branching point</div>
+  <div class="layer-body cols-4">
+
+    <div class="card key-orange">
+      <div style="margin-bottom:4px"><span class="badge badge-next">Next — P3.1</span> <span class="badge badge-key">🔑 Key</span></div>
+      <div class="card-top">
+        <div class="card-num">9</div>
+        <div class="card-name">Species &amp; Stoichiometry Editor</div>
+      </div>
+      <div class="card-note orange">Adds <code>customReaction: CustomReaction | null</code> to SimulationParams — follow migration checklist</div>
+      <div class="card-job">A new "Custom" option in the Mode dropdown (<code>reactionMode: 'custom'</code>). When selected, clicking "Edit Reaction…" opens a modal built as <code>ReactionBuilderModal.tsx</code>. The modal lets users: <strong>(1) add species</strong> — name (A/B/R/S or any 1-3 char label), role (reactant/product), stoichiometric coefficient (number input); <strong>(2) see the equation preview</strong> — e.g., "A + 2B → R" rendered live from the species array; <strong>(3) pick a rate type</strong> — Power Law, Michaelis-Menten, Langmuir-Hinshelwood (each shows which parameters are needed). New types: <code>CustomSpecies { id, label, role: 'reactant'|'product', stoich: number }</code>, <code>CustomReaction { species: CustomSpecies[]; rateType: RateType; rateParams: Record&lt;string, number&gt;; }</code>. Both live in <code>src/types/simulation.ts</code>. Stored in <code>params.customReaction</code>. Validation: at least 1 reactant, at least 1 product, all stoich &gt; 0. The modal closes on Save or Esc.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">7 hardcoded presets — user picks from a list</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">user defines any A+nB→R equation with custom stoichiometry</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card key-orange">
+      <div style="margin-bottom:4px"><span class="badge badge-next">Next — P3.2</span> <span class="badge badge-key">🔑 Key</span></div>
+      <div class="card-top">
+        <div class="card-num">10</div>
+        <div class="card-name">Rate Law Factory &amp; customPreset</div>
+      </div>
+      <div class="card-note orange">Purity invariant: <code>buildCustomPreset()</code> lives in <code>src/math/reactionRegistry.ts</code> — zero React/Zustand imports</div>
+      <div class="card-job">Extend <code>getPreset(params)</code> in <code>reactionRegistry.ts</code> with one new branch: <code>if (params.reactionMode === 'custom' &amp;&amp; params.customReaction) return buildCustomPreset(params.customReaction)</code>. The function <code>buildCustomPreset(cr: CustomReaction): ReactionPreset</code> is a pure factory that returns a standard <code>ReactionPreset</code> object — identical interface to all 7 existing presets. Rate law templates: <strong>Power Law</strong> — <code>rateLaw = (C, T, kP) =&gt; arrhenius(kP.k, kP.Ea, kP.T_ref, T) * prod(C[sp.label]^sp.stoich for reactants)</code>; <strong>Michaelis-Menten</strong> — <code>rA = kP.Vmax * CA / (kP.Km + CA)</code>; <strong>Langmuir-Hinshelwood</strong> — <code>rA = kP.k * CA / (1 + kP.K_A * CA + kP.K_B * CB)</code>. The factory also builds <code>reactions[]</code>, <code>kineticParams</code> (with the right keys for each template), <code>uiLabel</code> (from <code>formatEquation()</code>), and <code>isSingle: true</code>. No special-casing downstream — the rest of the solver sees it as a normal preset.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">presets are static objects defined at compile time</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">presets generated at runtime from user inputs · same solver interface</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-next">Next — P3.3</span></div>
+      <div class="card-top">
+        <div class="card-num">11</div>
+        <div class="card-name">Equation Display &amp; Labels</div>
+      </div>
+      <div class="card-job">Two display improvements using the custom reaction data: <strong>(1) Kinetics dropdown labels</strong> — update <code>kineticsOptions</code> in <code>ParameterPanel.tsx</code> to use <code>p.uiLabel</code> from each preset (already done for existing presets: "A→R (1st order)", "A→R (2nd order)", etc.). For the custom mode, display the formatted equation from <code>formatEquation(params.customReaction?.species)</code> as the label. <strong>(2) Reactor node badges</strong> — existing CSTR/PFR nodes show "Xa: X%" on the node face. When in custom mode, also show a small equation badge (3px font, truncated to 12 chars) below the type label: e.g., "A+B→R". Pure utility: <code>formatEquation(species: CustomSpecies[]): string</code> in <code>src/math/formatEquation.ts</code> (pure file, add to PURE_FILES). Output: "A + 2B → R + S" from stoich coefficients ≠ 1, "A → R" for coefficient 1 (coefficient omitted). No solver change.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">dropdown shows opaque preset IDs</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">dropdown shows equation · nodes show badge · self-documenting</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-next">Next — P3.4</span></div>
+      <div class="card-top">
+        <div class="card-num">12</div>
+        <div class="card-name">Custom Reaction Persistence</div>
+      </div>
+      <div class="card-job">Make custom reactions survive save/load and appear in the report: <strong>(1) Serializer</strong> — <code>params.customReaction</code> is already serialized as part of <code>SimulationParams</code> (it's a plain object), but add a migration guard in <code>deserializeState()</code>: if <code>state.params.customReaction === undefined</code>, set it to <code>null</code>. <strong>(2) Saved scenarios</strong> — scenarios serialize full <code>params</code>, so custom reactions survive automatically. <strong>(3) HTML report</strong> — add a "Reaction Equation" line in the report header: <code>Reaction: ${formatEquation(params.customReaction?.species) ?? params.kinetics}</code>. <strong>(4) Named custom presets</strong> — a "Save as preset" button in the ReactionBuilderModal saves the current <code>CustomReaction</code> to <code>localStorage['rsi-custom-presets']</code> (JSON array). A "My Presets" section in the kinetics dropdown loads them. Max 10 saved. Add a "×" to delete each. This lets users build a library of common reactions without re-entering stoichiometry each session.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">custom reaction lost on save/reload</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">survives save · named preset library · appears in PDF report</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="dep-arrow">↓ &nbsp;&nbsp; new reactor types extend the UnitModel interface — add all three before registering in the toolbar &nbsp;&nbsp; ↓</div>
+
+<!-- P4: New Reactor Types -->
+<div class="layer p4">
+  <div class="layer-header">🏭 &nbsp;Pillar 4 — New Reactor Types &nbsp;·&nbsp; 4 items · Levenspiel Ch. 7 selectivity contacting strategies</div>
+  <div class="layer-body cols-4">
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-next">Next — P4.1</span></div>
+      <div class="card-top">
+        <div class="card-num">13</div>
+        <div class="card-name">Semibatch Reactor</div>
+      </div>
+      <div class="card-note teal">Implements the "CA high, CB low" strategy from Levenspiel Fig. 7.1</div>
+      <div class="card-job">Semibatch (or fed-batch) reactor: a vessel that starts with species A, and B is fed continuously at rate <code>FB₀</code> (mol/s). This keeps C_B low throughout, maximizing selectivity S_R for reactions where the desired product favors low C_B (e.g., A→R if rR depends on C_A only; B→S competes if C_B is high). ODE system on a <strong>moles basis</strong>: <code>dNA/dt = rA(CA,CB)·V</code>, <code>dNB/dt = FB₀ − rB·V</code>, <code>dNR/dt = rR·V</code>, <code>dV/dt = FB₀/CB_feed</code> (volumetric addition rate). Concentrations: <code>CA = NA/V</code>, <code>CB = NB/V</code>. Solved with RK4 from <code>t=0</code> to <code>t=tau_batch</code>. New node params (in <code>node.data</code>): <code>tau_batch</code> (total time, s), <code>FB0</code> (B feed rate, mol/s), <code>CB_feed</code> (B feed concentration, mol/L). Result: final <code>NA, NB, NR</code> → <code>Xa = (NA₀ − NA)/NA₀</code>, <code>S_R = NR/(NA₀ − NA)</code>. New pure file: <code>src/math/semibatchModel.ts</code>. New node type: <code>semibatch</code> (icon: batch vessel with side-entry nozzle on the right).</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">batch = fixed-charge, no selectivity control</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">fed-batch · CB controlled low · selectivity optimized for parallel rxns</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-next">Next — P4.2</span></div>
+      <div class="card-top">
+        <div class="card-num">14</div>
+        <div class="card-name">Side-Injection PFR</div>
+      </div>
+      <div class="card-note teal">Implements the "CA high, CB distributed" pattern from Levenspiel Fig. 7.2</div>
+      <div class="card-job">A PFR variant where a second reactant B is injected uniformly along the reactor length instead of being co-fed at the inlet. This is the continuous-flow analogue of semibatch: C_A is high (fully fed at inlet), C_B is kept low (distributed addition). ODE with distributed feed term: <code>dFA/dτ = rA(CA,CB)·FA₀</code>, <code>dFB/dτ = FB₀_dist − rB·FA₀</code>, where <code>FB₀_dist = total_FB₀ / tau_pfr</code> is the distributed feed rate per unit space time. Concentrations at any τ: <code>CA = FA/Q(τ)</code>, <code>CB = FB/Q(τ)</code>, <code>Q(τ) = Q₀ + (FB₀_dist/CB_feed)·τ</code> (volumetric flow grows along length). Same RK4 solver as the existing PFR; just extend the state vector with <code>FB</code> and <code>Q</code> and add the distributed source. Implementation: a flag <code>sideInjection: boolean</code> and new param <code>FB0_side</code> (total B feed rate, mol/s) on the existing PFR node data. No new node type needed — extend <code>pfr</code>. <code>PFRNode.tsx</code> shows a "⊕B" badge when <code>sideInjection === true</code>. New function: <code>sideFeedPFR()</code> in <code>src/math/unitModels.ts</code>.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">PFR = co-feed at inlet · CB high throughout</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">distributed B injection · CB low along length · higher S_R vs. co-feed PFR</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-next">Next — P4.3</span></div>
+      <div class="card-top">
+        <div class="card-num">15</div>
+        <div class="card-name">Fixed-Bed Catalytic Reactor</div>
+      </div>
+      <div class="card-note orange">Adds <code>W_cat</code> to node data · no SimulationParams migration needed (node-local)</div>
+      <div class="card-job">A PFR operating on a catalyst weight basis rather than a volume basis. The Moles design equation: <code>dFA/dW = −r′A</code> where r′A is in mol/(kg_cat·s). This is the standard design equation from Fogler Ch. 10 for heterogeneous catalysis. Implementation: extend the existing PFR ODE path — when <code>node.data.catalytic === true</code>, swap the independent variable from <code>τ (volume/Q)</code> to <code>W/FA₀</code>. Node params: <code>W_cat</code> (kg catalyst), <code>rho_bulk</code> (kg/m³, default 1200), <code>epsilon_bed</code> (void fraction, default 0.4). Derived: <code>V_bed = W_cat / (rho_bulk · (1 − epsilon_bed))</code>. The Da equivalent is <code>Da' = k'·W/FA₀</code> where k' is the rate constant in mol/(kg·s·(mol/L)^n). Display: node shows "W: X kg" instead of "τ: X s". Ergun pressure drop (already implemented for PFR) integrates naturally over the catalyst bed. New node type: <code>fixedbed</code> with a distinct icon (stacked-layer symbol). New function: <code>catalyticPFR()</code> in <code>unitModels.ts</code>.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">volumetric-basis PFR only</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">weight-basis · catalyst design · W/FA₀ Da analogue · bed sizing</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-next">Next — P4.4</span></div>
+      <div class="card-top">
+        <div class="card-num">16</div>
+        <div class="card-name">Node Type Registration &amp; Toolbar</div>
+      </div>
+      <div class="card-job">All three new node types (P4.1–P4.3) require registration and toolbar integration. <strong>Registration</strong>: add <code>semibatch</code>, <code>fixedbed</code> entries to the <code>nodeTypes</code> map in <code>ReactorCanvas.tsx</code>. <strong>Toolbar</strong>: add to <code>ReactorToolbar.tsx</code> — <code>SemibatchIcon</code> (batch vessel + right-side nozzle), <code>FixedBedIcon</code> (stacked-layers symbol). Both get drag-start handlers and click-to-add handlers pointing to <code>addReactor('Semibatch', pos)</code> and <code>addReactor('FixedBed', pos)</code>. Extend <code>addReactor</code> in <code>topologySlice.ts</code> to handle 'Semibatch' and 'FixedBed' types (new prefix strings: 'SB', 'FB'). <strong>Serializer</strong>: add <code>semibatch</code> and <code>fixedbed</code> to the node type whitelist in <code>deserializeState()</code>. <strong>Context menu</strong>: <code>isReactor</code> check in <code>ContextMenu.tsx</code> extended to include <code>'semibatch'</code> and <code>'fixedbed'</code>. <strong>resetCanvas()</strong>: no change needed (new reactor types start at count 0). Side-injection PFR uses the existing PFR node type — no new toolbar item needed, but a toggle in the PFR Properties Panel (P1.2) enables side injection mode.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">new models exist in math/ but aren't accessible from the UI</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">draggable · click-to-add · serializable · context-menu aware</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="dep-arrow">↓ &nbsp;&nbsp; content and depth layers — build on the stable platform above &nbsp;&nbsp; ↓</div>
+
+<!-- P5: Content & Engineering Depth -->
+<div class="layer p5">
+  <div class="layer-header">📚 &nbsp;Pillar 5 — Content &amp; Engineering Depth &nbsp;·&nbsp; 4 items · examples · equilibrium · RTD · test suite</div>
+  <div class="layer-body cols-4">
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-next">Next — P5.1</span></div>
+      <div class="card-top">
+        <div class="card-num">17</div>
+        <div class="card-name">Expanded Examples Library</div>
+      </div>
+      <div class="card-job">Add 5 new entries to <code>src/io/examples.ts</code>, each as a full <code>SavedState</code> snapshot with curated nodes, edges, params, and a description blurb. New examples: <strong>(1) "Recycle Reactor"</strong> — PFR with a 50% recycle stream (Splitter → PFR → Mixer loop), demonstrating how recycle approaches CSTR behavior as R→∞. Show Xa vs. recycle ratio in the Analysis tab. <strong>(2) "Adiabatic CSTR Chain"</strong> — 3 adiabatic CSTRs in series with k=0.1, Ea=60 kJ/mol, ΔH=−100 kJ/mol, ρCp=1.0 — demonstrates temperature staging and runaway control. <strong>(3) "Series Intermediate"</strong> — CSTR → PFR with A→R→S kinetics (k₁=0.5, k₂=0.1), showing the C_R maximum at Da_opt. <strong>(4) "Gas-Phase Expansion"</strong> — isothermal PFR, gas-phase 1st order, ε=0.5, Ca0=0.5 mol/L — illustrates volumetric expansion reducing conversion vs. liquid-phase. <strong>(5) "Optimal Parallel Split"</strong> — Splitter → [CSTR, PFR] → Mixer with α=0.5, same τ=2s, showing that the mixed configuration gives intermediate conversion between pure CSTR (lower) and pure PFR (higher) for 1st-order kinetics.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Transforms</div>
+        <div class="depth-row">
+          <span class="depth-from">3 basic examples · isothermal only</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">8 examples · recycle · adiabatic · series optimization · gas-phase · parallel split</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-next">Next — P5.2</span></div>
+      <div class="card-top">
+        <div class="card-num">18</div>
+        <div class="card-name">Equilibrium Conversion Display</div>
+      </div>
+      <div class="card-job">For reversible reactions (A ⇌ R, <code>kinetics === 'reversible'</code>), show the equilibrium conversion X_eq as a dashed horizontal line on the Levenspiel plot and the Xa profile chart. Equilibrium from the rate law: at equilibrium <code>rA = 0</code>, so <code>k·CA − (k/Keq)·CR = 0</code>. For <code>CA = Ca0(1−Xa)</code>, <code>CR = Ca0·Xa</code>: <code>Xa_eq = Keq/(1+Keq)</code>. Display: a dashed line at <code>Xa = Xa_eq</code> with label "Xeq = X.XX" on the conversion profile chart. On the Levenspiel plot (1/(-rA) vs. Xa), the curve goes to infinity as Xa→Xa_eq; the dashed vertical line at Xa_eq shows the thermodynamic limit. Also display <code>ΔG° = −RT·ln(Keq) = ΔH° − T·ΔS°</code> as a tooltip next to the Keq input. All pure math — <code>computeXeq(Keq: number): number</code> in <code>src/math/equilibrium.ts</code> (pure file, add to PURE_FILES). Extend <code>SimulationResult</code> with <code>Xa_eq?: number</code>.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">no thermodynamic limit shown · user can over-design past Xeq</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">dashed Xeq line on both plots · prevents over-design · ΔG° tooltip</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-next">Next — P5.3</span></div>
+      <div class="card-top">
+        <div class="card-num">19</div>
+        <div class="card-name">RTD / Tanks-in-Series Model</div>
+      </div>
+      <div class="card-job">Residence Time Distribution analysis for non-ideal reactors. Add an "RTD" sub-section in the Analysis panel, toggled by a button "Show RTD Analysis". Two models: <strong>(1) Tanks-in-Series (TIS)</strong> — N CSTRs in series give an intermediate E(t) between perfect mixing (N=1, exponential) and plug flow (N→∞, delta function). <code>E(t) = N·(N·t/τ)^(N−1)·exp(−N·t/τ) / (τ·(N−1)!)</code>. For N CSTRs each with τ_i=τ/N: <code>Xa_TIS = 1 − 1/(1+Da/N)^N</code> for 1st order. <strong>(2) Dispersion number</strong> — for a PFR with axial dispersion <code>D_ax</code>, the Peclet number <code>Pe = u·L/D_ax</code>. Display: a slider for N (1–20) and a live comparison chart showing E(t) for that N vs. the ideal PFR delta and ideal CSTR exponential. Xa comparison: show Xa_CSTR, Xa_TIS(N), Xa_PFR on a mini table as N is adjusted. Pure math in <code>src/math/rtdModel.ts</code>. No solver integration needed — this is a standalone analytical tool displayed alongside the main results.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">ideal reactors only — no non-ideal flow analysis</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">E(t) curve · TIS conversion vs. N · bridges ideal and real reactor behavior</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-next">Next — P5.4</span></div>
+      <div class="card-top">
+        <div class="card-num">20</div>
+        <div class="card-name">Phase 4 Test Scenarios</div>
+      </div>
+      <div class="card-job">Extend <code>src/tests/</code> with Vitest unit tests for all new Phase 4 pure-math additions. Required tests: <strong>(1) Arrhenius regression</strong> — adiabatic CSTR, k=0.1, Ea=33.3 kJ/mol, ΔH=−100 kJ/mol, ρCp=1.0, τ=2s → expect <code>Xa ≈ 0.73 ± 0.02</code> and <code>T_out ≈ 373 ± 5K</code>. <strong>(2) Semibatch selectivity</strong> — A+B→R, k=0.2, FB₀=0.01 mol/s, V₀=1L, tau_batch=10s → expect <code>S_R &gt; 0.7</code> (better than batch co-feed). <strong>(3) customPreset factory</strong> — given species [{A, reactant, 1}, {R, product, 1}] and Power Law rateType → expect <code>buildCustomPreset()</code> returns a <code>ReactionPreset</code> with a working <code>rateLaw</code> that matches <code>firstOrderPreset</code> output for the same k. <strong>(4) Equilibrium Xeq</strong> — Keq=4 → expect <code>computeXeq(4) ≈ 0.80</code>. <strong>(5) TIS vs. CSTR/PFR</strong> — 1st order, Da=2: CSTR Xa≈0.667, PFR Xa≈0.865, TIS(N=5) Xa should be between them. Purity test: add <code>semibatchModel.ts</code>, <code>formatEquation.ts</code>, <code>equilibrium.ts</code>, <code>rtdModel.ts</code> to <code>PURE_FILES</code>.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">27 tests — no coverage for new Phase 4 math</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">32+ tests · Arrhenius regression · semibatch · factory · RTD · Xeq</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Build Order -->
+<div class="hardening">
+  <div class="section-title">⬇ Build order — dependency-first</div>
+  <div class="order-flow">
+    <div class="order-step done">✓ Phase 3<br/><small>19 items done</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p1c" style="border-color:#7c3aed;box-shadow:0 0 0 2px #ddd6fe">P1.6<br/><small>useReactorNode</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p1c">P1.4<br/><small>Rename + PDF</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p1c">P1.5<br/><small>Node sizing</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p1c">P1.3<br/><small>Edge select</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p2c">P2.1<br/><small>CSS audit</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p2c">P2.2<br/><small>Recharts dark</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p1c">P1.1<br/><small>Popover</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p1c">P1.2<br/><small>Properties</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p2c">P2.3<br/><small>Yield tab</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p3c key-step">P3.1<br/><small>Species editor</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p3c key-step">P3.2<br/><small>Rate factory</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p3c">P3.3<br/><small>Equation display</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p3c">P3.4<br/><small>Persistence</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p4c">P4.1<br/><small>Semibatch</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p4c">P4.2<br/><small>Side-inject PFR</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p4c">P4.3<br/><small>Fixed-bed</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p4c">P4.4<br/><small>Node reg.</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p5c">P5.2<br/><small>Xeq display</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p5c">P5.3<br/><small>RTD model</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p5c">P5.1<br/><small>Examples</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p5c">P5.4<br/><small>Tests</small></div>
+  </div>
+  <div style="margin-top:10px;font-size:11px;color:#64748b;line-height:1.6;padding:8px 12px;background:#f8fafc;border-radius:6px;border:1px solid #e2e8f0">
+    <strong>P1.6 absolutely first (Graphify mandate):</strong> The <code>useReactorNode</code> hook must land before any other Phase 4 work. It establishes the selector-hook pattern that every new component in P1.2, P3, and P4 must follow — if P4 nodes are written before it exists, they'll reach for <code>useSimulatorStore</code> directly and the coupling debt compounds. 3-file change: create the hook, update 3 node components. &nbsp;
+    <strong>Dark mode before popover (P2.1/P2.2 before P1.1):</strong> the floating popover must use CSS variables correctly from day one — easier to build it right than to retrofit. &nbsp;
+    <strong>P1.2 after P1.6:</strong> the Properties Panel reads from <code>useReactorNode(id)</code> — don't build it until the hook is stable. &nbsp;
+    <strong>P3 in order:</strong> P3.1 types → P3.2 factory → P3.3 display → P3.4 persistence. The factory imports <code>CustomReaction</code> from P3.1; display needs the formatted equation from P3.2. &nbsp;
+    <strong>P4 models before P4.4 registration:</strong> never add toolbar items for reactors without a working model — silent null results are worse than a missing button. &nbsp;
+    <strong>Flexible:</strong> P5.2, P5.3, P5.1 are independent; pull any forward if there's a gap. P5.4 (tests) always last.
+  </div>
+</div>
+
+<!-- Architectural Decisions -->
+<div class="decisions">
+  <div class="decisions-title">🔑 Architectural decisions to get right upfront — 6 new for Phase 4 (2 from Graphify analysis)</div>
+  <div class="decision-grid">
+
+    <div class="decision new-decision">
+      <div class="decision-name">🔬 Graphify: store monoculture — no new direct useSimulatorStore calls in Phase 4</div>
+      <div class="decision-wrong">✗ Each new Phase 4 component (PropertiesPanel, ReactionBuilderModal, SemibatchNode) calls <code>useSimulatorStore(s =&gt; s.X)</code> directly, as all existing components do. This adds more edges to the god node, raising useSimulatorStore from 67 to 80+ cross-community edges by end of Phase 4.</div>
+      <div class="decision-right">✓ Every new Phase 4 component goes through a purpose-built selector hook: <code>useReactorNode(id)</code> (P1.6) for node components; <code>useSimulationResult()</code> for plot/analysis components; <code>useReactionParams()</code> for the reaction builder. These hooks are thin wrappers — they call the store once internally — but they give Graphify a stable community boundary to cluster against, keeping the god-node edge count flat.</div>
+      <p style="color:#64748b;font-size:10.5px;margin-top:5px;line-height:1.5">The store itself does not change — only access patterns. Selector hooks also enable React.memo bailouts that direct subscriptions cannot, so Phase 4 gets a performance improvement for free.</p>
+    </div>
+
+    <div class="decision new-decision">
+      <div class="decision-name">🔬 Graphify: Param Panel blob — P3 reaction builder splits it, not grows it</div>
+      <div class="decision-wrong">✗ Add the ReactionBuilderModal, CustomReaction types, and buildCustomPreset factory into the same community as ParameterPanel.tsx, since they're all related to "chemistry configuration." The blob grows from 73 nodes to 90+ nodes with cohesion dropping further below 0.07.</div>
+      <div class="decision-right">✓ The reaction builder is a deliberate split operation on the blob: <strong>(a)</strong> <code>buildCustomPreset()</code> and <code>formatEquation()</code> go into <code>src/math/</code> — joining the pure-math community, not the Param Panel community; <strong>(b)</strong> <code>CustomReaction</code> and <code>CustomSpecies</code> types go into <code>src/types/simulation.ts</code>; <strong>(c)</strong> <code>ReactionBuilderModal.tsx</code> is a new isolated UI community (like Onboarding &amp; Shortcuts, cohesion ≥ 0.13). After P3, the Param Panel community should shrink: ParameterPanel.tsx imports from math/ but the math no longer lives inside it.</div>
+      <p style="color:#64748b;font-size:10.5px;margin-top:5px;line-height:1.5">Target: Param Panel community shrinks from 73 nodes → ~50, cohesion improves from 0.07 → ≥ 0.12. ReactionBuilder forms its own tight community (≥ 0.20).</p>
+    </div>
+
+    <div class="decision new-decision">
+      <div class="decision-name">Custom preset: factory function vs. eval() / dynamic code</div>
+      <div class="decision-wrong">✗ Build the rate law as a string expression and call <code>eval()</code> or <code>new Function()</code> at runtime. Tempting because it lets users type "k*Ca**2" directly — but eval is a CSP violation, impossible to typecheck, and a security footgun.</div>
+      <div class="decision-right">✓ Template factory: <code>buildCustomPreset(cr: CustomReaction)</code> takes the rate type enum and constructs a closure using the species array. Power Law template: <code>(C, T, kP) =&gt; arrhenius(...) * reactants.reduce((acc, s) =&gt; acc * (C[s.label] ?? 0) ** s.stoich, 1)</code>. All code paths are compile-time safe, testable, and follow the existing <code>arrhenius()</code> pattern.</div>
+      <p style="color:#64748b;font-size:10.5px;margin-top:5px;line-height:1.5">The three built-in templates (Power Law, MM, LH) cover 95% of undergraduate ChE kinetics. Adding a new template later is a one-function addition to the factory — not an architecture change.</p>
+    </div>
+
+    <div class="decision new-decision">
+      <div class="decision-name">Semibatch ODE: moles basis vs. concentration basis</div>
+      <div class="decision-wrong">✗ Write the semibatch ODE on a concentration basis: <code>dCA/dt = rA + (CA_in − CA)·vB/V</code>. This form looks familiar but has a dilution term that is easy to get wrong when V changes — especially the sign of the dilution term for products.</div>
+      <div class="decision-right">✓ Moles basis: state vector <code>[NA, NB, NR, V]</code>. Concentrations are derived: <code>CA = NA/V</code>, etc. The four ODEs are simple and unambiguous. RK4 steps are identical to the existing batch reactor ODE structure in <code>unitModels.ts</code>. Xa and S_R computed from final moles.</div>
+      <p style="color:#64748b;font-size:10.5px;margin-top:5px;line-height:1.5">The moles-basis formulation is standard in Fogler Appendix B and leaves no room for sign errors on the dilution term. Always derive concentrations, never track them as state variables when V is changing.</p>
+    </div>
+
+    <div class="decision new-decision">
+      <div class="decision-name">customReaction in SimulationParams: optional field migration</div>
+      <div class="decision-wrong">✗ Add <code>customReaction</code> as a required field. Every existing <code>SavedState</code> in localStorage will fail to deserialize (field missing → runtime error). Every spread of params in the sweep engine, target solver, and comparison engine must be updated immediately.</div>
+      <div class="decision-right">✓ Add as <code>customReaction?: CustomReaction | null</code> (optional). In <code>deserializeState()</code>, add a migration guard: <code>if (!('customReaction' in state.params)) state.params.customReaction = null</code>. The factory in P3.2 checks for null and falls through to the default preset. Follow the SimulationParams stability checklist from Phase 3 decisions.</div>
+      <p style="color:#64748b;font-size:10.5px;margin-top:5px;line-height:1.5">All existing saved files (from Phase 3) will deserialize cleanly and behave identically. The new field only activates when the user switches to 'custom' mode.</p>
+    </div>
+
+    <div class="decision new-decision">
+      <div class="decision-name">Side-injection PFR: new node type vs. flag on existing PFR</div>
+      <div class="decision-wrong">✗ Create a completely new node type <code>side-inject-pfr</code> with its own icon, toolbar item, node component, and solver branch. This mirrors how we added Semibatch as a distinct type — but the solver difference here is just one extra ODE term.</div>
+      <div class="decision-right">✓ Flag on the existing PFR node: <code>sideInjection: boolean</code> and <code>FB0_side: number</code> in <code>node.data</code>. The PFR solver checks the flag and calls <code>sideFeedPFR()</code> instead of the standard PFR ODE. The <code>PFRNode.tsx</code> component shows a "⊕B" badge when enabled. Toggle exposed in the per-reactor Properties Panel (P1.2). Keeps the toolbar lean.</div>
+      <p style="color:#64748b;font-size:10.5px;margin-top:5px;line-height:1.5">The semibatch reactor genuinely has different mass balances (moles basis, batch time) that justify a new type. The side-injection PFR is a PFR with one additional ODE term — a flag is the right granularity.</p>
+    </div>
+
+    <div class="decision">
+      <div class="decision-name">Floating popover state: sessionSlice vs. localStorage</div>
+      <div class="decision-wrong">✗ Persist the popover open/closed state in <code>localStorage</code> like the accordion section state. Sounds convenient, but the popover is transient UI — if the user navigates away and back, restoring a floating panel that obscures the canvas is disorienting.</div>
+      <div class="decision-right">✓ Store popover open state in <code>sessionSlice.paramPopoverOpen: boolean</code> (default <code>false</code>). This slice is in-memory only — not persisted to localStorage. The popover always starts closed on page load. The section <em>open states within</em> the popover still persist to localStorage via the existing <code>rsi-param-sections</code> key.</div>
+      <p style="color:#64748b;font-size:10.5px;margin-top:5px;line-height:1.5">Distinction: <em>which sections are expanded</em> (meaningful preference to persist) vs. <em>whether the popover is open</em> (transient session state). Get the persistence boundary right the first time — changing it later means a localStorage migration.</p>
+    </div>
+
+    <div class="decision">
+      <div class="decision-name">Selectivity analysis data: computed in solver vs. derived on render</div>
+      <div class="decision-wrong">✗ Compute the series C_R/Ca₀ curve and S_R value inside the React component using current params. This runs the math on every render, can't be cached, and duplicates logic that belongs in the pure math layer.</div>
+      <div class="decision-right">✓ Extend <code>SimulationResult</code> with <code>selectivityAnalysis?: { SR: number; YR_curve: {Da: number; YR: number}[]; Da_opt?: number }</code>. Populated by <code>solveNetwork()</code> after the main solve (one extra pure-math pass). The component only renders what's in the result object. Follows the existing pattern where Levenspiel plot data is also pre-computed in <code>SimulationResult</code>.</div>
+      <p style="color:#64748b;font-size:10.5px;margin-top:5px;line-height:1.5">Keeping derived data in <code>SimulationResult</code> also means it gets exported to the CSV and shows up in the HTML report automatically, without any extra wiring.</p>
+    </div>
+
+  </div>
+  <div class="rule-box">
+    <strong>Phase 4 purity rule:</strong> New pure files — <code>semibatchModel.ts</code>, <code>formatEquation.ts</code>, <code>equilibrium.ts</code>, <code>rtdModel.ts</code> — all go into <code>src/math/</code> and must be added to <code>PURE_FILES</code> in <code>purity.test.ts</code>. The <code>buildCustomPreset()</code> factory lives in <code>src/math/reactionRegistry.ts</code> (already in PURE_FILES). <code>CustomReaction</code> and <code>CustomSpecies</code> types live in <code>src/types/simulation.ts</code> (type-only file, already pure). The <code>ReactionBuilderModal.tsx</code> component and popover component are React UI — they import from <code>src/math/</code> (allowed direction) but never the reverse. Zero import cycles must be maintained: verify each new file with <code>madge --circular src/</code> before merge. Target: <strong>27 tests now → 32+ tests after P5.4</strong> (5 new tests: Arrhenius regression, semibatch, custom factory, Xeq, RTD bracketing). The <code>SimulationParams</code> migration checklist from Phase 3 applies to the <code>customReaction</code> field addition — grep for all spreads and destructures before merging P3.1. &nbsp;
+    <strong>Graphify community targets after Phase 4:</strong> Param Panel community 73 nodes → ~50 nodes, cohesion 0.07 → ≥ 0.12; ReactionBuilder forms a new isolated community ≥ 0.20 cohesion; <code>useSimulatorStore</code> god-node cross-community edges flat at ≤ 60 (no growth from Phase 4 additions); Reactor Nodes ↔ Param Panel coupling 33 edges → ≤ 15 after P1.6; total communities 26 → ~30 (new: ReactionBuilder, SemibatchModel, FixedBedModel, RTDAnalysis). Run Graphify after P3.4 merges to verify the blob split is working before committing to P4 new reactor types.
+  </div>
+</div>
+
+</body>
+</html>
