@@ -251,7 +251,7 @@ export default function ReactorCanvas() {
 
   return (
     <ValidationProvider nodes={nodes} edges={edges}>
-    <div ref={containerRef} className="w-full h-full bg-[#e8eeff]">
+    <div ref={containerRef} className="w-full h-full" style={{ background: 'var(--canvas-bg)' }}>
       <ReactFlow
         nodes={nodes}
         edges={displayEdges}
@@ -283,7 +283,7 @@ export default function ReactorCanvas() {
         maxZoom={2}
         defaultViewport={{ x: 0, y: 0, zoom: 1 }}
       >
-        <Background variant={BackgroundVariant.Dots} gap={20} color="#c7d2e8" />
+        <Background variant={BackgroundVariant.Dots} gap={20} color="var(--canvas-dot)" />
         <Controls
           style={{
             backgroundColor: '#ffffff',

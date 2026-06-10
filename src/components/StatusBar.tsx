@@ -58,7 +58,7 @@ export default function StatusBar() {
   const warnCount  = issues.filter((i) => i.level === 'warning').length;
 
   return (
-    <div className="h-12 bg-[#f8faff] border-t border-[#dde3f0] flex items-center px-4 gap-3 text-[12px] shrink-0">
+    <div className="h-12 flex items-center px-4 gap-3 text-[12px] shrink-0" style={{ background: 'var(--surface-raised)', borderTop: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
       {result ? (
         <>
           <span className="text-[#374151]">Final Xₐ:</span>
