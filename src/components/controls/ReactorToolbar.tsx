@@ -2,37 +2,80 @@ import { useCallback, useState } from 'react';
 import { Save, FolderOpen, BookOpen } from 'lucide-react';
 import { useSaveFile, useLoadFile, useLoadExample } from '../../hooks/useFileIO';
 import { EXAMPLES } from '../../io/examples';
-import { IconButton, Divider } from '../ui';
+import { Divider } from '../ui';
 
-function CstRIcon() {
+function CstrIcon() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-      <rect x="3" y="4" width="18" height="16" rx="2" stroke="#2563eb" strokeWidth="1.5" fill="none" />
-      <line x1="7" y1="12" x2="17" y2="12" stroke="#2563eb" strokeWidth="1" strokeDasharray="2 2" />
-      <line x1="10" y1="9" x2="10" y2="15" stroke="#2563eb" strokeWidth="1" />
-      <line x1="14" y1="9" x2="14" y2="15" stroke="#2563eb" strokeWidth="1" />
+    <svg width="26" height="28" viewBox="0 0 26 28" fill="none">
+      <path d="M2 2 H24 V18 Q13 27 2 18 Z"
+        stroke="#2563eb" strokeWidth="1.5" fill="#eff6ff" strokeLinejoin="round" />
+      <line x1="13" y1="2" x2="13" y2="16" stroke="#2563eb" strokeWidth="1.3" />
+      <line x1="7" y1="16" x2="19" y2="16" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" />
+      <line x1="7" y1="13" x2="19" y2="13" stroke="#2563eb" strokeWidth="1.3" strokeLinecap="round" />
     </svg>
   );
 }
 
-function PFRicon() {
+function PfrIcon() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-      <rect x="3" y="6" width="18" height="12" rx="6" stroke="#d97706" strokeWidth="1.5" fill="none" />
-      <line x1="7" y1="12" x2="17" y2="12" stroke="#d97706" strokeWidth="1" strokeDasharray="2 2" />
-      <line x1="9" y1="10" x2="9" y2="14" stroke="#d97706" strokeWidth="0.8" />
-      <line x1="12" y1="10" x2="12" y2="14" stroke="#d97706" strokeWidth="0.8" />
-      <line x1="15" y1="10" x2="15" y2="14" stroke="#d97706" strokeWidth="0.8" />
+    <svg width="28" height="16" viewBox="0 0 28 16" fill="none">
+      <path d="M5 1 H23 Q28 1 28 8 Q28 15 23 15 H5 Q0 15 0 8 Q0 1 5 1 Z"
+        stroke="#d97706" strokeWidth="1.5" fill="#fffbeb" />
+      <path d="M5 5 L10 8 L5 11 Z" fill="#d97706" />
+      <path d="M13 5 L18 8 L13 11 Z" fill="#d97706" />
     </svg>
   );
 }
 
 function BatchIcon() {
   return (
+    <svg width="22" height="28" viewBox="0 0 22 28" fill="none">
+      <path d="M8 2 H14 V10 L20 22 Q22 28 11 28 Q0 28 2 22 L8 10 Z"
+        stroke="#be123c" strokeWidth="1.5" fill="#fff1f2" strokeLinejoin="round" />
+      <path d="M4 22 Q11 20 18 22"
+        stroke="#be123c" strokeWidth="1.2" strokeDasharray="2 1.5" />
+    </svg>
+  );
+}
+
+function MixerIcon() {
+  return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-      <path d="M9 3h6M10 3v5L6 16a3 3 0 006 0h0a3 3 0 006 0L14 8V3"
-        stroke="#be123c" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-      <path d="M7 14h10" stroke="#be123c" strokeWidth="1" strokeDasharray="2 1.5" />
+      <line x1="12" y1="3"  x2="12" y2="12" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" />
+      <line x1="12" y1="21" x2="12" y2="12" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" />
+      <line x1="12" y1="12" x2="21" y2="12" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" />
+      <circle cx="12" cy="12" r="3" fill="#059669" />
+    </svg>
+  );
+}
+
+function SplitterIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <line x1="3"  y1="12" x2="12" y2="12" stroke="#7c3aed" strokeWidth="2.5" strokeLinecap="round" />
+      <line x1="12" y1="12" x2="22" y2="6"  stroke="#7c3aed" strokeWidth="2"   strokeLinecap="round" />
+      <line x1="12" y1="12" x2="22" y2="18" stroke="#7c3aed" strokeWidth="2"   strokeLinecap="round" />
+      <circle cx="12" cy="12" r="3" fill="#7c3aed" />
+    </svg>
+  );
+}
+
+function FeedIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="9" stroke="#6b7280" strokeWidth="1.5" fill="#f9fafb" />
+      <line x1="12" y1="7"  x2="12" y2="17" stroke="#6b7280" strokeWidth="1.6" strokeLinecap="round" />
+      <line x1="7"  y1="12" x2="17" y2="12" stroke="#6b7280" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function ProductIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="9" stroke="#16a34a" strokeWidth="1.5" fill="#f0fdf4" />
+      <polyline points="9,9 15,12 9,15"
+        stroke="#16a34a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
     </svg>
   );
 }
@@ -52,23 +95,24 @@ export default function ReactorToolbar() {
   const [examplesOpen, setExamplesOpen] = useState(false);
 
   return (
-    <div className="w-16 h-full bg-[#ffffff] border-r border-[#dde3f0] flex flex-col items-center pt-4 gap-4 pb-4">
+    <div className="w-20 h-full bg-[#ffffff] border-r border-[#dde3f0] flex flex-col items-center pt-3 gap-3 pb-4">
       <div
         className="flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing"
         draggable
         onDragStart={(e) => onDragStart(e, 'CSTR')}
+        title="CSTR — Continuous Stirred Tank Reactor"
         style={{ width: 56 }}
       >
         <div
           className="flex items-center justify-center rounded-md border"
           style={{
-            width: 44,
+            width: 52,
             height: 52,
             borderColor: '#2563eb',
             background: '#eff6ff',
           }}
         >
-          <CstRIcon />
+          <CstrIcon />
         </div>
         <span className="text-[10px] font-medium text-[#2563eb] uppercase tracking-wider">
           CSTR
@@ -79,18 +123,19 @@ export default function ReactorToolbar() {
         className="flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing"
         draggable
         onDragStart={(e) => onDragStart(e, 'PFR')}
+        title="PFR — Plug Flow Reactor"
         style={{ width: 56 }}
       >
         <div
           className="flex items-center justify-center rounded-md border"
           style={{
-            width: 44,
+            width: 52,
             height: 52,
             borderColor: '#d97706',
             background: '#fffbeb',
           }}
         >
-          <PFRicon />
+          <PfrIcon />
         </div>
         <span className="text-[10px] font-medium text-[#d97706] uppercase tracking-wider">
           PFR
@@ -101,11 +146,12 @@ export default function ReactorToolbar() {
         className="flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing"
         draggable
         onDragStart={(e) => onDragStart(e, 'Batch')}
+        title="Batch — Batch Reactor"
         style={{ width: 56 }}
       >
         <div
           className="flex items-center justify-center rounded-md border"
-          style={{ width: 44, height: 52, borderColor: '#be123c', background: '#fff1f2' }}
+          style={{ width: 52, height: 52, borderColor: '#be123c', background: '#fff1f2' }}
         >
           <BatchIcon />
         </div>
@@ -118,22 +164,19 @@ export default function ReactorToolbar() {
         className="flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing"
         draggable
         onDragStart={(e) => onDragStart(e, 'Mixer')}
+        title="Mixer — Stream Combiner"
         style={{ width: 56 }}
       >
         <div
           className="flex items-center justify-center rounded-md border"
           style={{
-            width: 44,
+            width: 52,
             height: 52,
             borderColor: '#059669',
             background: '#ecfdf5',
           }}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M8 8L16 16M16 8L8 16" stroke="#059669" strokeWidth="1.5" strokeLinecap="round" />
-            <circle cx="12" cy="12" r="9" stroke="#059669" strokeWidth="1.5" fill="none" />
-            <circle cx="12" cy="12" r="3" fill="#059669" opacity="0.2" />
-          </svg>
+          <MixerIcon />
         </div>
         <span className="text-[10px] font-medium text-[#059669] uppercase tracking-wider">
           Mixer
@@ -144,48 +187,39 @@ export default function ReactorToolbar() {
         className="flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing"
         draggable
         onDragStart={(e) => onDragStart(e, 'Splitter')}
+        title="Splitter — Stream Divider"
         style={{ width: 56 }}
       >
         <div
           className="flex items-center justify-center rounded-md border"
           style={{
-            width: 44,
+            width: 52,
             height: 52,
             borderColor: '#7c3aed',
             background: '#f5f3ff',
           }}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="9" stroke="#7c3aed" strokeWidth="1.5" fill="none" />
-            <circle cx="12" cy="12" r="3" fill="#7c3aed" opacity="0.2" />
-            <line x1="8" y1="12" x2="16" y2="12" stroke="#7c3aed" strokeWidth="1.5" />
-            <line x1="12" y1="8" x2="12" y2="16" stroke="#7c3aed" strokeWidth="1.5" />
-            <path d="M12 12L18 8" stroke="#7c3aed" strokeWidth="1" strokeDasharray="2 1" />
-            <path d="M12 12L18 16" stroke="#7c3aed" strokeWidth="1" strokeDasharray="2 1" />
-          </svg>
+          <SplitterIcon />
         </div>
         <span className="text-[10px] font-medium text-[#7c3aed] uppercase tracking-wider">
           Split
         </span>
       </div>
 
-      <Divider className="w-10" />
+      <Divider className="w-12" />
 
       <div
         className="flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing"
         draggable
         onDragStart={(e) => onDragStart(e, 'Feed')}
+        title="Feed — Process Feed Stream"
         style={{ width: 56 }}
       >
         <div
           className="flex items-center justify-center rounded-md border"
-          style={{ width: 44, height: 52, borderColor: '#6b7280', background: '#f9fafb' }}
+          style={{ width: 52, height: 52, borderColor: '#6b7280', background: '#f9fafb' }}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="9" stroke="#6b7280" strokeWidth="1.5" strokeDasharray="4 2" />
-            <line x1="12" y1="8" x2="12" y2="16" stroke="#6b7280" strokeWidth="1.5" strokeLinecap="round" />
-            <line x1="8" y1="12" x2="12" y2="12" stroke="#6b7280" strokeWidth="1" strokeLinecap="round" />
-          </svg>
+          <FeedIcon />
         </div>
         <span className="text-[10px] font-medium text-[#6b7280] uppercase tracking-wider">
           Feed
@@ -196,16 +230,14 @@ export default function ReactorToolbar() {
         className="flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing"
         draggable
         onDragStart={(e) => onDragStart(e, 'Product')}
+        title="Product — Process Product Stream"
         style={{ width: 56 }}
       >
         <div
           className="flex items-center justify-center rounded-md border"
-          style={{ width: 44, height: 52, borderColor: '#16a34a', background: '#f0fdf4' }}
+          style={{ width: 52, height: 52, borderColor: '#16a34a', background: '#f0fdf4' }}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="9" stroke="#16a34a" strokeWidth="1.5" strokeDasharray="4 2" />
-            <polyline points="10,10 14,12 10,14" stroke="#16a34a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-          </svg>
+          <ProductIcon />
         </div>
         <span className="text-[10px] font-medium text-[#16a34a] uppercase tracking-wider">
           Product
@@ -213,24 +245,39 @@ export default function ReactorToolbar() {
       </div>
 
       <div className="mt-auto" />
-      <Divider className="w-10 mb-1" />
+      <Divider className="w-12 mb-1" />
 
-      <IconButton onClick={handleSave} title="Save flowsheet" className="mb-2">
-        <Save size={18} color="#374151" />
-      </IconButton>
+      <button
+        onClick={handleSave}
+        title="Save flowsheet"
+        className="flex flex-col items-center gap-0.5 w-16 py-1.5 rounded-md
+                   hover:bg-[#f1f5f9] transition-colors"
+      >
+        <Save size={16} color="#374151" />
+        <span style={{ fontSize: 9, color: '#6b7280', fontWeight: 500 }}>Save</span>
+      </button>
 
-      <IconButton onClick={handleLoad} title="Load flowsheet" className="mb-2">
-        <FolderOpen size={18} color="#374151" />
-      </IconButton>
+      <button
+        onClick={handleLoad}
+        title="Load flowsheet"
+        className="flex flex-col items-center gap-0.5 w-16 py-1.5 rounded-md
+                   hover:bg-[#f1f5f9] transition-colors"
+      >
+        <FolderOpen size={16} color="#374151" />
+        <span style={{ fontSize: 9, color: '#6b7280', fontWeight: 500 }}>Load</span>
+      </button>
 
       <div style={{ position: 'relative' }} className="mb-4">
-        <IconButton
+        <button
           onClick={() => setExamplesOpen((v) => !v)}
           title="Load example"
-          active={examplesOpen}
+          className="flex flex-col items-center gap-0.5 w-16 py-1.5 rounded-md
+                     hover:bg-[#f1f5f9] transition-colors"
+          style={examplesOpen ? { background: '#eff6ff' } : {}}
         >
-          <BookOpen size={18} color="#374151" />
-        </IconButton>
+          <BookOpen size={16} color="#374151" />
+          <span style={{ fontSize: 9, color: '#6b7280', fontWeight: 500 }}>Examples</span>
+        </button>
 
         {examplesOpen && (
           <div
