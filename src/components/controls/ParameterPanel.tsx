@@ -20,11 +20,13 @@ function HoverDropdown<T extends string>({
   options,
   value,
   onChange,
+  minWidth,
 }: {
   label: string;
   options: { value: T; label: string }[];
   value: T;
   onChange: (v: T) => void;
+  minWidth?: number;
 }) {
   const [open, setOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -74,12 +76,18 @@ function HoverDropdown<T extends string>({
     >
       <button
         ref={buttonRef}
-        className="px-3 py-1.5 text-[11px] font-medium uppercase tracking-wider rounded border border-[#dde3f0] bg-[#ffffff] text-[#0f1730] hover:border-[#2563eb] transition-colors min-w-[140px] text-left flex items-center justify-between gap-2"
+        className="px-3 py-1.5 text-[11px] font-medium uppercase tracking-wider rounded border border-[#dde3f0] bg-[#ffffff] text-[#0f1730] hover:border-[#2563eb] transition-colors text-left flex items-center justify-between gap-2"
+        style={{ minWidth }}
       >
-        <span>
-          <span className="text-[#6b7280] mr-1">{label}:</span>
-          {selected?.label}
-        </span>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0 }}>
+          <span style={{ fontSize: 8, fontWeight: 700, color: '#94a3b8',
+                         textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            {label}
+          </span>
+          <span style={{ fontSize: 12, fontWeight: 600, color: '#0f1730', lineHeight: '1.2' }}>
+            {selected?.label}
+          </span>
+        </div>
         <svg width="8" height="5" viewBox="0 0 8 5" fill="none">
           <path d="M1 1L4 4L7 1" stroke="#6b7280" strokeWidth="1.2" strokeLinecap="round" />
         </svg>
@@ -123,13 +131,21 @@ export default function ParameterPanel() {
 
   const kLabel = isSingle ? 'k₁' : 'k₁';
 
+  const modeAccent = params.reactionMode === 'series'   ? '#0d9488'
+                   : params.reactionMode === 'parallel' ? '#7c3aed'
+                   : '#2563eb';
+
   return (
-    <div className="bg-[#ffffff] border-b border-[#dde3f0] flex items-center gap-4 px-4 overflow-x-auto" style={{ minHeight: 60 }}>
+    <div
+      className="bg-[#ffffff] border-b border-[#dde3f0] flex items-center gap-3 px-4 overflow-x-auto"
+      style={{ height: 48, borderLeft: `3px solid ${modeAccent}` }}
+    >
       <HoverDropdown
         label="Mode"
         options={modeOptions}
         value={params.reactionMode}
         onChange={(v) => updateParams({ reactionMode: v })}
+        minWidth={100}
       />
 
       {isSingle && (
@@ -138,11 +154,14 @@ export default function ParameterPanel() {
           options={kineticsOptions}
           value={params.kinetics}
           onChange={(v) => updateParams({ kinetics: v })}
+          minWidth={148}
         />
       )}
 
-      <div className="flex items-center gap-1.5 shrink-0">
-        <span className="text-[11px] text-[#374151] font-mono">{kLabel} =</span>
+      <div style={{ width: 1, height: 24, background: '#e0e6f0', flexShrink: 0 }} />
+
+      <div className="flex items-center gap-1 shrink-0">
+        <span style={{ fontSize: 10, color: '#94a3b8', fontFamily: 'monospace' }}>{kLabel}</span>
         <Input
           type="number"
           min="0.01"
@@ -153,14 +172,14 @@ export default function ParameterPanel() {
             const v = parseFloat(e.target.value);
             if (!isNaN(v)) updateParams({ k: Math.max(0.01, Math.min(10, v)) });
           }}
-          className="w-16"
+          className="w-14"
         />
-        <span className="text-[10px] text-[#6b7280]">{kUnit}</span>
+        <span style={{ fontSize: 9, color: '#94a3b8' }}>{kUnit}</span>
       </div>
 
       {isSingle && params.kinetics === 'reversible' && (
-        <div className="flex items-center gap-1.5 shrink-0">
-          <span className="text-[11px] text-[#374151] font-mono">K<sub>eq,ref</sub> =</span>
+        <div className="flex items-center gap-1 shrink-0">
+          <span style={{ fontSize: 10, color: '#94a3b8', fontFamily: 'monospace' }}>K<sub>eq,ref</sub></span>
           <Input
             type="number"
             min="0.1"
@@ -171,15 +190,15 @@ export default function ParameterPanel() {
               const v = parseFloat(e.target.value);
               if (!isNaN(v)) updateParams({ Keq_ref: Math.max(0.1, Math.min(100, v)) });
             }}
-            className="w-16"
+            className="w-14"
           />
-          <span className="text-[10px] text-[#6b7280]">—</span>
+          <span style={{ fontSize: 9, color: '#94a3b8' }}>—</span>
         </div>
       )}
 
       {!isSingle && (
-        <div className="flex items-center gap-1.5 shrink-0">
-          <span className="text-[11px] text-[#374151] font-mono">k₂ =</span>
+        <div className="flex items-center gap-1 shrink-0">
+          <span style={{ fontSize: 10, color: '#94a3b8', fontFamily: 'monospace' }}>k₂</span>
           <Input
             type="number"
             min="0.01"
@@ -190,14 +209,14 @@ export default function ParameterPanel() {
               const v = parseFloat(e.target.value);
               if (!isNaN(v)) updateParams({ k2: Math.max(0.01, Math.min(10, v)) });
             }}
-            className="w-16"
+            className="w-14"
           />
-          <span className="text-[10px] text-[#6b7280]">s⁻¹</span>
+          <span style={{ fontSize: 9, color: '#94a3b8' }}>s⁻¹</span>
         </div>
       )}
 
-      <div className="flex items-center gap-1.5 shrink-0">
-        <span className="text-[11px] text-[#374151] font-mono">Cₐ₀ =</span>
+      <div className="flex items-center gap-1 shrink-0">
+        <span style={{ fontSize: 10, color: '#94a3b8', fontFamily: 'monospace' }}>Cₐ₀</span>
         <Input
           type="number"
           min="0.1"
@@ -208,14 +227,14 @@ export default function ParameterPanel() {
             const v = parseFloat(e.target.value);
             if (!isNaN(v)) updateParams({ Ca0: Math.max(0.1, Math.min(100, v)) });
           }}
-          className="w-16"
+          className="w-14"
         />
-        <span className="text-[10px] text-[#6b7280]">mol/L</span>
+        <span style={{ fontSize: 9, color: '#94a3b8' }}>mol/L</span>
       </div>
 
       {preset.id === 'single-autocatalytic' && (
-        <div className="flex items-center gap-1.5 shrink-0">
-          <span className="text-[11px] text-[#374151] font-mono">Cᵣ₀/Cₐ₀ =</span>
+        <div className="flex items-center gap-1 shrink-0">
+          <span style={{ fontSize: 10, color: '#94a3b8', fontFamily: 'monospace' }}>Cᵣ₀/Cₐ₀</span>
           <Input
             type="number"
             min="0.001"
@@ -226,23 +245,35 @@ export default function ParameterPanel() {
               const v = parseFloat(e.target.value);
               if (!isNaN(v)) updateParams({ Cr0_fraction: Math.max(0.001, Math.min(0.5, v)) });
             }}
-            className="w-16"
+            className="w-14"
           />
         </div>
       )}
 
       <button
         onClick={() => setThermalOpen(!thermalOpen)}
-        className="ml-auto flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-[#6b7280] hover:text-[#2563eb] transition-colors shrink-0 px-2 py-1 rounded hover:bg-[#f8faff]"
+        className="ml-auto shrink-0 flex items-center gap-1.5 transition-colors"
+        style={{
+          padding: '3px 10px',
+          borderRadius: 20,
+          border: `1px solid ${thermalOpen ? '#f97316' : '#dde3f0'}`,
+          background: thermalOpen ? '#fff7ed' : 'transparent',
+          color: thermalOpen ? '#c2410c' : '#6b7280',
+          fontSize: 10,
+          fontWeight: 600,
+          letterSpacing: '0.05em',
+          textTransform: 'uppercase',
+          cursor: 'pointer',
+        }}
       >
-        {thermalOpen ? <X size={12} /> : <Gauge size={12} />}
-        Thermal
+        {thermalOpen ? <X size={11} /> : <Gauge size={11} />}
+        THERMAL
       </button>
 
       {thermalOpen && (
-        <div className="flex items-center gap-3 shrink-0 pl-2 pr-1 py-1 border-l border-[#dde3f0]">
+        <div className="flex items-center gap-3 shrink-0 pl-3 border-l border-[#e0e6f0]">
           <div className="flex items-center gap-1">
-            <span className="text-[10px] text-[#6b7280]">T_feed</span>
+            <span style={{ fontSize: 9, color: '#94a3b8' }}>T_feed</span>
             <Input
               type="number"
               min="200"
@@ -255,10 +286,10 @@ export default function ParameterPanel() {
               }}
               className="w-12"
             />
-            <span className="text-[9px] text-[#6b7280]">K</span>
+            <span style={{ fontSize: 9, color: '#94a3b8' }}>K</span>
           </div>
           <div className="flex items-center gap-1">
-            <span className="text-[10px] text-[#6b7280]">Eₐ</span>
+            <span style={{ fontSize: 9, color: '#94a3b8' }}>Eₐ</span>
             <Input
               type="number"
               min="0"
@@ -271,10 +302,10 @@ export default function ParameterPanel() {
               }}
               className="w-12"
             />
-            <span className="text-[9px] text-[#6b7280]">kJ/mol</span>
+            <span style={{ fontSize: 9, color: '#94a3b8' }}>kJ/mol</span>
           </div>
           <div className="flex items-center gap-1">
-            <span className="text-[10px] text-[#6b7280]">ΔH</span>
+            <span style={{ fontSize: 9, color: '#94a3b8' }}>ΔH</span>
             <Input
               type="number"
               min="-500"
@@ -287,10 +318,10 @@ export default function ParameterPanel() {
               }}
               className="w-12"
             />
-            <span className="text-[9px] text-[#6b7280]">kJ/mol</span>
+            <span style={{ fontSize: 9, color: '#94a3b8' }}>kJ/mol</span>
           </div>
           <div className="flex items-center gap-1">
-            <span className="text-[10px] text-[#6b7280]">ρCp</span>
+            <span style={{ fontSize: 9, color: '#94a3b8' }}>ρCp</span>
             <Input
               type="number"
               min="0.1"
@@ -303,7 +334,7 @@ export default function ParameterPanel() {
               }}
               className="w-12"
             />
-            <span className="text-[9px] text-[#6b7280]">kJ/(m³·K)</span>
+            <span style={{ fontSize: 9, color: '#94a3b8' }}>kJ/(m³·K)</span>
           </div>
         </div>
       )}
