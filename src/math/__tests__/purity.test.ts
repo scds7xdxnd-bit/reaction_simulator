@@ -33,6 +33,7 @@ const PURE_FILES = [
   'src/schema/parameterSchema.ts',
   'src/math/pressureDropModel.ts',
   'src/math/gasPhaseFactor.ts',
+  'src/math/steadyStateMapper.ts',
 ] as const;
 
 describe('purity invariants — zero store/React runtime imports', () => {

@@ -9,6 +9,7 @@ import {
   ReferenceDot,
 } from 'recharts';
 import { useSimulatorStore } from '../../store/simulatorStore';
+import { classifySteadyStates, steadyStateColor } from '../../math/steadyStateMapper';
 
 export default function OperatingDiagram() {
   const result = useSimulatorStore((s) => s.result);
@@ -35,7 +36,8 @@ export default function OperatingDiagram() {
     if (!activeId || !result) return null;
     const diagram = result.operatingDiagrams[activeId];
     if (!diagram) return null;
-    return { diagram, hasMultiplicity: diagram.steadyStates.length >= 3 };
+    const multiplicity = classifySteadyStates(diagram.steadyStates);
+    return { diagram, multiplicity };
   }, [activeId, result]);
 
   if (!diagramData) {
@@ -46,7 +48,7 @@ export default function OperatingDiagram() {
     );
   }
 
-  const { diagram, hasMultiplicity } = diagramData;
+  const { diagram, multiplicity } = diagramData;
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -66,9 +68,25 @@ export default function OperatingDiagram() {
           </select>
         </div>
       )}
-      {hasMultiplicity && (
-        <div className="text-[10px] font-medium text-[#d97706] px-3 py-1 bg-[#fffbeb] border-b border-[#fde68a]">
-          Multiple steady states detected ({diagram.steadyStates.length})
+      {multiplicity.hasMultiplicity && (
+        <div className="px-3 py-1.5 bg-[#fffbeb] border-b border-[#fde68a]">
+          <div className="text-[10px] font-bold text-[#92400e] mb-1">
+            ⚡ Multiple Steady States — ignition / unstable / extinction
+          </div>
+          <div className="flex gap-2">
+            {multiplicity.states.map((ss) => (
+              <div
+                key={ss.label}
+                className="flex-1 rounded px-2 py-1 text-[9.5px]"
+                style={{ background: steadyStateColor(ss.label) + '18', border: `1px solid ${steadyStateColor(ss.label)}44` }}
+              >
+                <div className="font-bold capitalize" style={{ color: steadyStateColor(ss.label) }}>{ss.label}</div>
+                <div className="text-[#374151]">T = {ss.T.toFixed(1)} K</div>
+                <div className="text-[#374151]">Xₐ = {ss.Xa.toFixed(3)}</div>
+                <div style={{ color: ss.stable ? '#16a34a' : '#dc2626' }}>{ss.stable ? '● stable' : '○ unstable'}</div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
       <div className="flex-1 min-h-0">
@@ -133,18 +151,19 @@ export default function OperatingDiagram() {
               dot={false}
               name="R"
             />
-            {diagram.steadyStates.map((ss, i) => {
+            {multiplicity.states.map((ss, i) => {
               const nearest = diagram.curve.reduce((prev, curr) =>
                 Math.abs(curr.T - ss.T) < Math.abs(prev.T - ss.T) ? curr : prev
               );
+              const color = steadyStateColor(ss.label);
               return (
                 <ReferenceDot
                   key={i}
                   x={ss.T}
                   y={nearest.G}
                   r={6}
-                  fill={ss.stable ? '#16a34a' : 'transparent'}
-                  stroke={ss.stable ? '#16a34a' : '#dc2626'}
+                  fill={ss.stable ? color : 'transparent'}
+                  stroke={color}
                   strokeWidth={2}
                 />
               );
