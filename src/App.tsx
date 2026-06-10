@@ -11,7 +11,7 @@ import DynamicResponse from './components/plots/DynamicResponse';
 import PhasePortrait from './components/plots/PhasePortrait';
 import SweepPanel from './components/plots/SweepPanel';
 import RecyclePanel from './components/plots/RecyclePanel';
-import StreamTable from './components/StreamTable';
+import StreamTablePanel from './components/panels/StreamTablePanel';
 import StatusBar from './components/StatusBar';
 import DynamicControls from './components/controls/DynamicControls';
 import { useSimulatorStore } from './store/simulatorStore';
@@ -208,7 +208,7 @@ export default function App() {
             )}
             {rightTab !== 'dynamic' && rightTab !== 'analysis' && (
               <div className="shrink-0">
-                <StreamTable />
+                <StreamTablePanel />
               </div>
             )}
           </div>
