@@ -17,6 +17,7 @@ import StatusBar from './components/StatusBar';
 import DynamicControls from './components/controls/DynamicControls';
 import ShortcutsModal from './components/ShortcutsModal';
 import OnboardingTour, { shouldShowTour } from './components/OnboardingTour';
+import ParameterPopover from './components/controls/ParameterPopover';
 import { useSimulatorStore } from './store/simulatorStore';
 import { useClipboardActions } from './hooks/useClipboardActions';
 import { useDynamicSimulation } from './hooks/useDynamicSimulation';
@@ -47,6 +48,7 @@ export default function App() {
   const addToast     = useSimulatorStore((s) => s.addToast);
   const closeMenu       = useSimulatorStore((s) => s.closeMenu);
   const closeCanvasMenu = useSimulatorStore((s) => s.closeCanvasMenu);
+  const setParamsOpen   = useSimulatorStore((s) => s.setParamsOpen);
   const { copySelected, paste, cut, duplicate } = useClipboardActions();
   const dynamic = useDynamicSimulation();
 
@@ -68,7 +70,7 @@ export default function App() {
       const t = e.target as HTMLElement;
       const inInput = t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable;
       if (e.key === '?' && !inInput) { setShowShortcuts((v) => !v); return; }
-      if (e.key === 'Escape') { closeMenu(); closeCanvasMenu(); setShowShortcuts(false); return; }
+      if (e.key === 'Escape') { closeMenu(); closeCanvasMenu(); setShowShortcuts(false); setParamsOpen(false); return; }
 
       if ((e.key === 'Delete' || e.key === 'Backspace') && !inInput) {
         const { edges: cur, setEdges: se } = useSimulatorStore.getState();
@@ -113,7 +115,7 @@ export default function App() {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [undo, redo, copySelected, paste, cut, duplicate, closeMenu, closeCanvasMenu]);
+  }, [undo, redo, copySelected, paste, cut, duplicate, closeMenu, closeCanvasMenu, setParamsOpen]);
 
   useEffect(() => {
     try {
@@ -260,6 +262,7 @@ export default function App() {
         <StatusBar />
       )}
       <Toaster />
+      <ParameterPopover />
       {showShortcuts && <ShortcutsModal onClose={() => setShowShortcuts(false)} />}
       {showTour && <OnboardingTour onDone={() => setShowTour(false)} />}
     </div>

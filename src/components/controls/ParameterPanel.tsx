@@ -3,8 +3,6 @@ import { useSimulatorStore } from '../../store/simulatorStore';
 import type { ReactionMode } from '../../types/simulation';
 import { PRESETS, getPreset } from '../../math/reactionRegistry';
 import { Input } from '../ui';
-import { PARAM_SECTIONS } from '../../schema/parameterSchema';
-import type { ParamFieldDef } from '../../schema/parameterSchema';
 
 const kineticsOptions = PRESETS
   .filter((p) => p.kinetics != null)
@@ -121,22 +119,10 @@ function HoverDropdown<T extends string>({
   );
 }
 
-const STORAGE_KEY = 'rsi-param-sections';
-
-function loadSectionState(): Record<string, boolean> {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}');
-  } catch { return {}; }
-}
-
-function saveSectionState(state: Record<string, boolean>) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-}
 
 export default function ParameterPanel() {
   const params = useSimulatorStore((s) => s.params);
   const updateParams = useSimulatorStore((s) => s.updateParams);
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>(loadSectionState);
 
   const preset = getPreset(params);
   const isSingle = preset.isSingle;
@@ -147,24 +133,6 @@ export default function ParameterPanel() {
   const modeAccent = params.reactionMode === 'series'   ? '#0d9488'
                    : params.reactionMode === 'parallel' ? '#7c3aed'
                    : '#2563eb';
-
-  const toggleSection = (id: string) => {
-    setOpenSections((prev) => {
-      const next = { ...prev, [id]: !prev[id] };
-      saveSectionState(next);
-      return next;
-    });
-  };
-
-  function isFieldVisible(field: ParamFieldDef): boolean {
-    if (field.key === 'k' || field.key === 'Ca0' || field.key === 'Cr0_fraction') return false;
-    switch (field.key) {
-      case 'k2': return !isSingle;
-      case 'Keq_ref': return isSingle && params.kinetics === 'reversible';
-      case 'epsilon': return isSingle && params.kinetics === 'gas-phase-1st-order';
-      default: return true;
-    }
-  }
 
   return (
     <div
@@ -245,64 +213,6 @@ export default function ParameterPanel() {
         )}
       </div>
 
-      {PARAM_SECTIONS.map((sec) => {
-        const visibleFields = sec.fields.filter(isFieldVisible);
-        if (visibleFields.length === 0) return null;
-
-        return (
-          <div key={sec.id}>
-            <div
-              onClick={() => toggleSection(sec.id)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer',
-                borderTop: '1px solid #e0e6f0',
-                background: openSections[sec.id] ? sec.bgColor : 'var(--surface)',
-                padding: '4px 16px',
-              }}
-            >
-              <span style={{
-                width: 3, height: 14, background: sec.color,
-                borderRadius: 2, flexShrink: 0,
-              }} />
-              <span style={{ fontSize: 10, fontWeight: 700, color: sec.color,
-                            textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                {sec.label}
-              </span>
-              <svg width="8" height="5" viewBox="0 0 8 5" fill="none"
-                   style={{ marginLeft: 2, transform: openSections[sec.id] ? 'rotate(180deg)' : 'none',
-                          transition: 'transform 0.15s' }}>
-                <path d="M1 1L4 4L7 1" stroke={sec.color} strokeWidth="1.4" strokeLinecap="round" />
-              </svg>
-            </div>
-            {openSections[sec.id] && (
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
-                padding: '6px 16px 8px', background: sec.bgColor,
-                borderBottom: '1px solid #e0e6f0',
-              }}>
-                {visibleFields.map((field) => (
-                  <div key={field.key} className="flex items-center gap-1 shrink-0">
-                    <span style={{ fontSize: 10, color: '#94a3b8', fontFamily: 'monospace' }}>
-                      {field.label}
-                    </span>
-                    <Input
-                      type="number"
-                      min={String(field.min)} max={String(field.max)} step={String(field.step)}
-                      value={params[field.key] as number}
-                      onChange={(e) => {
-                        const v = parseFloat(e.target.value);
-                        if (!isNaN(v)) updateParams({ [field.key]: Math.max(field.min, Math.min(field.max, v)) });
-                      }}
-                      className="w-14"
-                    />
-                    <span style={{ fontSize: 9, color: '#94a3b8' }}>{field.unit}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        );
-      })}
     </div>
   );
 }

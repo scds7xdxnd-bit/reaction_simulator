@@ -27,6 +27,9 @@ export interface SessionSlice {
   canvasMenuFlowY: number;
   openCanvasMenu: (screenX: number, screenY: number, flowX: number, flowY: number) => void;
   closeCanvasMenu: () => void;
+
+  paramsOpen: boolean;
+  setParamsOpen: (v: boolean) => void;
 }
 
 export const createSessionSlice: StateCreator<SimulatorStore, [], [], SessionSlice> =
@@ -57,4 +60,7 @@ export const createSessionSlice: StateCreator<SimulatorStore, [], [], SessionSli
   openCanvasMenu:  (screenX, screenY, flowX, flowY) =>
     set({ canvasMenuVisible: true, canvasMenuX: screenX, canvasMenuY: screenY, canvasMenuFlowX: flowX, canvasMenuFlowY: flowY }),
   closeCanvasMenu: () => set({ canvasMenuVisible: false }),
+
+  paramsOpen: false,
+  setParamsOpen: (v) => set({ paramsOpen: v }),
 });

@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Save, FolderOpen, BookOpen, Download } from 'lucide-react';
+import { Save, FolderOpen, BookOpen, Download, Settings } from 'lucide-react';
 import { useSaveFile, useLoadFile, useLoadExample } from '../../hooks/useFileIO';
 import { useExport } from '../../hooks/useExport';
 import { EXAMPLES } from '../../io/examples';
@@ -87,6 +87,8 @@ export default function ReactorToolbar() {
   const addUnit        = useSimulatorStore((s) => s.addUnit);
   const addFeedNode    = useSimulatorStore((s) => s.addFeedNode);
   const addProductNode = useSimulatorStore((s) => s.addProductNode);
+  const paramsOpen     = useSimulatorStore((s) => s.paramsOpen);
+  const setParamsOpen  = useSimulatorStore((s) => s.setParamsOpen);
 
   const onDragStart = useCallback(
     (event: React.DragEvent, nodeType: string) => {
@@ -226,6 +228,22 @@ export default function ReactorToolbar() {
           Split
         </span>
       </div>
+
+      <Divider className="w-12" />
+
+      <button
+        data-params-trigger
+        onClick={() => setParamsOpen(!paramsOpen)}
+        title="Parameters"
+        className="flex flex-col items-center gap-0.5 w-12 py-1 rounded-md transition-colors"
+        style={{ background: paramsOpen ? '#eff6ff' : 'transparent' }}
+      >
+        <div className="flex items-center justify-center rounded-md border"
+          style={{ width: 44, height: 36, borderColor: paramsOpen ? '#2563eb' : '#dde3f0', background: paramsOpen ? '#eff6ff' : 'var(--surface)' }}>
+          <Settings size={18} color={paramsOpen ? '#2563eb' : '#374151'} />
+        </div>
+        <span style={{ fontSize: 9, color: paramsOpen ? '#2563eb' : '#6b7280', fontWeight: 500 }}>Params</span>
+      </button>
 
       <Divider className="w-12" />
 
