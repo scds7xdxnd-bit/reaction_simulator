@@ -228,7 +228,7 @@ export const createTopologySlice: StateCreator<SimulatorStore, [], [], TopologyS
 
     addReactor: (type, position) => {
       const state = get();
-      const prefix = type === 'CSTR' ? 'CSTR' : type === 'PFR' ? 'PFR' : 'Batch';
+      const prefix = type === 'CSTR' ? 'CSTR' : type === 'PFR' ? 'PFR' : type === 'Semibatch' ? 'SB' : 'Batch';
       const typeKey = type.toLowerCase() as string;
       const num = findLowestAvailable(state.nodes, prefix);
       const id = `${typeKey}-${num}`;
@@ -242,27 +242,25 @@ export const createTopologySlice: StateCreator<SimulatorStore, [], [], TopologyS
       trimmed.push(snapshot);
       if (trimmed.length > 50) trimmed.shift();
 
-      const newNode: Node = {
-        id,
-        type: typeKey,
-        position,
-        data: {
-          reactorType: type,
-          label,
-          tau: 2.0,
-          thermalMode: 'isothermal' as ThermalMode,
-          Tc: 300,
-          kappa_v: 0.5,
-          ic_Ca: state.params.Ca0,
-          ic_T: state.params.T_feed,
-        },
+      const baseData = {
+        reactorType: type,
+        label,
+        tau: type === 'Semibatch' ? 30.0 : 2.0,
+        thermalMode: 'isothermal' as ThermalMode,
+        Tc: 300,
+        kappa_v: 0.5,
+        ic_Ca: state.params.Ca0,
+        ic_T: state.params.T_feed,
+        ...(type === 'Semibatch' ? { FB0: 0.1, CB_feed: 1.0 } : {}),
       };
+
+      const newNode: Node = { id, type: typeKey, position, data: baseData };
 
       set({
         nodes: [...state.nodes.map(n => ({ ...n, selected: false })), { ...newNode, selected: true }],
-        cstrCount:  type === 'CSTR'  ? Math.max(state.cstrCount,  num) : state.cstrCount,
-        pfrCount:   type === 'PFR'   ? Math.max(state.pfrCount,   num) : state.pfrCount,
-        batchCount: type === 'Batch' ? Math.max(state.batchCount, num) : state.batchCount,
+        cstrCount:      type === 'CSTR'      ? Math.max(state.cstrCount,  num) : state.cstrCount,
+        pfrCount:       type === 'PFR'       ? Math.max(state.pfrCount,   num) : state.pfrCount,
+        batchCount:     type === 'Batch'     ? Math.max(state.batchCount, num) : state.batchCount,
         _history: trimmed,
         _historyIndex: trimmed.length - 1,
       });

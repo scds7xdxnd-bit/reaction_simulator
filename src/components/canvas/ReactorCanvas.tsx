@@ -25,6 +25,7 @@ import '@xyflow/react/dist/style.css';
 import CSTRNode from './CSTRNode';
 import PFRNode from './PFRNode';
 import BatchNode from './BatchNode';
+import SemibatchNode from './SemibatchNode';
 import FeedNode from './FeedNode';
 import ProductNode from './ProductNode';
 import MixerNode from './MixerNode';
@@ -39,6 +40,7 @@ const nodeTypes = {
   cstr: CSTRNode,
   pfr: PFRNode,
   batch: BatchNode,
+  semibatch: SemibatchNode,
   feed: FeedNode,
   product: ProductNode,
   mixer: MixerNode,

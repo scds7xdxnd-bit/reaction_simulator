@@ -12,6 +12,7 @@ import { type StreamState, streamToState, stateToStream, annotateStream } from '
 import { buildChemistry } from './chemistryFactory';
 import { getPreset } from './reactionRegistry';
 import { cstrModel, pfrModel, type UnitParams } from './unitModels';
+import { semibatchSolve } from './semibatchModel';
 import type { AnnotatedStream } from '../types/stream';
 import type { ChemistryModel } from '../types/chemistry';
 
@@ -106,6 +107,20 @@ function forwardPass(
     } else if (node.type === 'product') {
       const inEdges = incomingEdges.get(nodeId) ?? [];
       outState = getInletStream(inEdges, streams, params);
+    } else if (node.type === 'semibatch') {
+      const sbData = node.data as { tau: number; FB0?: number; CB_feed?: number };
+      const sbResult = semibatchSolve(
+        { tau_batch: sbData.tau, FB0: sbData.FB0 ?? 0.1, CB_feed: sbData.CB_feed ?? 1.0,
+          Na0: params.Ca0, V0: 1.0 },
+        chemistry,
+        params.T_feed ?? 300,
+      );
+      outState = {
+        Xa: sbResult.Xa_out, Ca: params.Ca0 * (1 - sbResult.Xa_out),
+        Cr: params.Ca0 * sbResult.Xa_out * sbResult.selectivity_R,
+        Cs: params.Ca0 * sbResult.Xa_out * (1 - sbResult.selectivity_R),
+        flow: 1, T: sbResult.T_out,
+      };
     } else if (node.type === 'cstr' || node.type === 'pfr' || node.type === 'batch') {
       const inEdges = incomingEdges.get(nodeId) ?? [];
       const inlet = node.type === 'batch'
@@ -190,7 +205,7 @@ function buildSegments(
   params: SimulationParams,
   chemistry: ChemistryModel
 ): ReactorSegmentResult[] {
-  const reactorNodes = nodes.filter((n) => n.type === 'cstr' || n.type === 'pfr' || n.type === 'batch');
+  const reactorNodes = nodes.filter((n) => n.type === 'cstr' || n.type === 'pfr' || n.type === 'batch' || n.type === 'semibatch');
   const order = findReactorOrder(nodes, edges, tearIds);
   const segments: ReactorSegmentResult[] = [];
   let cumTauOffset = 0;
@@ -200,7 +215,7 @@ function buildSegments(
     if (!node) continue;
 
     const data = node.data as {
-      reactorType: 'CSTR' | 'PFR' | 'Batch';
+      reactorType: 'CSTR' | 'PFR' | 'Batch' | 'Semibatch';
       label: string;
       tau: number;
       thermalMode?: ThermalMode;
@@ -211,12 +226,15 @@ function buildSegments(
       phi?: number;
       P0?: number;
       u0?: number;
+      FB0?: number;
+      CB_feed?: number;
     };
     const output = pass.nodeOutputs.get(nodeId);
     if (!output) continue;
 
     const incomingEdges = edges.filter((e) => e.target === nodeId);
-    const inlet = node.type === 'batch'
+    const isBatchLike = node.type === 'batch' || node.type === 'semibatch';
+    const inlet = isBatchLike
       ? { Xa: 0, Ca: params.Ca0, Cr: 0, Cs: 0, flow: 1, T: params.T_feed ?? 300 }
       : getInletStream(incomingEdges, pass.streams, params);
     const Xa_in = inlet.Xa;
@@ -226,40 +244,53 @@ function buildSegments(
 
     const Da = getPreset(params).computeDa(params.k, data.tau, params.Ca0);
 
-    const tauEff = data.tau / Math.max(inlet.flow, 0.001);
+    if (isBatchLike) cumTauOffset = 0;
 
-    if (node.type === 'batch') cumTauOffset = 0;
+    let profile: ReactorSegmentResult['profile'];
+    let P_out: number | undefined;
+    let V: number | undefined;
 
-    const unitParams: UnitParams = {
-      tau:          tauEff,
-      thermalMode:  data.thermalMode  ?? 'isothermal',
-      Tc:           data.Tc           ?? 300,
-      kappa_v:      data.kappa_v      ?? 0.5,
-      Ca0:          params.Ca0,
-      pressureDrop: data.pressureDrop ?? false,
-      Dp:           data.Dp           ?? 0.005,
-      phi:          data.phi          ?? 0.4,
-      P0:           data.P0           ?? 101325,
-      u0:           data.u0           ?? 0.01,
-    };
-    const model = node.type === 'cstr' ? cstrModel : pfrModel;
-    const inletStream = stateToStream(inlet);
-    const unitResult  = model(inletStream, unitParams, chemistry);
-    const rawProfile = unitResult.profile.map(p => ({
-      cumTau: p.cumTau,
-      Xa:     Math.max(0, Math.min(0.9999, 1 - (p.C[chemistry.keyReactantId] ?? 0) / Math.max(params.Ca0, 1e-9))),
-      Ca:     p.C['A'] ?? 0,
-      Cr:     p.C['R'] ?? 0,
-      Cs:     p.C['S'] ?? 0,
-      T:      p.T,
-    }));
-
-    const profile = rawProfile.map((p) => ({
-      ...p,
-      cumTau: cumTauOffset + p.cumTau,
-    }));
-
-    cumTauOffset += tauEff;
+    if (node.type === 'semibatch') {
+      const sbResult = semibatchSolve(
+        { tau_batch: data.tau, FB0: data.FB0 ?? 0.1, CB_feed: data.CB_feed ?? 1.0,
+          Na0: params.Ca0, V0: 1.0 },
+        chemistry, T_in,
+      );
+      profile = sbResult.profile.map((p) => ({
+        cumTau: p.t, Xa: p.Xa, Ca: p.Ca, Cr: params.Ca0 * p.Xa * sbResult.selectivity_R, Cs: 0, T: T_in,
+      }));
+      P_out = 101325;
+      V = undefined;
+    } else {
+      const tauEff = data.tau / Math.max(inlet.flow, 0.001);
+      const unitParams: UnitParams = {
+        tau:          tauEff,
+        thermalMode:  data.thermalMode  ?? 'isothermal',
+        Tc:           data.Tc           ?? 300,
+        kappa_v:      data.kappa_v      ?? 0.5,
+        Ca0:          params.Ca0,
+        pressureDrop: data.pressureDrop ?? false,
+        Dp:           data.Dp           ?? 0.005,
+        phi:          data.phi          ?? 0.4,
+        P0:           data.P0           ?? 101325,
+        u0:           data.u0           ?? 0.01,
+      };
+      const model = node.type === 'cstr' ? cstrModel : pfrModel;
+      const inletStream = stateToStream(inlet);
+      const unitResult  = model(inletStream, unitParams, chemistry);
+      const rawProfile = unitResult.profile.map(p => ({
+        cumTau: p.cumTau,
+        Xa:     Math.max(0, Math.min(0.9999, 1 - (p.C[chemistry.keyReactantId] ?? 0) / Math.max(params.Ca0, 1e-9))),
+        Ca:     p.C['A'] ?? 0,
+        Cr:     p.C['R'] ?? 0,
+        Cs:     p.C['S'] ?? 0,
+        T:      p.T,
+      }));
+      profile = rawProfile.map((p) => ({ ...p, cumTau: cumTauOffset + p.cumTau }));
+      cumTauOffset += tauEff;
+      P_out = unitResult.outlet.P;
+      V = params.Q_feed > 0 ? data.tau * params.Q_feed : undefined;
+    }
 
     const yieldR = output.Cr / Math.max(params.Ca0, 1e-9);
     const consumed = getPreset(params).isSingle
@@ -286,8 +317,8 @@ function buildSegments(
       yield_R: yieldR,
       selectivity_R: selectivity,
       profile,
-      P_out: unitResult.outlet.P,
-      V: params.Q_feed > 0 ? data.tau * params.Q_feed : undefined,
+      P_out,
+      V,
     });
   }
 
@@ -296,10 +327,10 @@ function buildSegments(
 
 function findReactorOrder(nodes: Node[], edges: Edge[], tearIds: Set<string>): string[] {
   const reactorIds = new Set(
-    nodes.filter((n) => n.type === 'cstr' || n.type === 'pfr' || n.type === 'batch').map((n) => n.id)
+    nodes.filter((n) => n.type === 'cstr' || n.type === 'pfr' || n.type === 'batch' || n.type === 'semibatch').map((n) => n.id)
   );
   const batchIds = new Set(
-    nodes.filter((n) => n.type === 'batch').map((n) => n.id)
+    nodes.filter((n) => n.type === 'batch' || n.type === 'semibatch').map((n) => n.id)
   );
 
   const fromAnyFeed = new Set<string>();
