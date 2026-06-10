@@ -11,6 +11,7 @@ import {
   Tooltip,
 } from 'recharts';
 import { useSimulatorStore } from '../../store/simulatorStore';
+import { useTheme } from '../../hooks/useTheme';
 import PlotAxisBar from './PlotAxisBar';
 
 function interpolateCurve(
@@ -30,6 +31,8 @@ function interpolateCurve(
 export default function LevenspielPlot() {
   const result = useSimulatorStore((s) => s.result);
   const cfg = useSimulatorStore((s) => s.plotConfig['levenspiel']);
+  const { isDark } = useTheme();
+  const curveStroke = isDark ? '#e2e8f0' : '#0f1730';
 
   const yDomain = useMemo<[number, number]>(() => {
     if (!result?.levenspielCurve?.length) return [0, 10];
@@ -207,7 +210,7 @@ export default function LevenspielPlot() {
 
             <Line
               dataKey="inv_rA_norm"
-              stroke="#0f1730"
+              stroke={curveStroke}
               strokeWidth={2}
               dot={false}
               isAnimationActive={false}

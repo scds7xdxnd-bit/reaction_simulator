@@ -256,7 +256,7 @@ export default function ParameterPanel() {
               style={{
                 display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer',
                 borderTop: '1px solid #e0e6f0',
-                background: openSections[sec.id] ? sec.bgColor : '#ffffff',
+                background: openSections[sec.id] ? sec.bgColor : 'var(--surface)',
                 padding: '4px 16px',
               }}
             >
