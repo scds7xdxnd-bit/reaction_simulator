@@ -18,6 +18,7 @@ import DynamicControls from './components/controls/DynamicControls';
 import { useSimulatorStore } from './store/simulatorStore';
 import { useClipboardActions } from './hooks/useClipboardActions';
 import { useDynamicSimulation } from './hooks/useDynamicSimulation';
+import { useTheme } from './hooks/useTheme';
 import { serializeState, deserializeState } from './io/serializer';
 import Toaster from './components/Toaster';
 
@@ -26,6 +27,7 @@ const LS_KEY = 'reaction-simulator-v1';
 type RightTab = 'levenspiel' | 'profiles' | 'thermal' | 'dynamic' | 'analysis' | 'scenarios';
 
 export default function App() {
+  useTheme(); // initialize dark class on <html> from system/localStorage
   const reactionMode = useSimulatorStore((s) => s.params.reactionMode);
   const simulationMode = useSimulatorStore((s) => s.simulationMode);
   const setSimulationMode = useSimulatorStore((s) => s.setSimulationMode);
@@ -123,7 +125,7 @@ export default function App() {
   }, [nodes, edges, params, simulationMode]);
 
   return (
-    <div className="h-full min-w-[1280px] flex flex-col bg-[#f0f4ff]">
+    <div className="h-full min-w-[1280px] flex flex-col" style={{ background: 'var(--bg)' }}>
       <div className="flex flex-1 min-h-0">
         <ReactorToolbar />
 
@@ -134,17 +136,17 @@ export default function App() {
           </div>
         </div>
 
-        <div className="w-[420px] flex flex-col shrink-0 border-l border-[#dde3f0] bg-[#f0f4ff] overflow-hidden">
-          <div className="flex gap-0 border-b border-[#dde3f0] bg-[#ffffff] shrink-0">
+        <div className="w-[420px] flex flex-col shrink-0 overflow-hidden" style={{ borderLeft: '1px solid var(--border)', background: 'var(--bg)' }}>
+          <div className="flex gap-0 shrink-0 rsi-tab-bar" style={{ borderBottom: '1px solid var(--border)', background: 'var(--surface)' }}>
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setRightTab(tab.id)}
                 className="flex-1 text-[11px] font-medium py-2 transition-colors"
                 style={{
-                  color: rightTab === tab.id ? '#2563eb' : '#6b7280',
+                  color: rightTab === tab.id ? '#2563eb' : 'var(--text-muted)',
                   borderBottom: rightTab === tab.id ? '2px solid #2563eb' : '2px solid transparent',
-                  background: rightTab === tab.id ? '#f8faff' : '#ffffff',
+                  background: rightTab === tab.id ? 'var(--surface-raised)' : 'var(--surface)',
                 }}
               >
                 {tab.label}

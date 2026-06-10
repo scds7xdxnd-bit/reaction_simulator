@@ -1,7 +1,8 @@
 import { useSimulatorStore } from '../store/simulatorStore';
 import { getPreset } from '../math/reactionRegistry';
 import { useValidation } from '../hooks/useValidation';
-import { AlertTriangle, CheckCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Moon, Sun } from 'lucide-react';
+import { useTheme } from '../hooks/useTheme';
 
 export default function StatusBar() {
   const result = useSimulatorStore((s) => s.result);
@@ -11,6 +12,7 @@ export default function StatusBar() {
   const setSimulationMode = useSimulatorStore((s) => s.setSimulationMode);
   const sizingMode = useSimulatorStore((s) => s.sizingMode);
   const setSizingMode = useSimulatorStore((s) => s.setSizingMode);
+  const { isDark, toggle: toggleDark } = useTheme();
   const updateParams = useSimulatorStore((s) => s.updateParams);
 
   const isSingle = params.reactionMode === 'single';
@@ -173,6 +175,18 @@ export default function StatusBar() {
       )}
 
       <div className="ml-auto flex gap-1">
+        <button
+          onClick={toggleDark}
+          title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          className="text-[10px] px-1.5 py-0.5 rounded border font-medium transition-colors"
+          style={{
+            background: 'var(--surface-raised)',
+            color: 'var(--text-muted)',
+            borderColor: 'var(--border)',
+          }}
+        >
+          {isDark ? <Sun size={11} /> : <Moon size={11} />}
+        </button>
         <button
           onClick={() => setSizingMode(!sizingMode)}
           className="text-[10px] px-2 py-0.5 rounded border font-medium transition-colors"
