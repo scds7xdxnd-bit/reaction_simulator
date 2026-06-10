@@ -1,6 +1,6 @@
 import type { SimulationParams } from '../types/reactor';
-import type { ReactionMode, KineticsType } from '../types/simulation';
-import type { Species, Reaction, ReactionSet } from '../types/chemistry';
+import type { ReactionMode, KineticsType, CustomReaction } from '../types/simulation';
+import type { Species, Reaction, ReactionSet, RateLawFn } from '../types/chemistry';
 
 function arrhenius(k: number, Ea: number, T_ref: number, T: number): number {
   if (Ea <= 0) return k;
@@ -258,9 +258,81 @@ export const PRESETS: ReactionPreset[] = [
   parallelPreset,
 ];
 
+function formatCustomEquation(cr: CustomReaction): string {
+  const fmt = (label: string, stoich: number) => stoich === 1 ? label : `${stoich}${label}`;
+  const reactants = cr.species.filter((s) => s.role === 'reactant').map((s) => fmt(s.label, s.stoich)).join(' + ');
+  const products  = cr.species.filter((s) => s.role === 'product').map((s) => fmt(s.label, s.stoich)).join(' + ');
+  return reactants && products ? `${reactants} → ${products}` : '?';
+}
+
+export function buildCustomPreset(cr: CustomReaction): ReactionPreset {
+  const stoichiometry: Record<string, number> = {};
+  for (const sp of cr.species) {
+    stoichiometry[sp.label] = sp.role === 'reactant' ? -sp.stoich : sp.stoich;
+  }
+
+  const reactants = cr.species.filter((s) => s.role === 'reactant');
+  const firstReactant = reactants[0]?.label ?? 'A';
+  const secondReactant = reactants[1]?.label ?? firstReactant;
+  const rp = cr.rateParams;
+
+  let rateLawFn: RateLawFn;
+  if (cr.rateType === 'michaelis-menten') {
+    rateLawFn = (C) => {
+      const CA = C[firstReactant] ?? 0;
+      const Vmax = rp['Vmax'] ?? 1;
+      const Km   = rp['Km']   ?? 0.5;
+      return Vmax * CA / Math.max(Km + CA, 1e-12);
+    };
+  } else if (cr.rateType === 'langmuir-hinshelwood') {
+    rateLawFn = (C) => {
+      const CA  = C[firstReactant]  ?? 0;
+      const CB  = C[secondReactant] ?? 0;
+      const k   = rp['k']   ?? 0.5;
+      const K_A = rp['K_A'] ?? 0.2;
+      const K_B = rp['K_B'] ?? 0.1;
+      return k * CA / Math.max(1 + K_A * CA + K_B * CB, 1e-12);
+    };
+  } else {
+    // Power law
+    rateLawFn = (C, T) => {
+      const k_eff = arrhenius(rp['k'] ?? 0.5, rp['Ea'] ?? 0, rp['T_ref'] ?? 300, T);
+      return k_eff * reactants.reduce((acc, sp) => acc * Math.max(C[sp.label] ?? 0, 0) ** sp.stoich, 1);
+    };
+  }
+
+  const eqLabel = formatCustomEquation(cr);
+
+  return {
+    id: 'custom',
+    label: eqLabel,
+    mode: 'custom',
+    isSingle: true,
+    uiLabel: eqLabel,
+
+    buildSpecies: () => cr.species.map((sp) => ({
+      id: sp.label,
+      label: `${sp.role === 'reactant' ? 'Reactant' : 'Product'} ${sp.label}`,
+    })),
+
+    buildReactions: (): ReactionSet => [{
+      id: 'rxn-custom',
+      label: eqLabel,
+      stoichiometry,
+      rateLaw: rateLawFn,
+      kineticParams: { ...rp },
+    }],
+
+    computeDa: (_k, tau) => (rp['k'] ?? 0.5) * tau,
+  };
+}
+
 export function getPreset(
-  params: Pick<SimulationParams, 'reactionMode' | 'kinetics'>,
+  params: Pick<SimulationParams, 'reactionMode' | 'kinetics' | 'customReaction'>,
 ): ReactionPreset {
+  if (params.reactionMode === 'custom' && params.customReaction) {
+    return buildCustomPreset(params.customReaction);
+  }
   if (params.reactionMode === 'series')   return seriesPreset;
   if (params.reactionMode === 'parallel') return parallelPreset;
   switch (params.kinetics) {
