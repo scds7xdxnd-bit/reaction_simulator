@@ -23,6 +23,7 @@ export const createParamsSlice: StateCreator<SimulatorStore, [], [], ParamsSlice
       rho_Cp: 4.18,
       T_feed: 300,
       epsilon: 0,
+      Q_feed: 0,
     },
 
     updateParams: (partial) =>

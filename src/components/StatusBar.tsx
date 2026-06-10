@@ -9,6 +9,9 @@ export default function StatusBar() {
   const nodes = useSimulatorStore((s) => s.nodes);
   const simulationMode = useSimulatorStore((s) => s.simulationMode);
   const setSimulationMode = useSimulatorStore((s) => s.setSimulationMode);
+  const sizingMode = useSimulatorStore((s) => s.sizingMode);
+  const setSizingMode = useSimulatorStore((s) => s.setSizingMode);
+  const updateParams = useSimulatorStore((s) => s.updateParams);
 
   const isSingle = params.reactionMode === 'single';
   const finalXa = result?.finalConversion ?? null;
@@ -159,7 +162,48 @@ export default function StatusBar() {
           : `${reactorCount} Reactor${reactorCount !== 1 ? 's' : ''} in Series`}
       </span>
 
+      {sizingMode && result && params.Q_feed > 0 && (
+        <>
+          <span className="text-[#b0bcd4]">|</span>
+          <span className="text-[#374151]">Total V:</span>
+          <span className="font-mono font-bold text-[#7c3aed]">
+            {result.segments.reduce((acc, s) => acc + (s.V ?? 0), 0).toFixed(2)} L
+          </span>
+        </>
+      )}
+
       <div className="ml-auto flex gap-1">
+        <button
+          onClick={() => setSizingMode(!sizingMode)}
+          className="text-[10px] px-2 py-0.5 rounded border font-medium transition-colors"
+          style={{
+            background: sizingMode ? '#7c3aed' : '#f8faff',
+            color: sizingMode ? '#ffffff' : '#6b7280',
+            borderColor: sizingMode ? '#7c3aed' : '#dde3f0',
+          }}
+        >
+          Sizing
+        </button>
+        {sizingMode && (
+          <div className="flex items-center gap-1">
+            <span className="text-[10px] text-[#6b7280]">Q =</span>
+            <input
+              type="number"
+              min="0.001"
+              max="1000"
+              step="0.1"
+              value={params.Q_feed || ''}
+              placeholder="L/s"
+              onChange={(e) => {
+                const v = parseFloat(e.target.value);
+                if (!isNaN(v) && v > 0) updateParams({ Q_feed: v });
+              }}
+              className="w-16 text-[10px] font-mono border rounded px-1 py-0.5 outline-none"
+              style={{ borderColor: '#7c3aed', background: '#faf5ff', color: '#0f1730' }}
+            />
+            <span className="text-[10px] text-[#6b7280]">L/s</span>
+          </div>
+        )}
         <button
           onClick={() => setSimulationMode('steady-state')}
           className="text-[10px] px-2 py-0.5 rounded border font-medium transition-colors"

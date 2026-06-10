@@ -38,6 +38,7 @@ export interface SimulationParams {
   rho_Cp: number;
   T_feed: number;
   epsilon: number;
+  Q_feed: number;
 }
 
 export interface ReactorSegmentResult {
@@ -57,6 +58,7 @@ export interface ReactorSegmentResult {
   selectivity_R: number;
   profile: { cumTau: number; Xa: number; Ca: number; Cr: number; Cs: number; T: number }[];
   P_out?: number;
+  V?: number;
 }
 
 export interface RecycleIterationRecord {

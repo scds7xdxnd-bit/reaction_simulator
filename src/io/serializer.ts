@@ -47,6 +47,10 @@ export function deserializeState(json: string): SavedState | null {
     if (!(typeof p.epsilon === 'number')) {
       s.params = { ...s.params, epsilon: 0 };
     }
+    // Back-compat: older saves lack Q_feed
+    if (!(typeof p.Q_feed === 'number')) {
+      s.params = { ...s.params, Q_feed: 0 };
+    }
     return s;
   } catch {
     return null;

@@ -4,8 +4,10 @@ import type { SimulatorStore } from '../simulatorStore';
 
 export interface SessionSlice {
   simulationMode: 'steady-state' | 'dynamic';
+  sizingMode: boolean;
   selectedNodeId: string | null;
   setSimulationMode: (mode: 'steady-state' | 'dynamic') => void;
+  setSizingMode: (v: boolean) => void;
   setSelectedNodeId: (id: string | null) => void;
 
   clipboard: { nodes: Node[]; edges: Edge[] } | null;
@@ -30,9 +32,11 @@ export interface SessionSlice {
 export const createSessionSlice: StateCreator<SimulatorStore, [], [], SessionSlice> =
   (set) => ({
     simulationMode: 'steady-state',
+    sizingMode: false,
     selectedNodeId: null,
 
     setSimulationMode: (mode) => set({ simulationMode: mode }),
+    setSizingMode: (v) => set({ sizingMode: v }),
     setSelectedNodeId: (id)  => set({ selectedNodeId: id }),
 
     clipboard: null,

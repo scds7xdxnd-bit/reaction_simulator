@@ -287,6 +287,7 @@ function buildSegments(
       selectivity_R: selectivity,
       profile,
       P_out: unitResult.outlet.P,
+      V: params.Q_feed > 0 ? data.tau * params.Q_feed : undefined,
     });
   }
 

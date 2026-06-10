@@ -20,6 +20,7 @@ function CSTRNode({ id, data, selected }: CSTRNodeProps) {
   const result = useSimulatorStore((s) => s.result);
   const params = useSimulatorStore((s) => s.params);
   const simulationMode = useSimulatorStore((s) => s.simulationMode);
+  const sizingMode = useSimulatorStore((s) => s.sizingMode);
 
   const [isEditing, setIsEditing] = useState(false);
   const [labelStr, setLabelStr] = useState(data.label);
@@ -217,6 +218,16 @@ function CSTRNode({ id, data, selected }: CSTRNodeProps) {
           <span style={{ fontSize: 9, color: '#94a3b8' }}>T_out</span>
           <span style={{ fontSize: 10, fontFamily: 'monospace', color: '#d97706' }}>
             {segment?.T_out !== undefined ? `${segment.T_out.toFixed(0)} K` : '—'}
+          </span>
+        </div>
+      )}
+
+      {sizingMode && params.Q_feed > 0 && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      padding: '0 10px', height: 20 }}>
+          <span style={{ fontSize: 9, color: '#94a3b8' }}>Volume</span>
+          <span style={{ fontSize: 10, fontFamily: 'monospace', color: '#7c3aed' }}>
+            {segment?.V !== undefined ? `${segment.V.toFixed(2)} L` : `${(data.tau * params.Q_feed).toFixed(2)} L`}
           </span>
         </div>
       )}
