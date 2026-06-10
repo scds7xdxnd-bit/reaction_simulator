@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
-import { Save, FolderOpen, BookOpen } from 'lucide-react';
+import { Save, FolderOpen, BookOpen, Download } from 'lucide-react';
 import { useSaveFile, useLoadFile, useLoadExample } from '../../hooks/useFileIO';
+import { useExport } from '../../hooks/useExport';
 import { EXAMPLES } from '../../io/examples';
 import { Divider } from '../ui';
 
@@ -92,7 +93,9 @@ export default function ReactorToolbar() {
   const handleSave        = useSaveFile();
   const handleLoad        = useLoadFile();
   const handleLoadExample = useLoadExample();
+  const { exportPng, exportCsv, exportReport, hasResult } = useExport();
   const [examplesOpen, setExamplesOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
 
   return (
     <div className="w-20 h-full bg-[#ffffff] border-r border-[#dde3f0] flex flex-col items-center pt-3 gap-3 pb-4">
@@ -303,6 +306,51 @@ export default function ReactorToolbar() {
               >
                 <div className="text-[12px] font-medium text-[#0f1730]">{ex.name}</div>
                 <div className="text-[10px] text-[#6b7280]">{ex.description}</div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div style={{ position: 'relative' }} className="mb-2">
+        <button
+          onClick={() => setExportOpen((v) => !v)}
+          title="Export"
+          disabled={!hasResult}
+          className="flex flex-col items-center gap-0.5 w-16 py-1.5 rounded-md
+                     hover:bg-[#f1f5f9] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          style={exportOpen ? { background: '#f0fdf4' } : {}}
+        >
+          <Download size={16} color="#374151" />
+          <span style={{ fontSize: 9, color: '#6b7280', fontWeight: 500 }}>Export</span>
+        </button>
+
+        {exportOpen && hasResult && (
+          <div
+            style={{
+              position: 'absolute',
+              left: 52,
+              bottom: 0,
+              zIndex: 50,
+              background: '#ffffff',
+              border: '1px solid #dde3f0',
+              borderRadius: 8,
+              boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+              minWidth: 140,
+              padding: '4px 0',
+            }}
+          >
+            {[
+              { label: 'PNG — Flowsheet', action: () => { exportPng(); setExportOpen(false); } },
+              { label: 'CSV — Streams', action: () => { exportCsv(); setExportOpen(false); } },
+              { label: 'Report (PDF)', action: () => { exportReport(); setExportOpen(false); } },
+            ].map((item) => (
+              <button
+                key={item.label}
+                onClick={item.action}
+                className="w-full text-left px-3 py-1.5 hover:bg-[#f0fdf4] text-[12px] text-[#0f1730]"
+              >
+                {item.label}
               </button>
             ))}
           </div>
