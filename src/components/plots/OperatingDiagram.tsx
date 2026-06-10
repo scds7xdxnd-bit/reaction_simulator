@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   ComposedChart,
+  CartesianGrid,
   Line,
   XAxis,
   YAxis,
@@ -89,45 +90,47 @@ export default function OperatingDiagram() {
           </div>
         </div>
       )}
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0" style={{ background: 'var(--plot-bg)' }}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={diagram.curve}
             margin={{ top: 8, right: 16, left: -10, bottom: 12 }}
           >
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
             <XAxis
               dataKey="T"
               type="number"
-              tick={{ fontSize: 11, fill: '#6b7280' }}
+              tick={{ fontSize: 11, fill: 'var(--text-muted)' }}
               tickLine={false}
-              axisLine={{ stroke: '#dde3f0' }}
+              axisLine={{ stroke: 'var(--border)' }}
               label={{
                 value: 'T (K)',
                 position: 'bottom',
                 offset: 0,
                 fontSize: 10,
-                fill: '#6b7280',
+                fill: 'var(--text-muted)',
               }}
             />
             <YAxis
-              tick={{ fontSize: 11, fill: '#6b7280' }}
+              tick={{ fontSize: 11, fill: 'var(--text-muted)' }}
               tickLine={false}
-              axisLine={{ stroke: '#dde3f0' }}
+              axisLine={{ stroke: 'var(--border)' }}
               label={{
                 value: 'G, R (kJ/L)',
                 angle: -90,
                 position: 'left',
                 offset: 0,
                 fontSize: 10,
-                fill: '#6b7280',
+                fill: 'var(--text-muted)',
               }}
             />
             <Tooltip
               contentStyle={{
-                background: '#ffffff',
-                border: '1px solid #dde3f0',
+                background: 'var(--surface)',
+                border: '1px solid var(--border-subtle)',
                 borderRadius: 4,
                 fontSize: 11,
+                color: 'var(--text-primary)',
               }}
               formatter={(value: number, name: string) => {
                 if (name === 'G') return [value.toFixed(4), 'Heat Generated G(T)'];

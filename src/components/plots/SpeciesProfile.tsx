@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import {
   ComposedChart,
+  CartesianGrid,
   Line,
   XAxis,
   YAxis,
@@ -64,7 +65,7 @@ export default function SpeciesProfile() {
   return (
     <div className="flex flex-col h-full">
       <PlotAxisBar plotId="species" />
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0" style={{ background: 'var(--plot-bg)' }}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={profileData.allPoints}
@@ -88,12 +89,14 @@ export default function SpeciesProfile() {
               iconType="line"
             />
 
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
             <Tooltip
               contentStyle={{
-                backgroundColor: '#ffffff',
-                border: '1px solid #dde3f0',
+                background: 'var(--surface)',
+                border: '1px solid var(--border-subtle)',
                 borderRadius: 4,
                 fontSize: 12,
+                color: 'var(--text-primary)',
               }}
               labelFormatter={(val) => `τ = ${Number(val).toFixed(2)} s`}
               formatter={(value: unknown) => [`${(value as number).toFixed(3)} mol/L`]}
@@ -146,31 +149,31 @@ export default function SpeciesProfile() {
               dataKey="cumTau"
               type="number"
               domain={xDomainFinal}
-              stroke="#374151"
+              stroke="var(--text-muted)"
               fontSize={11}
               label={{
                 value: 'Cumulative τ (s)',
                 position: 'insideBottom',
                 offset: -5,
-                fill: '#374151',
+                fill: 'var(--text-muted)',
                 fontSize: 11,
               }}
-              tick={{ fill: '#374151' }}
+              tick={{ fill: 'var(--text-muted)' }}
             />
             <YAxis
               type="number"
               domain={yDomainFinal}
               allowDataOverflow
-              stroke="#374151"
+              stroke="var(--text-muted)"
               fontSize={11}
               label={{
                 value: 'Concentration (mol/L)',
                 angle: -90,
                 position: 'insideLeft',
-                fill: '#374151',
+                fill: 'var(--text-muted)',
                 fontSize: 11,
               }}
-              tick={{ fill: '#374151' }}
+              tick={{ fill: 'var(--text-muted)' }}
             />
           </ComposedChart>
         </ResponsiveContainer>

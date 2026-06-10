@@ -26,6 +26,8 @@ html, body, #root {
   --text-muted:      #6b7280;
   --canvas-bg:       #e8eeff;
   --canvas-dot:      #c7d2e8;
+  --border-subtle:   #e0e6f0;
+  --plot-bg:         #f8faff;
 }
 
 /* Dark mode CSS variables — toggled by .dark on <html> */
@@ -40,6 +42,8 @@ html, body, #root {
   --text-muted:      #94a3b8;
   --canvas-bg:       #1a1f2e;
   --canvas-dot:      #2a3040;
+  --border-subtle:   #253550;
+  --plot-bg:         #1a2035;
 }
 
 body {

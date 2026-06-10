@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import {
   ComposedChart,
+  CartesianGrid,
   Line,
   XAxis,
   YAxis,
@@ -33,6 +34,7 @@ export default function LevenspielPlot() {
   const cfg = useSimulatorStore((s) => s.plotConfig['levenspiel']);
   const { isDark } = useTheme();
   const curveStroke = isDark ? '#e2e8f0' : '#0f1730';
+  const pfrFill = isDark ? 'rgba(251, 191, 36, 0.28)' : 'rgba(217, 119, 6, 0.22)';
 
   const yDomain = useMemo<[number, number]>(() => {
     if (!result?.levenspielCurve?.length) return [0, 10];
@@ -116,7 +118,7 @@ export default function LevenspielPlot() {
   return (
     <div className="flex flex-col h-full">
       <PlotAxisBar plotId="levenspiel" showYLog />
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0" style={{ background: 'var(--plot-bg)' }}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={result.levenspielCurve}
@@ -141,12 +143,14 @@ export default function LevenspielPlot() {
               Rectangle area = τ_CSTR   |   Shaded area = τ_PFR
             </text>
 
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
             <Tooltip
               contentStyle={{
-                backgroundColor: '#ffffff',
-                border: '1px solid #dde3f0',
+                background: 'var(--surface)',
+                border: '1px solid var(--border-subtle)',
                 borderRadius: 4,
                 fontSize: 12,
+                color: 'var(--text-primary)',
               }}
               labelFormatter={(val) => `Xₐ = ${Number(val).toFixed(3)}`}
               formatter={(value: unknown) => [`${(Number(value) as number).toFixed(2)} s`]}
@@ -182,8 +186,8 @@ export default function LevenspielPlot() {
                     x2={strip.x2}
                     y1={0}
                     y2={strip.height}
-                    fill="#d97706"
-                    fillOpacity={0.22}
+                    fill={pfrFill}
+                    fillOpacity={1}
                     stroke="none"
                   />
                 ))}
@@ -221,10 +225,10 @@ export default function LevenspielPlot() {
               type="number"
               domain={xDomainFinal}
               tickFormatter={(v) => v.toFixed(1)}
-              stroke="#374151"
+              stroke="var(--text-muted)"
               fontSize={11}
-              label={{ value: 'Conversion, Xₐ', position: 'insideBottom', offset: -5, fill: '#374151', fontSize: 11 }}
-              tick={{ fill: '#374151' }}
+              label={{ value: 'Conversion, Xₐ', position: 'insideBottom', offset: -5, fill: 'var(--text-muted)', fontSize: 11 }}
+              tick={{ fill: 'var(--text-muted)' }}
             />
             <YAxis
               type="number"
@@ -232,10 +236,10 @@ export default function LevenspielPlot() {
               scale={cfg.yLog ? 'log' : 'linear'}
               allowDataOverflow
               tickFormatter={(v) => Number(v).toFixed(0)}
-              stroke="#374151"
+              stroke="var(--text-muted)"
               fontSize={11}
-              label={{ value: 'Cₐ₀/(−rₐ) [s]  ←area = τ', angle: -90, position: 'insideLeft', fill: '#374151', fontSize: 11 }}
-              tick={{ fill: '#374151' }}
+              label={{ value: 'Cₐ₀/(−rₐ) [s]  ←area = τ', angle: -90, position: 'insideLeft', fill: 'var(--text-muted)', fontSize: 11 }}
+              tick={{ fill: 'var(--text-muted)' }}
             />
           </ComposedChart>
         </ResponsiveContainer>

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   ComposedChart,
+  CartesianGrid,
   Line,
   XAxis,
   YAxis,
@@ -127,7 +128,7 @@ export default function ConversionProfile() {
           </button>
         ))}
       </div>
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0" style={{ background: 'var(--plot-bg)' }}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={profileData.allPoints}
@@ -144,12 +145,14 @@ export default function ConversionProfile() {
               {view === 'Xa' ? 'CONVERSION PROFILE' : 'CONCENTRATION PROFILE'}
             </text>
 
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
             <Tooltip
               contentStyle={{
-                backgroundColor: '#ffffff',
-                border: '1px solid #dde3f0',
+                background: 'var(--surface)',
+                border: '1px solid var(--border-subtle)',
                 borderRadius: 4,
                 fontSize: 12,
+                color: 'var(--text-primary)',
               }}
               cursor={{ stroke: '#94a3b8', strokeWidth: 1, strokeDasharray: '3 3' }}
               labelFormatter={(val) => `τ = ${Number(val).toFixed(2)} s`}
@@ -198,32 +201,32 @@ export default function ConversionProfile() {
               dataKey="cumTau"
               type="number"
               domain={xDomainFinal}
-              stroke="#374151"
+              stroke="var(--text-muted)"
               fontSize={11}
               label={{
                 value: 'Cumulative τ (s)',
                 position: 'insideBottom',
                 offset: -5,
-                fill: '#374151',
+                fill: 'var(--text-muted)',
                 fontSize: 11,
               }}
-              tick={{ fill: '#374151' }}
+              tick={{ fill: 'var(--text-muted)' }}
             />
             <YAxis
               type="number"
               domain={yDomain}
               allowDataOverflow
               tickFormatter={yTickFormatter}
-              stroke="#374151"
+              stroke="var(--text-muted)"
               fontSize={11}
               label={{
                 value: yAxisLabel,
                 angle: -90,
                 position: 'insideLeft',
-                fill: '#374151',
+                fill: 'var(--text-muted)',
                 fontSize: 11,
               }}
-              tick={{ fill: '#374151' }}
+              tick={{ fill: 'var(--text-muted)' }}
             />
           </ComposedChart>
         </ResponsiveContainer>
