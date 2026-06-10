@@ -75,11 +75,18 @@ export function useScenarios() {
     setMode(scenario.state.mode);
   }
 
+  function rename(id: string, newName: string): void {
+    const trimmed = newName.trim();
+    if (!trimmed) return;
+    saveToStorage(loadFromStorage().map((s) => s.id === id ? { ...s, name: trimmed } : s));
+  }
+
   return {
     getScenarios,
     save,
     remove,
     restore,
+    rename,
     canSave: loadFromStorage().length < MAX_SCENARIOS,
   };
 }

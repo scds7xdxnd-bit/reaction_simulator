@@ -4,9 +4,11 @@ import { useScenarios } from '../../hooks/useScenarios';
 import type { Scenario } from '../../hooks/useScenarios';
 
 export default function ScenariosPanel() {
-  const { getScenarios, save, remove, restore, canSave } = useScenarios();
+  const { getScenarios, save, remove, restore, canSave, rename } = useScenarios();
   const [name, setName] = useState('');
   const [, forceUpdate] = useState(0);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState('');
 
   const scenarios = getScenarios();
 
@@ -76,8 +78,42 @@ export default function ScenariosPanel() {
                   className="border-b border-[#f0f4ff] cursor-pointer hover:bg-[#eff6ff] transition-colors"
                   title={`Saved: ${sc.savedAt} — click to restore`}
                 >
-                  <td className="px-2 py-1.5 font-medium text-[#0f1730] max-w-[100px] truncate">
-                    {sc.name}
+                  <td className="px-2 py-1.5 font-medium text-[#0f1730] max-w-[100px]">
+                    {editingId === sc.id ? (
+                      <input
+                        autoFocus
+                        type="text"
+                        value={editingName}
+                        onChange={(e) => setEditingName(e.target.value)}
+                        onBlur={() => {
+                          if (editingName.trim()) {
+                            rename(sc.id, editingName.trim());
+                            forceUpdate((n) => n + 1);
+                          }
+                          setEditingId(null);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                          if (e.key === 'Escape') setEditingId(null);
+                          e.stopPropagation();
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-full text-[10px] bg-transparent border-b border-[#2563eb] outline-none font-medium"
+                        style={{ color: '#0f1730' }}
+                      />
+                    ) : (
+                      <span
+                        className="truncate block cursor-text"
+                        title="Double-click to rename"
+                        onDoubleClick={(e) => {
+                          e.stopPropagation();
+                          setEditingId(sc.id);
+                          setEditingName(sc.name);
+                        }}
+                      >
+                        {sc.name}
+                      </span>
+                    )}
                   </td>
                   <td className="px-2 py-1.5 text-right font-mono text-[#6b7280] max-w-[80px] truncate">
                     {sc.kinetics}

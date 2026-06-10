@@ -60,7 +60,7 @@ export default function ContextMenu() {
     <div
       ref={menuRef}
       style={{ top: menuY, left: menuX }}
-      className="fixed z-50 bg-surface border border-border-subtle rounded-lg shadow-xl py-1 min-w-[180px]"
+      className="fixed z-50 bg-surface border border-border-subtle rounded-lg shadow-xl py-1 min-w-[148px]"
     >
       <Button
         variant="ghost" size="sm"

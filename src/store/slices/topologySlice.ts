@@ -4,6 +4,23 @@ import { MarkerType } from '@xyflow/react';
 import type { ReactorType, UnitType, ThermalMode } from '../../types/simulation';
 import type { SimulatorStore } from '../simulatorStore';
 
+const dedup = <T extends { id: string }>(arr: T[]): T[] => {
+  const seen = new Set<string>();
+  return arr.filter(n => seen.has(n.id) ? false : (seen.add(n.id), true));
+};
+
+const findLowestAvailable = (nodes: Node[], prefix: string): number => {
+  const re = new RegExp(`^${prefix}-(\\d+)$`);
+  const used = new Set<number>();
+  for (const n of nodes) {
+    const label = (n.data as any)?.label as string | undefined;
+    if (label) { const m = label.match(re); if (m) used.add(parseInt(m[1], 10)); }
+  }
+  let num = 1;
+  while (used.has(num)) num++;
+  return num;
+};
+
 const initialNodes: Node[] = [
   { id: 'feed',    type: 'feed',    position: { x: 60,  y: 230 }, data: {},                                                                                      draggable: false, deletable: false },
   { id: 'cstr-0',  type: 'cstr',    position: { x: 230, y: 220 }, data: { reactorType: 'CSTR', label: 'CSTR-1', tau: 2.0, thermalMode: 'isothermal', Tc: 300, kappa_v: 0.5, ic_Ca: 1.0, ic_T: 300 } },
@@ -74,7 +91,7 @@ export const createTopologySlice: StateCreator<SimulatorStore, [], [], TopologyS
       const newNodes = incomingNodes.filter((n) => !existingIds.has(n.id));
 
       if (newNodes.length === 0) {
-        set({ nodes: incomingNodes });
+        set({ nodes: dedup(incomingNodes) });
         return;
       }
 
@@ -168,7 +185,7 @@ export const createTopologySlice: StateCreator<SimulatorStore, [], [], TopologyS
       });
 
       set({
-        nodes: renamed,
+        nodes: dedup(renamed),
         cstrCount,
         pfrCount,
         batchCount,
@@ -200,25 +217,11 @@ export const createTopologySlice: StateCreator<SimulatorStore, [], [], TopologyS
 
     addReactor: (type, position) => {
       const state = get();
-      let id: string;
-      let label: string;
-      let cstrCount = state.cstrCount;
-      let pfrCount = state.pfrCount;
-      let batchCount = state.batchCount;
-
-      if (type === 'CSTR') {
-        cstrCount = state.cstrCount + 1;
-        id = `cstr-${cstrCount}`;
-        label = `CSTR-${cstrCount}`;
-      } else if (type === 'PFR') {
-        pfrCount = state.pfrCount + 1;
-        id = `pfr-${pfrCount}`;
-        label = `PFR-${pfrCount}`;
-      } else {
-        batchCount = state.batchCount + 1;
-        id = `batch-${batchCount}`;
-        label = `Batch-${batchCount}`;
-      }
+      const prefix = type === 'CSTR' ? 'CSTR' : type === 'PFR' ? 'PFR' : 'Batch';
+      const typeKey = type.toLowerCase() as string;
+      const num = findLowestAvailable(state.nodes, prefix);
+      const id = `${typeKey}-${num}`;
+      const label = `${prefix}-${num}`;
 
       const snapshot = {
         nodes: state.nodes.map(n => ({ ...n, data: { ...n.data } })),
@@ -230,7 +233,7 @@ export const createTopologySlice: StateCreator<SimulatorStore, [], [], TopologyS
 
       const newNode: Node = {
         id,
-        type: type.toLowerCase(),
+        type: typeKey,
         position,
         data: {
           reactorType: type,
@@ -245,10 +248,10 @@ export const createTopologySlice: StateCreator<SimulatorStore, [], [], TopologyS
       };
 
       set({
-        nodes: [...state.nodes, newNode],
-        cstrCount,
-        pfrCount,
-        batchCount,
+        nodes: [...state.nodes.map(n => ({ ...n, selected: false })), { ...newNode, selected: true }],
+        cstrCount:  type === 'CSTR'  ? Math.max(state.cstrCount,  num) : state.cstrCount,
+        pfrCount:   type === 'PFR'   ? Math.max(state.pfrCount,   num) : state.pfrCount,
+        batchCount: type === 'Batch' ? Math.max(state.batchCount, num) : state.batchCount,
         _history: trimmed,
         _historyIndex: trimmed.length - 1,
       });
@@ -266,25 +269,23 @@ export const createTopologySlice: StateCreator<SimulatorStore, [], [], TopologyS
       if (trimmed.length > 50) trimmed.shift();
 
       if (unitType === 'Mixer') {
-        const count = state.mixerCount + 1;
-        const id = `mixer-${count}`;
+        const num = findLowestAvailable(state.nodes, 'Mixer');
         const newNode: Node = {
-          id,
+          id: `mixer-${num}`,
           type: 'mixer',
           position,
-          data: { label: `Mixer-${count}` },
+          data: { label: `Mixer-${num}` },
         };
-        set({ nodes: [...state.nodes, newNode], mixerCount: count, _history: trimmed, _historyIndex: trimmed.length - 1 });
+        set({ nodes: [...state.nodes.map(n => ({ ...n, selected: false })), { ...newNode, selected: true }], mixerCount: Math.max(state.mixerCount, num), _history: trimmed, _historyIndex: trimmed.length - 1 });
       } else if (unitType === 'Splitter') {
-        const count = state.splitterCount + 1;
-        const id = `splitter-${count}`;
+        const num = findLowestAvailable(state.nodes, 'Split');
         const newNode: Node = {
-          id,
+          id: `splitter-${num}`,
           type: 'splitter',
           position,
-          data: { label: `Split-${count}`, alpha: 0.5 },
+          data: { label: `Split-${num}`, alpha: 0.5 },
         };
-        set({ nodes: [...state.nodes, newNode], splitterCount: count, _history: trimmed, _historyIndex: trimmed.length - 1 });
+        set({ nodes: [...state.nodes.map(n => ({ ...n, selected: false })), { ...newNode, selected: true }], splitterCount: Math.max(state.splitterCount, num), _history: trimmed, _historyIndex: trimmed.length - 1 });
       }
     },
 
@@ -298,18 +299,18 @@ export const createTopologySlice: StateCreator<SimulatorStore, [], [], TopologyS
       trimmed.push(snapshot);
       if (trimmed.length > 50) trimmed.shift();
 
-      const count = state.feedCount + 1;
+      const num = findLowestAvailable(state.nodes, 'Feed');
       const newNode: Node = {
-        id: `feed-${count}`,
+        id: `feed-${num}`,
         type: 'feed',
         position,
-        data: { label: `Feed-${count}` },
+        data: { label: `Feed-${num}` },
         draggable: true,
         deletable: true,
       };
       set({
-        nodes: [...state.nodes, newNode],
-        feedCount: count,
+        nodes: [...state.nodes.map(n => ({ ...n, selected: false })), { ...newNode, selected: true }],
+        feedCount: Math.max(state.feedCount, num),
         _history: trimmed,
         _historyIndex: trimmed.length - 1,
       });
@@ -325,18 +326,18 @@ export const createTopologySlice: StateCreator<SimulatorStore, [], [], TopologyS
       trimmed.push(snapshot);
       if (trimmed.length > 50) trimmed.shift();
 
-      const count = state.productCount + 1;
+      const num = findLowestAvailable(state.nodes, 'Product');
       const newNode: Node = {
-        id: `product-${count}`,
+        id: `product-${num}`,
         type: 'product',
         position,
-        data: { label: `Product-${count}` },
+        data: { label: `Product-${num}` },
         draggable: true,
         deletable: true,
       };
       set({
-        nodes: [...state.nodes, newNode],
-        productCount: count,
+        nodes: [...state.nodes.map(n => ({ ...n, selected: false })), { ...newNode, selected: true }],
+        productCount: Math.max(state.productCount, num),
         _history: trimmed,
         _historyIndex: trimmed.length - 1,
       });

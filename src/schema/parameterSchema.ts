@@ -36,9 +36,10 @@ export const PARAM_SECTIONS: ParamSectionDef[] = [
     color: '#0d9488',
     bgColor: '#f0fdfa',
     fields: [
-      { key: 'Ca0',          label: 'Cₐ₀',          unit: 'mol/L', min: 0.1,   max: 100,  step: 0.1   },
-      { key: 'Cr0_fraction', label: 'Cᵣ₀/Cₐ₀',      unit: '—',    min: 0.001, max: 0.5,  step: 0.001 },
-      { key: 'T_feed',       label: 'T_feed',        unit: 'K',    min: 200,   max: 600,  step: 5     },
+      { key: 'Ca0',          label: 'Cₐ₀',     unit: 'mol/L', min: 0.1,   max: 100,  step: 0.1   },
+      { key: 'Cr0_fraction', label: 'Cᵣ₀/Cₐ₀', unit: '—',    min: 0.001, max: 0.5,  step: 0.001 },
+      { key: 'T_feed',       label: 'T_feed',   unit: 'K',    min: 200,   max: 600,  step: 5     },
+      { key: 'epsilon',      label: 'ε',        unit: '—',    min: -1,    max: 3,    step: 0.01  },
     ],
   },
   {

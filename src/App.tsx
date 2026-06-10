@@ -96,6 +96,11 @@ export default function App() {
       if (key === 'v') { e.preventDefault(); paste(); }
       if (key === 'x') { e.preventDefault(); cut(); }
       if (key === 'd') { e.preventDefault(); duplicate(); }
+      if (key === 'a') {
+        e.preventDefault();
+        const { nodes: cur, setNodes: sn } = useSimulatorStore.getState();
+        sn(cur.map(n => ({ ...n, selected: true, data: { ...n.data } })));
+      }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);

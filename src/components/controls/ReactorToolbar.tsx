@@ -4,6 +4,7 @@ import { useSaveFile, useLoadFile, useLoadExample } from '../../hooks/useFileIO'
 import { useExport } from '../../hooks/useExport';
 import { EXAMPLES } from '../../io/examples';
 import { Divider } from '../ui';
+import { useSimulatorStore } from '../../store/simulatorStore';
 
 function CstrIcon() {
   return (
@@ -82,6 +83,11 @@ function ProductIcon() {
 }
 
 export default function ReactorToolbar() {
+  const addReactor     = useSimulatorStore((s) => s.addReactor);
+  const addUnit        = useSimulatorStore((s) => s.addUnit);
+  const addFeedNode    = useSimulatorStore((s) => s.addFeedNode);
+  const addProductNode = useSimulatorStore((s) => s.addProductNode);
+
   const onDragStart = useCallback(
     (event: React.DragEvent, nodeType: string) => {
       event.dataTransfer.setData('application/reactflow', nodeType);
@@ -89,6 +95,13 @@ export default function ReactorToolbar() {
     },
     []
   );
+
+  const getClickPosition = useCallback((typeKey: string) => {
+    const { nodes } = useSimulatorStore.getState();
+    const sameType = nodes.filter(n => n.type === typeKey);
+    const n = sameType.length;
+    return { x: 260 + (n % 5) * 45, y: 340 + Math.floor(n / 5) * 80 };
+  }, []);
 
   const handleSave        = useSaveFile();
   const handleLoad        = useLoadFile();
@@ -98,19 +111,20 @@ export default function ReactorToolbar() {
   const [exportOpen, setExportOpen] = useState(false);
 
   return (
-    <div className="w-20 h-full bg-[#ffffff] border-r border-[#dde3f0] flex flex-col items-center pt-3 gap-3 pb-4">
+    <div className="w-[72px] h-full bg-[#ffffff] border-r border-[#dde3f0] flex flex-col items-center pt-2 gap-2 pb-2">
       <div
         className="flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing"
         draggable
         onDragStart={(e) => onDragStart(e, 'CSTR')}
-        title="CSTR — Continuous Stirred Tank Reactor"
-        style={{ width: 56 }}
+        onClick={() => addReactor('CSTR', getClickPosition('cstr'))}
+        title="CSTR — click to add, or drag to position"
+        style={{ width: 48 }}
       >
         <div
           className="flex items-center justify-center rounded-md border"
           style={{
-            width: 52,
-            height: 52,
+            width: 44,
+            height: 44,
             borderColor: '#2563eb',
             background: '#eff6ff',
           }}
@@ -126,14 +140,15 @@ export default function ReactorToolbar() {
         className="flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing"
         draggable
         onDragStart={(e) => onDragStart(e, 'PFR')}
-        title="PFR — Plug Flow Reactor"
-        style={{ width: 56 }}
+        onClick={() => addReactor('PFR', getClickPosition('pfr'))}
+        title="PFR — click to add, or drag to position"
+        style={{ width: 48 }}
       >
         <div
           className="flex items-center justify-center rounded-md border"
           style={{
-            width: 52,
-            height: 52,
+            width: 44,
+            height: 44,
             borderColor: '#d97706',
             background: '#fffbeb',
           }}
@@ -149,12 +164,13 @@ export default function ReactorToolbar() {
         className="flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing"
         draggable
         onDragStart={(e) => onDragStart(e, 'Batch')}
-        title="Batch — Batch Reactor"
-        style={{ width: 56 }}
+        onClick={() => addReactor('Batch', getClickPosition('batch'))}
+        title="Batch — click to add, or drag to position"
+        style={{ width: 48 }}
       >
         <div
           className="flex items-center justify-center rounded-md border"
-          style={{ width: 52, height: 52, borderColor: '#be123c', background: '#fff1f2' }}
+          style={{ width: 44, height: 44, borderColor: '#be123c', background: '#fff1f2' }}
         >
           <BatchIcon />
         </div>
@@ -167,14 +183,15 @@ export default function ReactorToolbar() {
         className="flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing"
         draggable
         onDragStart={(e) => onDragStart(e, 'Mixer')}
-        title="Mixer — Stream Combiner"
-        style={{ width: 56 }}
+        onClick={() => addUnit('Mixer', getClickPosition('mixer'))}
+        title="Mixer — click to add, or drag to position"
+        style={{ width: 48 }}
       >
         <div
           className="flex items-center justify-center rounded-md border"
           style={{
-            width: 52,
-            height: 52,
+            width: 44,
+            height: 44,
             borderColor: '#059669',
             background: '#ecfdf5',
           }}
@@ -190,14 +207,15 @@ export default function ReactorToolbar() {
         className="flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing"
         draggable
         onDragStart={(e) => onDragStart(e, 'Splitter')}
-        title="Splitter — Stream Divider"
-        style={{ width: 56 }}
+        onClick={() => addUnit('Splitter', getClickPosition('splitter'))}
+        title="Splitter — click to add, or drag to position"
+        style={{ width: 48 }}
       >
         <div
           className="flex items-center justify-center rounded-md border"
           style={{
-            width: 52,
-            height: 52,
+            width: 44,
+            height: 44,
             borderColor: '#7c3aed',
             background: '#f5f3ff',
           }}
@@ -215,12 +233,13 @@ export default function ReactorToolbar() {
         className="flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing"
         draggable
         onDragStart={(e) => onDragStart(e, 'Feed')}
-        title="Feed — Process Feed Stream"
-        style={{ width: 56 }}
+        onClick={() => addFeedNode(getClickPosition('feed'))}
+        title="Feed — click to add, or drag to position"
+        style={{ width: 48 }}
       >
         <div
           className="flex items-center justify-center rounded-md border"
-          style={{ width: 52, height: 52, borderColor: '#6b7280', background: '#f9fafb' }}
+          style={{ width: 44, height: 44, borderColor: '#6b7280', background: '#f9fafb' }}
         >
           <FeedIcon />
         </div>
@@ -233,12 +252,13 @@ export default function ReactorToolbar() {
         className="flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing"
         draggable
         onDragStart={(e) => onDragStart(e, 'Product')}
-        title="Product — Process Product Stream"
-        style={{ width: 56 }}
+        onClick={() => addProductNode(getClickPosition('product'))}
+        title="Product — click to add, or drag to position"
+        style={{ width: 48 }}
       >
         <div
           className="flex items-center justify-center rounded-md border"
-          style={{ width: 52, height: 52, borderColor: '#16a34a', background: '#f0fdf4' }}
+          style={{ width: 44, height: 44, borderColor: '#16a34a', background: '#f0fdf4' }}
         >
           <ProductIcon />
         </div>

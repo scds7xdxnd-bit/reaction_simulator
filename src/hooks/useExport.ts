@@ -10,10 +10,11 @@ export function useExport() {
   async function exportPng() {
     const el = document.querySelector<HTMLElement>('.react-flow');
     if (!el) return;
+    const date = new Date().toISOString().slice(0, 10);
     try {
       const dataUrl = await toPng(el, { cacheBust: true, backgroundColor: '#f0f4ff' });
       const a = document.createElement('a');
-      a.download = 'flowsheet.png';
+      a.download = `reaction-sim_${params.kinetics}_${date}_flowsheet.png`;
       a.href = dataUrl;
       a.click();
     } catch (err) {
@@ -54,17 +55,27 @@ export function useExport() {
     const csv = [headers, ...rows].map((r) => r.join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
+    const date = new Date().toISOString().slice(0, 10);
     const a = document.createElement('a');
-    a.download = 'streams.csv';
+    a.download = `reaction-sim_${params.kinetics}_${date}_streams.csv`;
     a.href = url;
     a.click();
     URL.revokeObjectURL(url);
   }
 
-  function exportReport() {
+  async function exportReport() {
     if (!result) return;
     const isSingle = params.reactionMode === 'single';
     const feedStream = makeFeedStream(params.Ca0, params.T_feed);
+
+    let flowsheetImg = '';
+    try {
+      const flowEl = document.querySelector<HTMLElement>('.react-flow');
+      if (flowEl) {
+        const dataUrl = await toPng(flowEl, { cacheBust: true, backgroundColor: '#f0f4ff' });
+        flowsheetImg = `<img src="${dataUrl}" style="width:100%;max-height:380px;object-fit:contain;margin-bottom:16px" alt="Flowsheet Diagram" />`;
+      }
+    } catch { /* ignore */ }
 
     const segRows = result.segments
       .map(
@@ -113,6 +124,7 @@ export function useExport() {
 <body>
 <h1>Reaction Simulator — Simulation Report</h1>
 <div class="meta">Generated ${new Date().toLocaleString()} · Kinetics: ${params.kinetics} · k = ${params.k} · Ca0 = ${params.Ca0} mol/L</div>
+${flowsheetImg ? `<h2>Flowsheet Diagram</h2>${flowsheetImg}` : ''}
 <div class="summary">
   <div class="kpi"><div class="kpi-label">Final Conversion</div><div class="kpi-value">${(result.finalConversion * 100).toFixed(1)}%</div></div>
   ${!isSingle ? `<div class="kpi"><div class="kpi-label">Yield Y_R</div><div class="kpi-value">${(result.finalYield * 100).toFixed(1)}%</div></div>` : ''}

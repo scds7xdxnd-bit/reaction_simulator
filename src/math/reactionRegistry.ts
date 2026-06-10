@@ -2,6 +2,12 @@ import type { SimulationParams } from '../types/reactor';
 import type { ReactionMode, KineticsType } from '../types/simulation';
 import type { Species, Reaction, ReactionSet } from '../types/chemistry';
 
+function arrhenius(k: number, Ea: number, T_ref: number, T: number): number {
+  if (Ea <= 0) return k;
+  const R_kJ = 8.314e-3;
+  return k * Math.exp(Math.max(-30, Math.min(30, (Ea / R_kJ) * (1 / T_ref - 1 / Math.max(T, 50)))));
+}
+
 export interface ReactionPreset {
   id: string;
   label: string;
@@ -39,8 +45,8 @@ const firstOrderPreset: ReactionPreset = {
     id: 'rxn-1',
     label: 'A → R',
     stoichiometry: { A: -1, R: +1, S: 0 },
-    rateLaw: (C, _T, kP) => (kP['k'] ?? 0) * (C['A'] ?? 0),
-    kineticParams: { k: params.k },
+    rateLaw: (C, T, kP) => arrhenius(kP['k'] ?? 0, kP['Ea'] ?? 0, kP['T_ref'] ?? 300, T) * (C['A'] ?? 0),
+    kineticParams: { k: params.k, Ea: params.Ea, T_ref: params.T_ref },
   }],
 
   computeDa: (k, tau) => k * tau,
@@ -64,8 +70,8 @@ const secondOrderPreset: ReactionPreset = {
     id: 'rxn-1',
     label: 'A → R',
     stoichiometry: { A: -1, R: +1, S: 0 },
-    rateLaw: (C, _T, kP) => (kP['k'] ?? 0) * (C['A'] ?? 0) ** 2,
-    kineticParams: { k: params.k },
+    rateLaw: (C, T, kP) => arrhenius(kP['k'] ?? 0, kP['Ea'] ?? 0, kP['T_ref'] ?? 300, T) * (C['A'] ?? 0) ** 2,
+    kineticParams: { k: params.k, Ea: params.Ea, T_ref: params.T_ref },
   }],
 
   computeDa: (k, tau, Ca0) => k * Ca0 * tau,
@@ -89,11 +95,11 @@ const autocatalyticPreset: ReactionPreset = {
     id: 'rxn-1',
     label: 'A → R',
     stoichiometry: { A: -1, R: +1, S: 0 },
-    rateLaw: (C, _T, kP) =>
-      (kP['k'] ?? 0) *
+    rateLaw: (C, T, kP) =>
+      arrhenius(kP['k'] ?? 0, kP['Ea'] ?? 0, kP['T_ref'] ?? 300, T) *
       (C['A'] ?? 0) *
       ((C['R'] ?? 0) + (kP['Cr0_frac'] ?? 0.01) * (kP['Ca0'] ?? 1)),
-    kineticParams: { k: params.k, Ca0: params.Ca0, Cr0_frac: params.Cr0_fraction },
+    kineticParams: { k: params.k, Ea: params.Ea, T_ref: params.T_ref, Ca0: params.Ca0, Cr0_frac: params.Cr0_fraction },
   }],
 
   computeDa: (k, tau, Ca0) => k * Ca0 * tau,
@@ -190,15 +196,15 @@ const seriesPreset: ReactionPreset = {
       id: 'rxn-1',
       label: 'A → R',
       stoichiometry: { A: -1, R: +1, S: 0 },
-      rateLaw: (C, _T, kP) => (kP['k'] ?? 0) * (C['A'] ?? 0),
-      kineticParams: { k: params.k },
+      rateLaw: (C, T, kP) => arrhenius(kP['k'] ?? 0, kP['Ea'] ?? 0, kP['T_ref'] ?? 300, T) * (C['A'] ?? 0),
+      kineticParams: { k: params.k, Ea: params.Ea, T_ref: params.T_ref },
     },
     {
       id: 'rxn-2',
       label: 'R → S',
       stoichiometry: { A: 0, R: -1, S: +1 },
-      rateLaw: (C, _T, kP) => (kP['k'] ?? 0) * (C['R'] ?? 0),
-      kineticParams: { k: params.k2 },
+      rateLaw: (C, T, kP) => arrhenius(kP['k'] ?? 0, kP['Ea'] ?? 0, kP['T_ref'] ?? 300, T) * (C['R'] ?? 0),
+      kineticParams: { k: params.k2, Ea: params.Ea, T_ref: params.T_ref },
     },
   ],
 
@@ -223,15 +229,15 @@ const parallelPreset: ReactionPreset = {
       id: 'rxn-1',
       label: 'A → R',
       stoichiometry: { A: -1, R: +1, S: 0 },
-      rateLaw: (C, _T, kP) => (kP['k'] ?? 0) * (C['A'] ?? 0),
-      kineticParams: { k: params.k },
+      rateLaw: (C, T, kP) => arrhenius(kP['k'] ?? 0, kP['Ea'] ?? 0, kP['T_ref'] ?? 300, T) * (C['A'] ?? 0),
+      kineticParams: { k: params.k, Ea: params.Ea, T_ref: params.T_ref },
     },
     {
       id: 'rxn-2',
       label: 'A → S',
       stoichiometry: { A: -1, R: 0, S: +1 },
-      rateLaw: (C, _T, kP) => (kP['k'] ?? 0) * (C['A'] ?? 0),
-      kineticParams: { k: params.k2 },
+      rateLaw: (C, T, kP) => arrhenius(kP['k'] ?? 0, kP['Ea'] ?? 0, kP['T_ref'] ?? 300, T) * (C['A'] ?? 0),
+      kineticParams: { k: params.k2, Ea: params.Ea, T_ref: params.T_ref },
     },
   ],
 
