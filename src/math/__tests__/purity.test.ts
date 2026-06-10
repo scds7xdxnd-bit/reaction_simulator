@@ -23,6 +23,7 @@ function runtimeImportLines(source: string): string[] {
 }
 
 const PURE_FILES = [
+  'src/types/simulation.ts',
   'src/math/validation.ts',
   'src/io/serializer.ts',
   'src/math/networkSolver.ts',

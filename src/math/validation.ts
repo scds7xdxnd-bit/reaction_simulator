@@ -1,10 +1,16 @@
 import type { SimulationParams } from '../types/reactor';
 import type { Node, Edge } from '@xyflow/react';
+import { reachableFrom, reachableTo } from './topology';
 
 export interface ValidationIssue {
   level: 'error' | 'warning';
   field?: string;
   message: string;
+}
+
+export interface NodeIssue {
+  nodeId: string;
+  offPath: boolean;
 }
 
 export function validateParams(params: SimulationParams): ValidationIssue[] {
@@ -49,6 +55,37 @@ export function validateTopology(nodes: Node[], edges: Edge[]): ValidationIssue[
   if (orphanCount > 0)
     issues.push({ level: 'warning', field: 'topology',
       message: `${orphanCount} reactor(s) are not connected to any stream` });
+
+  return issues;
+}
+
+const REACTOR_TYPES = new Set(['cstr', 'pfr', 'mixer', 'splitter']);
+
+export function validateNodePaths(nodes: Node[], edges: Edge[]): NodeIssue[] {
+  const issues: NodeIssue[] = [];
+
+  const feedNodes = nodes.filter((n) => n.type === 'feed');
+  const productNodes = nodes.filter((n) => n.type === 'product');
+
+  if (feedNodes.length === 0 || productNodes.length === 0) return issues;
+
+  const fromAnyFeed = new Set<string>();
+  for (const fn of feedNodes) {
+    for (const id of reachableFrom(fn.id, edges)) fromAnyFeed.add(id);
+  }
+
+  const toAnyProduct = new Set<string>();
+  for (const pn of productNodes) {
+    for (const id of reachableTo(pn.id, edges)) toAnyProduct.add(id);
+  }
+
+  for (const node of nodes) {
+    if (!REACTOR_TYPES.has(node.type ?? '')) continue;
+    const onPath = fromAnyFeed.has(node.id) && toAnyProduct.has(node.id);
+    if (!onPath) {
+      issues.push({ nodeId: node.id, offPath: true });
+    }
+  }
 
   return issues;
 }

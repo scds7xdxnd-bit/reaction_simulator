@@ -10,6 +10,7 @@ import OperatingDiagram from './components/plots/OperatingDiagram';
 import DynamicResponse from './components/plots/DynamicResponse';
 import PhasePortrait from './components/plots/PhasePortrait';
 import SweepPanel from './components/plots/SweepPanel';
+import RecyclePanel from './components/plots/RecyclePanel';
 import StreamTable from './components/StreamTable';
 import StatusBar from './components/StatusBar';
 import DynamicControls from './components/controls/DynamicControls';
@@ -198,8 +199,11 @@ export default function App() {
               </>
             )}
             {rightTab === 'analysis' && (
-              <div className="flex-1 min-h-0 overflow-hidden">
-                <SweepPanel />
+              <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+                <RecyclePanel />
+                <div className="flex-1 min-h-0 overflow-hidden">
+                  <SweepPanel />
+                </div>
               </div>
             )}
             {rightTab !== 'dynamic' && rightTab !== 'analysis' && (

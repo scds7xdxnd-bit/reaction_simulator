@@ -1,6 +1,7 @@
 import { memo, useState, useEffect } from 'react';
 import { Handle, Position, useReactFlow } from '@xyflow/react';
 import type { SplitterNodeData } from '../../types/reactor';
+import { useNodeIssues } from '../../context/ValidationContext';
 
 function SplitterNode({ id, data }: { id: string; data: SplitterNodeData }) {
   const { updateNodeData } = useReactFlow();
@@ -8,14 +9,20 @@ function SplitterNode({ id, data }: { id: string; data: SplitterNodeData }) {
 
   useEffect(() => { setAlphaStr(String(data.alpha)); }, [data.alpha]);
 
+  const { isOffPath } = useNodeIssues(id);
+
   return (
     <div
+      title={isOffPath ? 'Not in active flow path' : undefined}
       style={{
         width: 110,
         height: 80,
         borderRadius: 8,
         background: '#ffffff',
-        border: '2px solid #7c3aed',
+        borderTop:    isOffPath ? '2px dashed #f97316' : '3px solid #7c3aed',
+        borderRight:  isOffPath ? '2px dashed #f97316' : '1px solid #e0e6f0',
+        borderBottom: isOffPath ? '2px dashed #f97316' : '1px solid #e0e6f0',
+        borderLeft:   isOffPath ? '2px dashed #f97316' : '1px solid #e0e6f0',
       }}
       className="flex flex-col items-center justify-center gap-1"
     >

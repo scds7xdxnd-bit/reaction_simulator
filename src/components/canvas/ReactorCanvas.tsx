@@ -31,6 +31,7 @@ import MixerNode from './MixerNode';
 import SplitterNode from './SplitterNode';
 import ContextMenu from './ContextMenu';
 import CanvasContextMenu from './CanvasContextMenu';
+import { ValidationProvider } from '../../context/ValidationContext';
 import { useSimulatorStore } from '../../store/simulatorStore';
 import { useSimulation } from '../../hooks/useSimulation';
 
@@ -224,6 +225,7 @@ export default function ReactorCanvas() {
   }, [edges, recycleIdsKey]);
 
   return (
+    <ValidationProvider nodes={nodes} edges={edges}>
     <div ref={containerRef} className="w-full h-full bg-[#e8eeff]">
       <ReactFlow
         nodes={nodes}
@@ -285,5 +287,6 @@ export default function ReactorCanvas() {
       <ContextMenu />
       <CanvasContextMenu />
     </div>
+    </ValidationProvider>
   );
 }

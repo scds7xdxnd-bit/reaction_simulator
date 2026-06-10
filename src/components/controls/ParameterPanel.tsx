@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useSimulatorStore } from '../../store/simulatorStore';
-import type { ReactionMode } from '../../types/reactor';
+import type { ReactionMode } from '../../types/simulation';
 import { PRESETS, getPreset } from '../../math/reactionRegistry';
 import { Gauge, X } from 'lucide-react';
 import { Input } from '../ui';

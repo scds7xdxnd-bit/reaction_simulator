@@ -82,6 +82,7 @@ h1 { font-size: 22px; font-weight: 800; color: #0f172a; margin-bottom: 4px; lett
 }
 .card:hover { box-shadow: 0 4px 18px rgba(0,0,0,0.13); transform: translateY(-2px); z-index: 2; }
 .card.key { border: 2px solid #7c3aed; background: #faf5ff; }
+.card.done { opacity: 0.55; border: 2px dashed #93c5fd; background: #f8fafc; }
 
 .card-top { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
 .card-num {
@@ -102,6 +103,7 @@ h1 { font-size: 22px; font-weight: 800; color: #0f172a; margin-bottom: 4px; lett
 .card-note.teal { color: #134e4a; background: #f0fdfa; border-color: #99f6e4; }
 .card-note.green { color: #14532d; background: #f0fdf4; border-color: #bbf7d0; }
 .card-note.red { color: #7f1d1d; background: #fef2f2; border-color: #fecaca; }
+.card-note.amber { color: #78350f; background: #fffbeb; border-color: #fcd34d; }
 
 .depth-axis { margin-top: auto; padding-top: 8px; border-top: 1px solid #f1f5f9; }
 .depth-label { font-size: 9px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; font-weight: 600; }
@@ -116,6 +118,7 @@ h1 { font-size: 22px; font-weight: 800; color: #0f172a; margin-bottom: 4px; lett
 .badge-next  { background: #c2410c; color: white; box-shadow: 0 0 0 2px #fed7aa; }
 .badge-key   { background: #6d28d9; color: white; }
 .badge-later { background: #e2e8f0; color: #64748b; }
+.badge-new   { background: #d97706; color: white; box-shadow: 0 0 0 2px #fde68a; }
 
 /* Bug callout */
 .bug-callout {
@@ -134,6 +137,32 @@ h1 { font-size: 22px; font-weight: 800; color: #0f172a; margin-bottom: 4px; lett
   padding: 8px 11px; font-size: 10.5px; color: #1e293b; line-height: 1.55;
 }
 .bug-item strong { display: block; font-weight: 700; color: #7f1d1d; margin-bottom: 3px; }
+.bug-item.fixed { background: #f0fdf4; border-color: #86efac; opacity: 0.8; }
+.bug-item.fixed strong { color: #166534; }
+
+/* Graphify callout */
+.graphify-callout {
+  background: #fffbeb; border: 2px solid #d97706; border-radius: 10px;
+  padding: 14px 18px; margin-bottom: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.graphify-callout-title {
+  font-size: 12px; font-weight: 800; color: #78350f;
+  text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.graphify-body { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.graphify-risk {
+  background: #fef2f2; border: 1px solid #fca5a5; border-radius: 6px;
+  padding: 8px 11px; font-size: 10.5px; color: #1e293b; line-height: 1.55;
+}
+.graphify-risk strong { display: block; font-weight: 700; color: #991b1b; margin-bottom: 3px; }
+.graphify-health {
+  background: #f0fdf4; border: 1px solid #86efac; border-radius: 6px;
+  padding: 8px 11px; font-size: 10.5px; color: #1e293b; line-height: 1.55;
+}
+.graphify-health strong { display: block; font-weight: 700; color: #166534; margin-bottom: 3px; }
+
 code {
   background: #f1f5f9; border-radius: 3px; padding: 0 4px;
   font-family: 'SF Mono','Fira Code',monospace; font-size: 10px;
@@ -161,6 +190,7 @@ code {
 .order-step small { display: block; font-size: 9.5px; font-weight: 400; color: #94a3b8; margin-top: 1px; }
 .order-step.done  { background: #dbeafe; border-color: #3b82f6; color: #1e3a5f; opacity: 0.75; }
 .order-step.p1c   { background: #fff7ed; border-color: #f97316; color: #7c2d12; }
+.order-step.p1c.new-item { border-color: #d97706; box-shadow: 0 0 0 2px #fde68a; }
 .order-step.p2c   { background: #eff6ff; border-color: #3b82f6; color: #1e3a5f; }
 .order-step.p3c   { background: #f0fdfa; border-color: #0d9488; color: #134e4a; }
 .order-step.p4c   { background: #fdf4ff; border-color: #a855f7; color: #581c87; }
@@ -173,8 +203,9 @@ code {
   border-radius: 10px; padding: 14px 18px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
 .decisions-title { font-size: 11px; font-weight: 800; color: #4c1d95; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 12px; }
-.decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.decision-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 .decision { background: white; border: 1px solid #ddd6fe; border-radius: 7px; padding: 10px 13px; font-size: 11px; line-height: 1.5; }
+.decision.new-decision { border: 2px solid #7c3aed; background: #f5f0ff; }
 .decision-name { font-weight: 700; color: #4c1d95; margin-bottom: 4px; font-size: 11.5px; }
 .decision-wrong { color: #dc2626; margin-bottom: 3px; }
 .decision-right { color: #059669; font-weight: 600; }
@@ -184,24 +215,25 @@ code {
 <body>
 
 <h1>Reaction Simulator — Phase 3 Roadmap</h1>
-<p class="subtitle">5 pillars · 18 items · built on Phase 2 (18 items ✓) &nbsp;·&nbsp; theme: <strong>Polished Instrument</strong> — fix solver correctness for all topologies, elevate UI from prototype to formal engineering tool</p>
+<p class="subtitle">5 pillars · 19 items · built on Phase 2 (18 items ✓) + P1.1 ✓ &nbsp;·&nbsp; theme: <strong>Polished Instrument</strong> — fix solver + type layer first, then elevate UI to formal engineering tool &nbsp;·&nbsp; updated with Graphify structural analysis</p>
 
 <!-- Legend -->
 <div class="legend">
-  <div class="legend-item"><div class="legend-swatch" style="background:#fff7ed;border-color:#c2410c;"></div>P1 · Solver Hardening</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#fff7ed;border-color:#c2410c;"></div>P1 · Solver &amp; Type Hardening</div>
   <div class="legend-item"><div class="legend-swatch" style="background:#eff6ff;border-color:#1d4ed8;"></div>P2 · Visual System v2</div>
   <div class="legend-item"><div class="legend-swatch" style="background:#f0fdfa;border-color:#0f766e;"></div>P3 · Panels &amp; Analysis</div>
   <div class="legend-item"><div class="legend-swatch" style="background:#fdf4ff;border-color:#7e22ce;"></div>P4 · Domain Expansion</div>
   <div class="legend-item"><div class="legend-swatch" style="background:#f0fdf4;border-color:#166534;"></div>P5 · Data &amp; Workflow</div>
   <div class="legend-item" style="color:#6d28d9;font-weight:700">🔑 Key architectural decision</div>
-  <div class="legend-item" style="color:#0369a1;font-weight:700">✓ Phase 2 complete</div>
+  <div class="legend-item" style="color:#0369a1;font-weight:700">✓ Done</div>
 </div>
 
 <!-- Phase 2 done banner -->
 <div class="done-banner">
   <div class="done-banner-title">
     <span class="badge badge-done">✓ Phase 2 Done — 18/18 items</span>
-    All P1–P5 items shipped · 15 purity-checked tests green · Vercel deployed
+    <span class="badge badge-done">✓ P1.1 · P1.4 · P1.2 · P1.3 Done</span>
+    19/19 tests green · Vercel deployed
   </div>
   <div class="done-banner-body">
     <div class="done-item"><strong>Foundation (P1)</strong>Vitest suite · Toast system · localStorage autosave</div>
@@ -210,22 +242,23 @@ code {
     <div class="done-item"><strong>Analysis (P4)</strong>Sweep engine · Target solver (bisection) · CSTR/PFR/N-CSTR comparison</div>
     <div class="done-item"><strong>Domain Depth (P5)</strong>Multi-feed/product · Adjustable axes · Reversible A⇌R · Batch reactor</div>
     <div class="done-item"><strong>Architecture</strong>Pure-function core · Zustand 8-slice store · purity invariant enforced by test</div>
-    <div class="done-item"><strong>Node colours</strong>CSTR #2563eb · PFR #d97706 · Batch #be123c · Mixer #059669 · Splitter #7c3aed</div>
-    <div class="done-item"><strong>Solver</strong>RK4 integration · Wegstein tear-edge iteration · recycle convergence · Levenspiel curve</div>
+    <div class="done-item"><strong>P1.1 ✓ Parallel Fix</strong>Splitter index fallback + stale-edge guard · 2 new golden tests · 19/19 green</div>
+    <div class="done-item"><strong>P1.4 ✓ Type Split</strong>simulation.ts (5 math types, zero imports) · reactor.ts bridges 9→~4 · 9 import sites updated · SimulationParams JSDoc stability warning</div>
+    <div class="done-item"><strong>P1.2 ✓ Topology Error UX</strong>validateNodePaths() pure · ValidationContext (React context, not Zustand) · dashed orange border + tooltip on off-path nodes · setNodes paste dedup fixed (was: isPastable suffix check; fix: any new ID)</div>
   </div>
 </div>
 
 <!-- Bug callout -->
 <div class="bug-callout">
-  <div class="bug-callout-title">⚠ Known bugs entering Phase 3</div>
+  <div class="bug-callout-title">⚠ Known bugs entering Phase 3 — 1 fixed, 2 open</div>
   <div class="bug-body">
-    <div class="bug-item">
-      <strong>Parallel network returns null</strong>
-      <code>solveNetwork</code> returns <code>null</code> for diamond topologies (Feed→Splitter→{A,B}→Mixer→Product). Status bar shows "Connect Feed → Units → Product". Root cause is in <code>forwardPass</code>: splitter only sets edge streams when <code>sourceHandle === 'out-top'/'out-bot'</code> — if user connects via the generic handle, no stream is written. Downstream nodes fall back to fresh params. Compounded by a potential runtime crash in <code>topoSort</code> when stale edges from copy-paste reference non-existent node IDs. Fix: (1) robust splitter stream-set by edge order, not handle name; (2) guard stale edges in <code>topoSort</code>.
+    <div class="bug-item fixed">
+      <strong>✓ FIXED — P1.1 — Parallel network returns null</strong>
+      <code>solveNetwork</code> returned <code>null</code> for diamond topologies. Two-part fix: (1) splitter index fallback in <code>forwardPass</code> — assigns flow by edge order when <code>sourceHandle</code> doesn't match <code>'out-top'/'out-bot'</code>; (2) <code>safeEdges</code> filter before <code>topoSort</code> guards against stale node IDs from copy-paste. Two golden tests added: diamond Xa ≈ 2/3, stale-edge guard no-throw. 17/17 tests green.
     </div>
     <div class="bug-item">
       <strong>Duplicate node labels after copy-paste</strong>
-      Copy-pasted nodes keep the original label ("CSTR-2" appears twice). No store counter increment on paste, so new nodes don't get incremented names. Cosmetic only but confusing. Fix: increment <code>cstrCount</code> / <code>pfrCount</code> in the paste action.
+      Copy-pasted nodes keep the original label ("CSTR-2" appears twice). No store counter increment on paste, so new nodes don't get incremented names. Cosmetic only but confusing. Fix: increment <code>cstrCount</code> / <code>pfrCount</code> in the paste action inside <code>topologySlice</code>.
     </div>
     <div class="bug-item">
       <strong>Xa: — on nodes not in flow path</strong>
@@ -234,38 +267,80 @@ code {
   </div>
 </div>
 
-<div class="dep-arrow">↓ &nbsp;&nbsp; P1 (Solver Hardening) before everything — broken topology blocks all other testing &nbsp;&nbsp; ↓</div>
+<!-- Graphify Structural Analysis callout -->
+<div class="graphify-callout">
+  <div class="graphify-callout-title">🔬 Graphify Structural Analysis — 369 nodes · 833 edges · 20 communities · 26.2% cross-boundary coupling</div>
+  <div class="graphify-body">
+    <div class="graphify-risk">
+      <strong>🔴 reactor.ts — highest-risk file</strong>
+      Bridges <strong>9 communities</strong>, 25 dependents, 19 dependencies. A type change here cascades across the entire codebase. Math types (ThermalMode, KineticsType) and UI node-data types (ReactorNodeData) live in the same file — split them. → <strong>P1.4 added.</strong>
+    </div>
+    <div class="graphify-risk">
+      <strong>🟠 SimulationParams — 2nd most dangerous interface</strong>
+      19 dependents, bridges 7 communities. P4 plans to add <code>gasPhase</code>, <code>epsilon</code>, <code>Q_feed</code> — each addition is a full-app rebuild. Treat as a frozen interface with a migration checklist before any new field lands. → Warnings added to P4.2 and P4.4.
+    </div>
+    <div class="graphify-health">
+      <strong>🟢 What's working well</strong>
+      <strong>Zero import cycles</strong> across all 833 edges — clean DAG. <strong>solveNetwork()</strong>: 18 dependents, 8 outgoing, tight and self-contained. <strong>Stream Management</strong> cohesion 0.38 (highest of all communities). <strong>Dynamic Solvers (C8)</strong>: 14 nodes, self-contained around rk4/DynamicSimState. Math engine is clean — don't touch it.
+    </div>
+  </div>
+  <div style="margin-top:8px;font-size:10px;color:#78350f;background:#fef3c7;border:1px solid #fcd34d;border-radius:4px;padding:5px 10px;line-height:1.5">
+    <strong>Also flagged:</strong> C4 Node Parameter Panel (51 nodes, 0.08 cohesion) — glue layer connecting math engine AND chemistry presets AND display. C1 Reactor UI Components (58 nodes, 0.05 cohesion) — dumping ground. SweepPanel.tsx has 21 outgoing deps — most of any UI component. → These inform P3.3 scope and P5 refactor notes.
+  </div>
+</div>
 
-<!-- P1: Solver Hardening -->
+<div class="dep-arrow">↓ &nbsp;&nbsp; P1.4 type split before P2 — every new P2 file will import reactor types &nbsp;&nbsp; ↓</div>
+
+<!-- P1: Solver & Type Hardening -->
 <div class="layer p1">
-  <div class="layer-header">🔧 &nbsp;Pillar 1 — Solver Hardening &nbsp;·&nbsp; correctness floor · broken parallel networks and stale edges must be fixed first</div>
-  <div class="layer-body cols-3">
+  <div class="layer-header">🔧 &nbsp;Pillar 1 — Solver &amp; Type Hardening &nbsp;·&nbsp; correctness floor + structural hygiene · both must land before UI rework</div>
+  <div class="layer-body cols-4">
 
-    <div class="card key">
-      <div style="margin-bottom:4px"><span class="badge badge-next">▶ Start here</span></div>
+    <!-- P1.1 — DONE -->
+    <div class="card done">
+      <div style="margin-bottom:4px"><span class="badge badge-done">✓ Done — P1.1</span></div>
       <div class="card-top">
         <div class="card-num">1</div>
         <div class="card-name">Parallel Network Fix</div>
       </div>
-      <div class="card-note red">🔑 Blocks all parallel/split topologies — most common advanced use case</div>
-      <div class="card-job">Two-part fix in <code>networkSolver.ts</code>. <strong>(a)</strong> Robust splitter stream-writing: instead of matching <code>sourceHandle === 'out-top'</code>, fall back to index-based assignment — first outgoing edge gets <code>alpha</code> fraction, second gets <code>(1-alpha)</code>. <strong>(b)</strong> Guard stale edges: before <code>topoSort</code>, filter out any edge whose <code>source</code> or <code>target</code> is not in the <code>nodes</code> array. Both fixes are 2–3 line changes in pure functions. Tests: add 2 golden tests — one diamond topology, one series-parallel hybrid.</div>
+      <div class="card-job">Splitter index fallback: assigns flow by edge order when <code>sourceHandle</code> doesn't match <code>'out-top'/'out-bot'</code>. Stale-edge guard: <code>safeEdges</code> filter before <code>topoSort</code> prevents crash on ghost node IDs from copy-paste. Two golden tests added to <code>networkSolver.test.ts</code>. 17/17 tests green.</div>
       <div class="depth-axis">
-        <div class="depth-label">Enables</div>
+        <div class="depth-label">Delivered</div>
         <div class="depth-row">
-          <span class="depth-from">only series chains work</span>
+          <span class="depth-from">null for diamond topologies</span>
           <span class="depth-arrow">→</span>
           <span class="depth-to">all DAG topologies: parallel, bypass, multi-feed mixing</span>
         </div>
       </div>
     </div>
 
-    <div class="card">
-      <div style="margin-bottom:4px"><span class="badge badge-later">Later</span></div>
+    <!-- P1.4 — DONE: Type Layer Refactor -->
+    <div class="card done">
+      <div style="margin-bottom:4px"><span class="badge badge-done">✓ Done — P1.4</span></div>
       <div class="card-top">
         <div class="card-num">2</div>
+        <div class="card-name">Type Layer Refactor</div>
+      </div>
+      <div class="card-note red">🔑 Graphify: reactor.ts bridges 9 communities — highest-risk file in the project</div>
+      <div class="card-job">Split <code>src/types/reactor.ts</code> into two files. <strong>New <code>src/types/simulation.ts</code></strong> holds math-domain-only types: <code>KineticsType</code>, <code>ReactorType</code>, <code>ReactionMode</code>, <code>UnitType</code>, <code>ThermalMode</code> — these are referenced by pure math files and must never import UI concerns. <strong><code>reactor.ts</code></strong> retains UI/store-facing shapes: <code>ReactorNodeData</code>, <code>SimulationParams</code>, <code>SimulationResult</code>, <code>MixerNodeData</code>, <code>SplitterNodeData</code>, <code>NetworkResult</code>. Add a <code>// SimulationParams: treat as frozen — migration checklist before adding any field</code> JSDoc comment. TypeScript compiler catches every import that needs updating. Zero runtime change. Reduces reactor.ts community bridges 9 → ~4.</div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">reactor.ts bridges 9 communities</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">math types isolated · UI types separate · safe P4 extension</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- P1.2 — DONE: Topology Error UX -->
+    <div class="card done">
+      <div style="margin-bottom:4px"><span class="badge badge-done">✓ Done — P1.2</span></div>
+      <div class="card-top">
+        <div class="card-num">3</div>
         <div class="card-name">Topology Error UX</div>
       </div>
-      <div class="card-job">Per-node and per-edge visual diagnostics. Nodes outside the feed→product flow path get a dashed orange border and a tooltip "Not in active flow path". Invalid/stale edges (dangling, wrong direction) are highlighted in red. The validation hook currently only fires global warnings — extend it to return <code>nodeIssues: Map&lt;nodeId, issue[]&gt;</code> passed as a context to each node component. Zero new pure files needed: validation stays pure, nodes read from context.</div>
+      <div class="card-job">Per-node and per-edge visual diagnostics. Nodes outside the feed→product flow path get a dashed orange border and a tooltip "Not in active flow path". Invalid/stale edges (dangling, wrong direction) are highlighted in red. The validation hook currently only fires global warnings — extend it to return <code>nodeIssues: Map&lt;nodeId, issue[]&gt;</code> passed as a React context to each node component. Zero new pure files needed: validation stays pure, nodes read from context. Also fixes duplicate label bug (copy-paste counter increment in <code>topologySlice</code>).</div>
       <div class="card-note orange">Pairs with P1.1 — user needs to see WHY a topology fails, not just that it does</div>
       <div class="depth-axis">
         <div class="depth-label">Enables</div>
@@ -277,10 +352,11 @@ code {
       </div>
     </div>
 
-    <div class="card">
-      <div style="margin-bottom:4px"><span class="badge badge-later">Later</span></div>
+    <!-- P1.3 — Recycle Stream Panel -->
+    <div class="card key">
+      <div style="margin-bottom:4px"><span class="badge badge-done">✓ Done — P1.3</span></div>
       <div class="card-top">
-        <div class="card-num">3</div>
+        <div class="card-num">4</div>
         <div class="card-name">Recycle Stream Panel</div>
       </div>
       <div class="card-job">Make recycle loops a first-class UI feature. Currently tear edges are detected automatically and shown in purple — but there's no panel showing convergence progress. Add a collapsible "Recycle Convergence" panel in the Analysis tab: table of tear edges with assumed vs. computed Xa, error per iteration, convergence plot (error vs. iteration). Also fix label increment on copy-paste (bonus: detect when the same node ID exists twice after paste and rename).</div>
@@ -297,7 +373,7 @@ code {
   </div>
 </div>
 
-<div class="dep-arrow">↓ &nbsp;&nbsp; solver correct → safe to redesign UI on top of it &nbsp;&nbsp; ↓</div>
+<div class="dep-arrow">↓ &nbsp;&nbsp; solver correct + types clean → safe to redesign UI on top of them &nbsp;&nbsp; ↓</div>
 
 <!-- P2: Visual System v2 -->
 <div class="layer p2">
@@ -305,9 +381,9 @@ code {
   <div class="layer-body cols-4">
 
     <div class="card key">
-      <div style="margin-bottom:4px"><span class="badge badge-later">Later</span></div>
+      <div style="margin-bottom:4px"><span class="badge badge-next">▶ Next</span></div>
       <div class="card-top">
-        <div class="card-num">4</div>
+        <div class="card-num">5</div>
         <div class="card-name">Node Cards v2</div>
       </div>
       <div class="card-note" style="color:#1e40af">🔑 Single biggest visual impact — cards are the most-viewed element</div>
@@ -325,16 +401,16 @@ code {
     <div class="card">
       <div style="margin-bottom:4px"><span class="badge badge-later">Later</span></div>
       <div class="card-top">
-        <div class="card-num">5</div>
+        <div class="card-num">6</div>
         <div class="card-name">Toolbar v2</div>
       </div>
-      <div class="card-job">Widen toolbar from 64px → 80px. Replace minimal SVG icons with proper <strong>chemical engineering P&ID symbols</strong>: CSTR = stirred tank with agitator, PFR = horizontal cylinder with flow arrows, Batch = flask, Mixer = T-junction, Splitter = Y-junction. Add <code>title</code> tooltips that show on hover: "CSTR — Continuous Stirred Tank Reactor". Move Save/Load/Examples to a footer section with text labels instead of icon-only buttons. Add a thin grey section divider between reactor tools and utility tools.</div>
+      <div class="card-job">Widen toolbar from 64px → 80px. Replace minimal SVG icons with proper <strong>chemical engineering P&amp;ID symbols</strong>: CSTR = stirred tank with agitator, PFR = horizontal cylinder with flow arrows, Batch = flask, Mixer = T-junction, Splitter = Y-junction. Add <code>title</code> tooltips that show on hover: "CSTR — Continuous Stirred Tank Reactor". Move Save/Load/Examples to a footer section with text labels instead of icon-only buttons. Add a thin grey section divider between reactor tools and utility tools.</div>
       <div class="depth-axis">
         <div class="depth-label">Enables</div>
         <div class="depth-row">
           <span class="depth-from">icon-only toolbar, no labels</span>
           <span class="depth-arrow">→</span>
-          <span class="depth-to">P&ID-style symbols · hover tooltips · labelled save/load</span>
+          <span class="depth-to">P&amp;ID-style symbols · hover tooltips · labelled save/load</span>
         </div>
       </div>
     </div>
@@ -342,7 +418,7 @@ code {
     <div class="card">
       <div style="margin-bottom:4px"><span class="badge badge-later">Later</span></div>
       <div class="card-top">
-        <div class="card-num">6</div>
+        <div class="card-num">7</div>
         <div class="card-name">Top Parameter Bar</div>
       </div>
       <div class="card-job">Redesign the dense single-row parameter bar into a <strong>two-section compact bar</strong>: left group = MODE + KINETICS dropdowns (wider, better spacing), centre group = k / Ca0 / Keq inputs with clear unit labels, right = THERMAL toggle becomes a distinct pill switch. Add a subtle left-border accent per reaction mode (blue=single, teal=series, purple=parallel). Height stays at 48px — just better internal layout and typography. Pure CSS/layout change, zero logic change.</div>
@@ -359,7 +435,7 @@ code {
     <div class="card">
       <div style="margin-bottom:4px"><span class="badge badge-later">Later</span></div>
       <div class="card-top">
-        <div class="card-num">7</div>
+        <div class="card-num">8</div>
         <div class="card-name">Canvas Polish</div>
       </div>
       <div class="card-job">Four targeted canvas improvements: <strong>(1)</strong> selection glow — selected nodes get a <code>box-shadow: 0 0 0 3px {nodeColor}40</code> halo, <strong>(2)</strong> edge flow direction — animated dash direction follows source→target (currently all dashes move same direction), <strong>(3)</strong> recycle edges already purple — add a small ♻ label in the middle of tear edges, <strong>(4)</strong> MiniMap improvement — show node type icons in minimap instead of just colour squares. All display-only changes, no solver impact.</div>
@@ -380,13 +456,13 @@ code {
 
 <!-- P3: Panels & Analysis -->
 <div class="layer p3">
-  <div class="layer-header">📊 &nbsp;Pillar 3 — Panels &amp; Analysis &nbsp;·&nbsp; richer data presentation · stream table · plot upgrades</div>
+  <div class="layer-header">📊 &nbsp;Pillar 3 — Panels &amp; Analysis &nbsp;·&nbsp; richer data presentation · stream table · plot upgrades · parameter panel hygiene</div>
   <div class="layer-body cols-3">
 
     <div class="card">
       <div style="margin-bottom:4px"><span class="badge badge-later">Later</span></div>
       <div class="card-top">
-        <div class="card-num">8</div>
+        <div class="card-num">9</div>
         <div class="card-name">Stream Table v2</div>
       </div>
       <div class="card-job">Full sortable stream table in its own panel tab. Columns: Stream ID, From→To, Flowrate, T (K), Xₐ, Cₐ (mol/L), Cᵣ, Cₛ. Rows for all edges + one row per reactor outlet. Colour-code the Xₐ column (green/amber/red). Highlight recycle streams (purple row). Add a "Copy as CSV" button. Currently the stream table section exists in the panel but is minimal — this replaces it with a proper engineering mass-balance table. Pure display change; all data comes from <code>result.streams</code> already computed.</div>
@@ -404,7 +480,7 @@ code {
     <div class="card">
       <div style="margin-bottom:4px"><span class="badge badge-later">Later</span></div>
       <div class="card-top">
-        <div class="card-num">9</div>
+        <div class="card-num">10</div>
         <div class="card-name">Profiles Panel v2</div>
       </div>
       <div class="card-job">Upgrade the Profiles tab: <strong>(1)</strong> click on a reactor segment in the chart to highlight it and show a detail card below (Xa_in → Xa_out, T_in → T_out, Da, τ), <strong>(2)</strong> add crosshair cursor with tooltip showing exact (τ, Xₐ) or (τ, T) at hover position, <strong>(3)</strong> toggle between C(τ) and Xₐ(τ) view — a "Show: Conversion / Concentration" switch above the chart, <strong>(4)</strong> overlay grid lines aligned to each reactor's τ boundaries. All within the existing Recharts ComposedChart.</div>
@@ -418,19 +494,20 @@ code {
       </div>
     </div>
 
-    <div class="card">
+    <div class="card key">
       <div style="margin-bottom:4px"><span class="badge badge-later">Later</span></div>
       <div class="card-top">
-        <div class="card-num">10</div>
+        <div class="card-num">11</div>
         <div class="card-name">Parameter Panel v2</div>
       </div>
-      <div class="card-job">Restructure the right-click/selected-node parameter panel into <strong>collapsible sections</strong>: <em>Kinetics</em> (k, k2, Keq, Ea), <em>Feed</em> (Ca0, Cr0_fraction, T_feed), <em>Thermal</em> (rho_Cp, delta_H, T_ref). Each section has a chevron toggle and remembers its open/closed state in localStorage. Section headers are colour-coded to the pillar they belong to. Currently all params are flat; this groups them logically without changing any data. Add a small unit label next to each field (s⁻¹, mol/L, kJ/mol, etc.) that's always visible.</div>
+      <div class="card-note amber">🔑 Graphify: C4 Node Parameter Panel (51 nodes, 0.08 cohesion) is the glue layer — connects math engine AND chemistry presets AND display</div>
+      <div class="card-job">Restructure the right-click/selected-node parameter panel into <strong>collapsible sections</strong>: <em>Kinetics</em> (k, k2, Keq, Ea), <em>Feed</em> (Ca0, Cr0_fraction, T_feed), <em>Thermal</em> (rho_Cp, delta_H, T_ref). Each section has a chevron toggle and remembers its open/closed state in localStorage. Section headers are colour-coded. Add a small unit label next to each field (s⁻¹, mol/L, kJ/mol, etc.). <strong>Structural note (C4 split):</strong> move parameter schema definitions (field lists, validation rules, default values) out of display components and into a <code>src/schema/parameterSchema.ts</code> file that display components consume. Display components should render schemas, not define them. This alone shrinks C4's outgoing edges by ~30%. <code>SweepPanel.tsx</code> (21 outgoing deps) is the most complex file in this community — do not split it during this item, but ensure new schema file absorbs its field definitions.</div>
       <div class="depth-axis">
         <div class="depth-label">Enables</div>
         <div class="depth-row">
-          <span class="depth-from">flat undifferentiated parameter list</span>
+          <span class="depth-from">flat undifferentiated panel + schema-in-display</span>
           <span class="depth-arrow">→</span>
-          <span class="depth-to">sectioned + collapsible · always-visible units · persistent state</span>
+          <span class="depth-to">sectioned + collapsible · schema extracted · C4 glue reduced</span>
         </div>
       </div>
     </div>
@@ -448,11 +525,11 @@ code {
     <div class="card key">
       <div style="margin-bottom:4px"><span class="badge badge-later">Later</span></div>
       <div class="card-top">
-        <div class="card-num">11</div>
+        <div class="card-num">12</div>
         <div class="card-name">Pressure Drop — PFR</div>
       </div>
       <div class="card-note purple">🔑 Momentum balance adds a 3rd ODE to the PFR system — architecture decision needed</div>
-      <div class="card-job">Add optional Ergun equation to the PFR ODE system: <code>dP/dz = -G/ρ·(1-φ)/φ³ · (150(1-φ)μ/Dp² + 1.75G/Dp)</code>. New PFR node toggle "Pressure Drop" with inputs: catalyst particle size Dp, void fraction φ, inlet pressure P0. The ODE becomes [Ca, Cr, Cs, T, P] (5-vector). The rate law is multiplied by (P/P0)ⁿ for gas-phase. Architecture: <code>pfrModel</code> already integrates a vector ODE — extend the state vector from [Ca,Cr,Cs,T] to [Ca,Cr,Cs,T,P] when pressure-drop mode is enabled.</div>
+      <div class="card-job">Add optional Ergun equation to the PFR ODE system: <code>dP/dz = -G/ρ·(1-φ)/φ³ · (150(1-φ)μ/Dp² + 1.75G/Dp)</code>. New PFR node toggle "Pressure Drop" with inputs: catalyst particle size Dp, void fraction φ, inlet pressure P0. The ODE becomes [Ca, Cr, Cs, T, P] (5-vector). The rate law is multiplied by (P/P0)ⁿ for gas-phase. Architecture: <code>pfrModel</code> already integrates a vector ODE — extend the state vector from [Ca,Cr,Cs,T] to [Ca,Cr,Cs,T,P] when pressure-drop mode is enabled. New pure file: <code>pressureDropModel.ts</code>.</div>
       <div class="depth-axis">
         <div class="depth-label">Enables</div>
         <div class="depth-row">
@@ -466,10 +543,11 @@ code {
     <div class="card">
       <div style="margin-bottom:4px"><span class="badge badge-later">Later</span></div>
       <div class="card-top">
-        <div class="card-num">12</div>
+        <div class="card-num">13</div>
         <div class="card-name">Gas-Phase Reactions</div>
       </div>
-      <div class="card-job">Add <strong>volumetric expansion</strong> for gas-phase reactions. New parameter ε (expansion factor, dimensionless). Concentration becomes <code>Ca = Ca0·(1-Xa)/(1+ε·Xa)</code>. New kinetics mode "Gas-phase 1st order" alongside the existing modes. For CSTR: modified CSTR design equation. For PFR: modify the ODE <code>dFa/dV = -ra</code> form (Fa-based, not Ca-based). Architecture: add <code>gasPhase: boolean</code> and <code>epsilon: number</code> to <code>SimulationParams</code>; rate laws receive the gas-corrected concentration.</div>
+      <div class="card-note orange">⚠ Adds <code>gasPhase</code> + <code>epsilon</code> to SimulationParams — run migration checklist before merge (grep spreads, update serializer, update sweepEngine + comparisonEngine)</div>
+      <div class="card-job">Add <strong>volumetric expansion</strong> for gas-phase reactions. New parameter ε (expansion factor, dimensionless). Concentration becomes <code>Ca = Ca0·(1-Xa)/(1+ε·Xa)</code>. New kinetics mode "Gas-phase 1st order" alongside the existing modes. For CSTR: modified CSTR design equation. For PFR: modify the ODE <code>dFa/dV = -ra</code> form (Fa-based, not Ca-based). Add <code>gasPhase: boolean</code> and <code>epsilon: number</code> to <code>SimulationParams</code> — follow the SimulationParams stability checklist (see Decisions section). New pure file: <code>gasPhaseFactor.ts</code>.</div>
       <div class="depth-axis">
         <div class="depth-label">Enables</div>
         <div class="depth-row">
@@ -483,10 +561,10 @@ code {
     <div class="card">
       <div style="margin-bottom:4px"><span class="badge badge-later">Later</span></div>
       <div class="card-top">
-        <div class="card-num">13</div>
+        <div class="card-num">14</div>
         <div class="card-name">Multiple Steady States</div>
       </div>
-      <div class="card-job">For a <strong>non-isothermal CSTR with cooling</strong>, the heat-removal line can intersect the heat-generation curve at 3 points (ignition, unstable, extinction). Add a "Steady-State Map" button on cooled CSTR nodes: runs the operating diagram model, detects 1 or 3 intersections using a bisection sweep, marks the stable/unstable states on the Thermal tab. The existing <code>buildOperatingDiagram</code> already computes the G(T) and R(T) curves — extend it to count and return all intersection points.</div>
+      <div class="card-job">For a <strong>non-isothermal CSTR with cooling</strong>, the heat-removal line can intersect the heat-generation curve at 3 points (ignition, unstable, extinction). Add a "Steady-State Map" button on cooled CSTR nodes: runs the operating diagram model, detects 1 or 3 intersections using a bisection sweep, marks the stable/unstable states on the Thermal tab. The existing <code>buildOperatingDiagram</code> already computes the G(T) and R(T) curves — extend it to count and return all intersection points. New pure file: <code>steadyStateMapper.ts</code>. No SimulationParams changes.</div>
       <div class="depth-axis">
         <div class="depth-label">Enables</div>
         <div class="depth-row">
@@ -500,10 +578,11 @@ code {
     <div class="card">
       <div style="margin-bottom:4px"><span class="badge badge-later">Later</span></div>
       <div class="card-top">
-        <div class="card-num">14</div>
+        <div class="card-num">15</div>
         <div class="card-name">Reactor Sizing Mode</div>
       </div>
-      <div class="card-job">Add a "Sizing" toggle to the top bar. In sizing mode, the user specifies <strong>volumetric flow rate Q (L/s)</strong> and the simulator computes reactor volume <code>V = τ · Q</code> for each unit, displaying V alongside τ. Adds a "Volume" row to each node card. Also adds a network-level cost estimator: V_total = ΣVᵢ, displayed in the status bar as "Total V: X.X L". Pure derived-value computation — V = τ·Q, no new solver logic. New parameter: <code>Q_feed: number</code> in <code>SimulationParams</code>.</div>
+      <div class="card-note orange">⚠ Adds <code>Q_feed</code> to SimulationParams — same migration checklist as P4.2 (serializer + sweep/target/compare engines)</div>
+      <div class="card-job">Add a "Sizing" toggle to the top bar. In sizing mode, the user specifies <strong>volumetric flow rate Q (L/s)</strong> and the simulator computes reactor volume <code>V = τ · Q</code> for each unit, displaying V alongside τ. Adds a "Volume" row to each node card. Also adds a network-level cost estimator: V_total = ΣVᵢ, displayed in the status bar as "Total V: X.X L". Pure derived-value computation — V = τ·Q, no new solver logic. Add <code>Q_feed: number</code> to <code>SimulationParams</code> following the stability checklist.</div>
       <div class="depth-axis">
         <div class="depth-label">Enables</div>
         <div class="depth-row">
@@ -527,7 +606,7 @@ code {
     <div class="card">
       <div style="margin-bottom:4px"><span class="badge badge-later">Later</span></div>
       <div class="card-top">
-        <div class="card-num">15</div>
+        <div class="card-num">16</div>
         <div class="card-name">Export Engine</div>
       </div>
       <div class="card-job">Three export targets: <strong>(1) PNG canvas</strong> — ReactFlow's <code>toBlob()</code> API captures the current flowsheet as an image (already available in ReactFlow v12); <strong>(2) CSV streams</strong> — dumps the stream table to a downloadable .csv; <strong>(3) Simulation report</strong> — a simple HTML-to-PDF 1-pager with flowsheet screenshot + stream table + segment summary + plot screenshot. Button in the toolbar footer. New <code>useExport</code> hook. Zero solver change — all data from <code>result</code>.</div>
@@ -544,7 +623,7 @@ code {
     <div class="card">
       <div style="margin-bottom:4px"><span class="badge badge-later">Later</span></div>
       <div class="card-top">
-        <div class="card-num">16</div>
+        <div class="card-num">17</div>
         <div class="card-name">Saved Scenarios</div>
       </div>
       <div class="card-job">Named snapshots of the full simulation state (nodes, edges, params, result summary). Up to 10 scenarios stored in <code>localStorage</code>. A "Scenarios" panel shows a comparison table: Scenario name · Kinetics · Xa · Yield · Selectivity. Click a scenario to restore it. Enables the classic ChE teaching exercise of "compare isothermal vs. adiabatic vs. cooled at same τ." Architecture: reuse the existing save/load serializer (<code>src/io/serializer.ts</code>) — a scenario is just a named <code>SavedState</code> with a <code>Xa</code> summary field.</div>
@@ -561,7 +640,7 @@ code {
     <div class="card">
       <div style="margin-bottom:4px"><span class="badge badge-later">Later</span></div>
       <div class="card-top">
-        <div class="card-num">17</div>
+        <div class="card-num">18</div>
         <div class="card-name">Dark Mode</div>
       </div>
       <div class="card-job">System-preference-based dark theme using Tailwind's <code>dark:</code> variant. Background: <code>#0f172a</code>, card: <code>#1e293b</code>, border: <code>#334155</code>, text: <code>#e2e8f0</code>. Canvas background: deep navy with lighter dots. Node card backgrounds darken but accent colours stay the same (CSTR blue, PFR amber, etc.). Plots: dark background with light axis text, same line colours. One <code>dark</code> class on <code>&lt;html&gt;</code> driven by <code>window.matchMedia('(prefers-color-scheme: dark)')</code> + manual toggle in toolbar. Architecture: Tailwind dark-mode config set to <code>class</code> strategy.</div>
@@ -578,7 +657,7 @@ code {
     <div class="card">
       <div style="margin-bottom:4px"><span class="badge badge-later">Later</span></div>
       <div class="card-top">
-        <div class="card-num">18</div>
+        <div class="card-num">19</div>
         <div class="card-name">Keyboard Shortcuts &amp; Onboarding</div>
       </div>
       <div class="card-job">Two completeness items: <strong>(1) Keyboard shortcuts overlay</strong> — press <code>?</code> to show a modal listing all shortcuts (⌘Z undo, ⌘C copy, Del delete, Arrow nudge, etc.). Overlays like this are the standard way to teach a canvas tool's shortcuts. <strong>(2) First-run onboarding tooltip sequence</strong> — 5-step highlight sequence shown once (dismissed to localStorage): toolbar → canvas → parameter bar → plot panel → status bar. Both are pure UI additions. Zero solver or store changes.</div>
@@ -601,13 +680,15 @@ code {
   <div class="order-flow">
     <div class="order-step done">✓ Phase 2<br/><small>18 items done</small></div>
     <div class="order-arrow">→</div>
-    <div class="order-step p1c"><strong>▶ P1.1</strong><br/><small>Parallel fix</small></div>
+    <div class="order-step done">✓ P1.1<br/><small>Parallel fix</small></div>
     <div class="order-arrow">→</div>
-    <div class="order-step p1c">P1.2<br/><small>Error UX</small></div>
+    <div class="order-step done">✓ P1.4<br/><small>Type split</small></div>
     <div class="order-arrow">→</div>
-    <div class="order-step p1c">P1.3<br/><small>Recycle panel</small></div>
+    <div class="order-step done">✓ P1.2<br/><small>Error UX</small></div>
     <div class="order-arrow">→</div>
-    <div class="order-step p2c">P2.1<br/><small>Node cards v2</small></div>
+    <div class="order-step done">✓ P1.3<br/><small>Recycle panel</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p2c new-item"><strong>▶ P2.1</strong><br/><small>Node cards v2</small></div>
     <div class="order-arrow">→</div>
     <div class="order-step p2c">P2.2<br/><small>Toolbar v2</small></div>
     <div class="order-arrow">→</div>
@@ -638,7 +719,8 @@ code {
     <div class="order-step p5c">P5.4<br/><small>Shortcuts</small></div>
   </div>
   <div style="margin-top:10px;font-size:11px;color:#64748b;line-height:1.6;padding:8px 12px;background:#f8fafc;border-radius:6px;border:1px solid #e2e8f0">
-    <strong>Hard constraint:</strong> P1 (Solver Hardening) must land before P2 (Visual System) — visual rework on top of a broken solver makes testing impossible. &nbsp;
+    <strong>Hard constraint:</strong> P1.4 type split lands immediately after P1.1 — before P2 adds more UI files that import reactor types. Every new component in P2 will reference node-data types; if the split hasn't happened yet those imports go to the wrong file. &nbsp;
+    <strong>P1 before P2:</strong> both solver correctness (P1.1 ✓) and type clarity (P1.4) must be done before visual rework. &nbsp;
     <strong>P2 before P3:</strong> Panel redesign builds on stable node layouts — wait for Node Cards v2 to settle before redesigning the side panels. &nbsp;
     <strong>Flexible:</strong> P4 domain items are independent of each other. P5 data tools are independent of P4 — can be worked in parallel once P3 is done. &nbsp;
     <strong>P4.1 (Pressure Drop) key decision:</strong> extending the ODE state vector must be done before P4.2 (gas-phase) since both share the vector extension pattern.
@@ -647,16 +729,34 @@ code {
 
 <!-- Architectural Decisions -->
 <div class="decisions">
-  <div class="decisions-title">🔑 Architectural decisions to get right upfront</div>
+  <div class="decisions-title">🔑 Architectural decisions to get right upfront — 2 new from Graphify analysis</div>
   <div class="decision-grid">
 
+    <!-- NEW decision 1 -->
+    <div class="decision new-decision">
+      <div class="decision-name">reactor.ts type split: math types vs. UI types</div>
+      <div class="decision-wrong">✗ Keep all types in one file — "they're just types, imports are cheap." This approach lets reactor.ts continue bridging 9 communities; a single field rename cascades across the entire project.</div>
+      <div class="decision-right">✓ Extract <code>KineticsType</code>, <code>ReactorType</code>, <code>ReactionMode</code>, <code>UnitType</code>, <code>ThermalMode</code> → <code>src/types/simulation.ts</code>. Pure math files only import from <code>simulation.ts</code>. UI node-data shapes stay in <code>reactor.ts</code>. Bridge count drops 9 → ~4. Compiler enforces the boundary — if a pure file imports from <code>reactor.ts</code>, purity test catches it.</div>
+      <p style="color:#64748b;font-size:10.5px;margin-top:5px;line-height:1.5">Graphify confirms this is the single highest-risk file. The split is zero-runtime-cost and the compiler does all the verification.</p>
+    </div>
+
+    <!-- NEW decision 2 -->
+    <div class="decision new-decision">
+      <div class="decision-name">SimulationParams: stable interface with migration checklist</div>
+      <div class="decision-wrong">✗ Add fields to <code>SimulationParams</code> freely as P4 features need them — it's just adding optional fields, how bad can it be? (Answer: 19 dependents, 7 communities, breaks serializer migration without an explicit bump.)</div>
+      <div class="decision-right">✓ Treat <code>SimulationParams</code> as a versioned interface. Before adding any field: (1) grep for all spreads (<code>{ ...params }</code>) and destructures, (2) add the field + default to the serializer migration map in <code>serializer.ts</code>, (3) check <code>sweepEngine</code>, <code>targetSolver</code>, <code>comparisonEngine</code> — they all take params, (4) run full purity test suite. This checklist is in the JSDoc comment on the interface definition.</div>
+      <p style="color:#64748b;font-size:10.5px;margin-top:5px;line-height:1.5">P4.2 adds <code>gasPhase + epsilon</code>, P4.4 adds <code>Q_feed</code> — two migrations. Each is manageable if done carefully, risky if rushed.</p>
+    </div>
+
+    <!-- Original decision 1 -->
     <div class="decision">
       <div class="decision-name">Splitter stream assignment: handle-name vs. edge-order</div>
       <div class="decision-wrong">✗ Continue matching <code>sourceHandle === 'out-top'/'out-bot'</code> — breaks when user connects via any other handle</div>
-      <div class="decision-right">✓ Fall back to edge-index: <code>outEdges[0]</code> gets α fraction, <code>outEdges[1]</code> gets (1−α). Keep handle-name check as the primary path, add index fallback. Guard stale edges (<code>source/target not in nodeMap</code>) before topoSort.</div>
+      <div class="decision-right">✓ Fall back to edge-index: <code>outEdges[0]</code> gets α fraction, <code>outEdges[1]</code> gets (1−α). Keep handle-name check as the primary path, add index fallback. Guard stale edges (<code>source/target not in nodeMap</code>) before topoSort. <strong>Done in P1.1.</strong></div>
       <p style="color:#64748b;font-size:10.5px;margin-top:5px;line-height:1.5">The splitter has always had two distinct source handles for a reason (top/bot fraction assignment). But the index fallback makes it robust to ReactFlow handle connection behaviour variance.</p>
     </div>
 
+    <!-- Original decision 2 -->
     <div class="decision">
       <div class="decision-name">Per-node validation: pure vs. context</div>
       <div class="decision-wrong">✗ Import validation results inside each node component — breaks purity test for validation.ts</div>
@@ -664,13 +764,15 @@ code {
       <p style="color:#64748b;font-size:10.5px;margin-top:5px;line-height:1.5">Validation context is the right seam: topology-local information flows naturally as React context, not global Zustand state.</p>
     </div>
 
+    <!-- Original decision 3 -->
     <div class="decision">
       <div class="decision-name">PFR ODE state vector extension for pressure drop</div>
       <div class="decision-wrong">✗ Add a separate pressure-drop ODE pass after the main integration — doubles the integration cost and makes T/P coupling incorrect</div>
       <div class="decision-right">✓ Extend the RK4 state vector from <code>[Ca, Cr, Cs, T]</code> to <code>[Ca, Cr, Cs, T, P]</code> when pressure-drop is enabled. The existing <code>rk4Step</code> already handles arbitrary-length vectors. Add a <code>pressureDrop</code> flag to <code>UnitParams</code>.</div>
-      <p style="color:#64748b;font-size:10.5px;margin-top:5px;line-height:1.5">The correct approach: T and P are coupled (temperature affects viscosity, which affects ΔP). They must be integrated together in one RK4 step.</p>
+      <p style="color:#64748b;font-size:10.5px;margin-top:5px;line-height:1.5">T and P are coupled (temperature affects viscosity, which affects ΔP). They must be integrated together in one RK4 step.</p>
     </div>
 
+    <!-- Original decision 4 -->
     <div class="decision">
       <div class="decision-name">Dark mode strategy: Tailwind class vs. CSS variables</div>
       <div class="decision-wrong">✗ Use <code>prefers-color-scheme</code> media query in CSS only — can't be overridden by the user's manual toggle</div>
@@ -680,7 +782,7 @@ code {
 
   </div>
   <div class="rule-box">
-    <strong>Phase 3 purity rule:</strong> The pure-function invariant is preserved. New pure files added in P4 (<code>pressureDropModel.ts</code>, <code>gasPhaseFactor.ts</code>, <code>steadyStateMapper.ts</code>) get added to <code>PURE_FILES</code> in <code>purity.test.ts</code>. The validation map return from <code>validation.ts</code> is type-only; the <code>ValidationContext</code> React context lives in a separate <code>src/context/</code> file. Tests target: <strong>21+ tests</strong> (current 15 + 2 golden for parallel network + 4 for new pure math files).
+    <strong>Phase 3 purity rule:</strong> The pure-function invariant is preserved. New pure files added in P4 (<code>pressureDropModel.ts</code>, <code>gasPhaseFactor.ts</code>, <code>steadyStateMapper.ts</code>) get added to <code>PURE_FILES</code> in <code>purity.test.ts</code>. <code>src/types/simulation.ts</code> (from P1.4) is a type-only file — add it to PURE_FILES too. New <code>src/schema/parameterSchema.ts</code> (from P3.3) is also pure. The validation map return from <code>validation.ts</code> is type-only; the <code>ValidationContext</code> React context lives in a separate <code>src/context/</code> file. Tests: <strong>17 green now</strong> → target <strong>28+ tests</strong> after all Phase 3 pure files (17 + ~3 type-split tests + ~4 P4 math file tests + 4 for new pure schema/context files). &nbsp;<strong>Graphify invariant:</strong> keep zero import cycles. Every new file must be verified cycle-free before merge. SweepPanel.tsx (21 outgoing deps) is a known hotspot — do not add new imports to it in P3.3; move definitions out instead.
   </div>
 </div>
 

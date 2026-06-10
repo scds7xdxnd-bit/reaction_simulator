@@ -1,6 +1,6 @@
 import type { Stream } from '../types/stream';
 import type { ChemistryModel, SpeciesId, Reaction } from '../types/chemistry';
-import type { ThermalMode } from '../types/reactor';
+import type { ThermalMode } from '../types/simulation';
 import { bisect, rk4Step } from './numerics';
 
 export interface UnitParams {

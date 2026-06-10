@@ -1,4 +1,5 @@
-import type { SimulationParams, ReactionMode, KineticsType } from '../types/reactor';
+import type { SimulationParams } from '../types/reactor';
+import type { ReactionMode, KineticsType } from '../types/simulation';
 import type { Species, Reaction, ReactionSet } from '../types/chemistry';
 
 export interface ReactionPreset {

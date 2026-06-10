@@ -1,16 +1,25 @@
 import { memo, useState, useEffect } from 'react';
 import { Handle, Position, useReactFlow, type NodeProps } from '@xyflow/react';
-import type { ReactorNodeData, ThermalMode } from '../../types/reactor';
+import type { ReactorNodeData } from '../../types/reactor';
+import type { ThermalMode } from '../../types/simulation';
 import { useSimulatorStore } from '../../store/simulatorStore';
 import { getPreset } from '../../math/reactionRegistry';
+import { useNodeIssues } from '../../context/ValidationContext';
 
 type PFRNodeProps = NodeProps & { data: ReactorNodeData };
+
+const ACCENT = '#d97706';
+const HEADER_BG = '#fffbeb';
+const BADGE_BG = '#fef3c7';
+const BADGE_TEXT = '#92400e';
+const PILL_BG = '#fef3c7';
 
 function PFRNode({ id, data, selected }: PFRNodeProps) {
   const { updateNodeData } = useReactFlow();
   const updateNodeThermal = useSimulatorStore((s) => s.updateNodeThermal);
   const result = useSimulatorStore((s) => s.result);
   const params = useSimulatorStore((s) => s.params);
+  const simulationMode = useSimulatorStore((s) => s.simulationMode);
 
   const [isEditing, setIsEditing] = useState(false);
   const [labelStr, setLabelStr] = useState(data.label);
@@ -27,30 +36,31 @@ function PFRNode({ id, data, selected }: PFRNodeProps) {
 
   const isSingle = params.reactionMode === 'single';
   const thermalMode = data.thermalMode ?? 'isothermal';
-  const nodeHeight = isSingle ? 140 : 90;
+
+  const base = !isSingle
+    ? 88
+    : thermalMode === 'cooled' ? 170 : thermalMode === 'adiabatic' ? 130 : 110;
+  const nodeHeight = simulationMode === 'dynamic' ? base + 48 : base;
 
   const conversionColor = segment
-    ? segment.Xa_out > 0.7
-      ? '#16a34a'
-      : segment.Xa_out > 0.4
-        ? '#d97706'
-        : '#dc2626'
-    : '#6b7280';
+    ? segment.Xa_out > 0.7 ? '#16a34a' : segment.Xa_out > 0.4 ? '#d97706' : '#dc2626'
+    : '#94a3b8';
 
-  const T_out = segment?.T_out;
+  const { isOffPath } = useNodeIssues(id);
 
   return (
     <div
       className="relative"
+      title={isOffPath ? 'Not in active flow path' : undefined}
       style={{
         width: 160,
         height: nodeHeight,
         borderRadius: 8,
         background: '#ffffff',
-        borderTop: selected ? '2px solid #d97706' : '1px solid #dde3f0',
-        borderRight: selected ? '2px solid #d97706' : '1px solid #dde3f0',
-        borderBottom: selected ? '2px solid #d97706' : '1px solid #dde3f0',
-        borderLeft: '3px solid #d97706',
+        borderTop:    isOffPath ? '2px dashed #f97316' : selected ? `2px solid ${ACCENT}` : `3px solid ${ACCENT}`,
+        borderRight:  isOffPath ? '2px dashed #f97316' : selected ? `2px solid ${ACCENT}` : '1px solid #e0e6f0',
+        borderBottom: isOffPath ? '2px dashed #f97316' : selected ? `2px solid ${ACCENT}` : '1px solid #e0e6f0',
+        borderLeft:   isOffPath ? '2px dashed #f97316' : selected ? `2px solid ${ACCENT}` : '1px solid #e0e6f0',
       }}
     >
       <Handle
@@ -60,7 +70,7 @@ function PFRNode({ id, data, selected }: PFRNodeProps) {
         style={{
           width: 10,
           height: 10,
-          background: '#d97706',
+          background: ACCENT,
           border: 'none',
           left: -5,
           top: '50%',
@@ -73,19 +83,28 @@ function PFRNode({ id, data, selected }: PFRNodeProps) {
         style={{
           width: 10,
           height: 10,
-          background: '#d97706',
+          background: ACCENT,
           border: 'none',
           right: -5,
           top: '50%',
         }}
       />
 
-      <div className="flex items-center justify-between px-2 pt-1.5" style={{ height: 40 }}>
+      <div style={{ height: 34, background: HEADER_BG, borderRadius: '6px 6px 0 0',
+                    display: 'flex', alignItems: 'center', padding: '0 8px', gap: 6 }}>
+        <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 4,
+                       textTransform: 'uppercase', letterSpacing: '0.05em',
+                       background: BADGE_BG, color: BADGE_TEXT, flexShrink: 0 }}>
+          PFR
+        </span>
+
         {isEditing ? (
           <input
             autoFocus
             type="text"
             value={labelStr}
+            className="flex-1 min-w-0 text-[12px] font-medium bg-transparent outline-none text-center text-[#0f1730]"
+            style={{ borderBottom: `1px solid ${ACCENT}` }}
             onChange={(e) => setLabelStr(e.target.value)}
             onBlur={() => {
               if (labelStr.trim()) updateNodeData(id, { ...data, label: labelStr.trim() });
@@ -97,24 +116,24 @@ function PFRNode({ id, data, selected }: PFRNodeProps) {
               if (e.key === 'Escape') { setLabelStr(data.label); setIsEditing(false); }
               e.stopPropagation();
             }}
-            className="w-24 text-[13px] font-medium bg-transparent border-b border-[#d97706] outline-none text-[#0f1730]"
           />
         ) : (
           <span
-            className="text-[13px] font-medium text-[#0f1730] cursor-text"
+            className="flex-1 min-w-0 text-[12px] font-medium text-[#0f1730] text-center truncate cursor-text"
             title="Double-click to rename"
             onDoubleClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
           >
             {data.label}
           </span>
         )}
-        <span className="text-[11px] font-mono text-[#6b7280]">
-          Da: {Da.toFixed(2)}
+
+        <span style={{ fontSize: 10, fontFamily: 'monospace', color: '#94a3b8', flexShrink: 0 }}>
+          {`Da:${Da.toFixed(2)}`}
         </span>
       </div>
 
-      <div className="flex items-center gap-1.5 px-2">
-        <span className="text-[11px] text-[#374151]">τ =</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 10px', height: 28 }}>
+        <span style={{ fontSize: 11, color: '#6b7280' }}>τ =</span>
         <input
           type="number"
           min="0.01"
@@ -136,21 +155,21 @@ function PFRNode({ id, data, selected }: PFRNodeProps) {
             if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
             e.stopPropagation();
           }}
-          className="w-16 text-[11px] font-mono bg-[#f8faff] border border-[#dde3f0] rounded px-1 py-0.5 text-[#0f1730] outline-none focus:border-[#d97706]"
+          style={{ width: 52, fontSize: 11, fontFamily: 'monospace', textAlign: 'right',
+                   background: PILL_BG, border: 'none', borderRadius: 6,
+                   padding: '2px 5px', outline: 'none', color: '#0f1730' }}
         />
-        <span className="text-[10px] text-[#6b7280]">s</span>
+        <span style={{ fontSize: 10, color: '#94a3b8' }}>s</span>
       </div>
 
       {isSingle && (
-        <div className="px-2 mt-1">
+        <div style={{ padding: '0 10px', height: 26 }}>
           <select
             value={thermalMode}
-            onChange={(e) => {
-              updateNodeThermal(id, { thermalMode: e.target.value as ThermalMode });
-            }}
-            className="w-full text-xs border border-gray-300 rounded px-1.5 py-1 bg-white text-gray-700 
-                       focus:outline-none focus:ring-1 focus:ring-amber-400 cursor-pointer"
-          >
+            onChange={(e) => updateNodeThermal(id, { thermalMode: e.target.value as ThermalMode })}
+            style={{ width: '100%', fontSize: 11, padding: '2px 4px',
+                     border: `1px solid ${ACCENT}33`, borderRadius: 5,
+                     background: '#ffffff', color: '#374151', outline: 'none', cursor: 'pointer' }}>
             <option value="isothermal">Isothermal</option>
             <option value="adiabatic">Adiabatic</option>
             <option value="cooled">Cooled / Heated</option>
@@ -159,8 +178,8 @@ function PFRNode({ id, data, selected }: PFRNodeProps) {
       )}
 
       {isSingle && thermalMode === 'cooled' && (
-        <div className="flex items-center gap-1 px-2 mt-0.5">
-          <span className="text-[9px] text-[#6b7280]">Tc:</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '0 10px', height: 26 }}>
+          <span style={{ fontSize: 9, color: '#6b7280' }}>Tc:</span>
           <input
             type="number"
             min="200"
@@ -171,9 +190,10 @@ function PFRNode({ id, data, selected }: PFRNodeProps) {
               const v = parseFloat(e.target.value);
               if (!isNaN(v)) updateNodeThermal(id, { Tc: Math.max(200, Math.min(600, v)) });
             }}
-            className="w-12 text-[10px] font-mono bg-[#f8faff] border border-[#dde3f0] rounded px-1 py-0.5 text-[#0f1730] outline-none focus:border-[#d97706]"
+            style={{ width: 44, fontSize: 10, fontFamily: 'monospace', background: PILL_BG,
+                     border: 'none', borderRadius: 5, padding: '2px 4px', outline: 'none', color: '#0f1730' }}
           />
-          <span className="text-[9px] text-[#6b7280]">κ:</span>
+          <span style={{ fontSize: 9, color: '#6b7280' }}>K  κ:</span>
           <input
             type="number"
             min="0.01"
@@ -184,26 +204,77 @@ function PFRNode({ id, data, selected }: PFRNodeProps) {
               const v = parseFloat(e.target.value);
               if (!isNaN(v)) updateNodeThermal(id, { kappa_v: Math.max(0.01, Math.min(5, v)) });
             }}
-            className="w-12 text-[10px] font-mono bg-[#f8faff] border border-[#dde3f0] rounded px-1 py-0.5 text-[#0f1730] outline-none focus:border-[#d97706]"
+            style={{ width: 40, fontSize: 10, fontFamily: 'monospace', background: PILL_BG,
+                     border: 'none', borderRadius: 5, padding: '2px 4px', outline: 'none', color: '#0f1730' }}
           />
         </div>
       )}
 
-      <div className="flex items-center gap-1 px-2 mt-1">
-        <span className="text-[10px] text-[#374151]">Xₐ:</span>
-        {segment ? (
-          <span className="text-[11px] font-mono" style={{ color: conversionColor }}>
-            {segment.Xa_in.toFixed(2)} → {segment.Xa_out.toFixed(2)}
+      {isSingle && thermalMode !== 'isothermal' && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      padding: '0 10px', height: 20 }}>
+          <span style={{ fontSize: 9, color: '#94a3b8' }}>T_out</span>
+          <span style={{ fontSize: 10, fontFamily: 'monospace', color: '#d97706' }}>
+            {segment?.T_out !== undefined ? `${segment.T_out.toFixed(0)} K` : '—'}
           </span>
-        ) : (
-          <span className="text-[11px] font-mono text-[#6b7280]">—</span>
-        )}
-        {isSingle && T_out !== undefined && (
-          <span className="text-[10px] font-mono text-[#d97706] ml-auto">
-            {T_out.toFixed(0)} K
+        </div>
+      )}
+
+      <div style={{ padding: '4px 10px 0' }}>
+        <div style={{ height: 8, borderRadius: 4, background: '#e2e8f0', overflow: 'hidden', position: 'relative' }}>
+          <div style={{
+            position: 'absolute', left: 0, top: 0, bottom: 0,
+            width: segment ? `${segment.Xa_out * 100}%` : '0%',
+            background: conversionColor, borderRadius: 4,
+            transition: 'width 0.2s ease',
+          }} />
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
+          <span style={{ fontSize: 9, color: '#94a3b8' }}>Xₐ</span>
+          <span style={{ fontSize: 10, fontFamily: 'monospace', color: conversionColor }}>
+            {segment ? `${segment.Xa_in.toFixed(2)} → ${segment.Xa_out.toFixed(2)}` : '—'}
           </span>
-        )}
+        </div>
       </div>
+
+      {simulationMode === 'dynamic' && (
+        <div style={{ margin: '4px 10px 0', paddingTop: 4, borderTop: '1px solid #e0e6f0' }}>
+          <p style={{ fontSize: 9, color: '#94a3b8', textTransform: 'uppercase',
+                      letterSpacing: '0.05em', margin: '0 0 2px' }}>
+            Init. Conditions
+          </p>
+          <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+            <span style={{ fontSize: 9, color: '#6b7280' }}>Cₐ₀:</span>
+            <input
+              type="number"
+              min={0}
+              max={100}
+              step={0.1}
+              value={data.ic_Ca ?? params.Ca0}
+              onChange={(e) => {
+                const v = parseFloat(e.target.value);
+                if (!isNaN(v)) updateNodeData(id, { ...data, ic_Ca: Math.max(0, Math.min(100, v)) });
+              }}
+              style={{ width: 44, fontSize: 10, fontFamily: 'monospace', background: PILL_BG,
+                       border: 'none', borderRadius: 5, padding: '2px 4px', outline: 'none', color: '#0f1730' }}
+            />
+            <span style={{ fontSize: 9, color: '#6b7280' }}>T₀:</span>
+            <input
+              type="number"
+              min={200}
+              max={800}
+              step={1}
+              value={data.ic_T ?? params.T_feed}
+              onChange={(e) => {
+                const v = parseFloat(e.target.value);
+                if (!isNaN(v)) updateNodeData(id, { ...data, ic_T: Math.max(200, Math.min(800, v)) });
+              }}
+              style={{ width: 44, fontSize: 10, fontFamily: 'monospace', background: PILL_BG,
+                       border: 'none', borderRadius: 5, padding: '2px 4px', outline: 'none', color: '#0f1730' }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

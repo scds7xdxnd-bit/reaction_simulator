@@ -1,7 +1,7 @@
 import type { StateCreator } from 'zustand';
 import type { Node, Edge } from '@xyflow/react';
 import { MarkerType } from '@xyflow/react';
-import type { ReactorType, UnitType, ThermalMode } from '../../types/reactor';
+import type { ReactorType, UnitType, ThermalMode } from '../../types/simulation';
 import type { SimulatorStore } from '../simulatorStore';
 
 const initialNodes: Node[] = [
@@ -67,7 +67,117 @@ export const createTopologySlice: StateCreator<SimulatorStore, [], [], TopologyS
     _history: [],
     _historyIndex: -1,
 
-    setNodes: (nodes) => set({ nodes }),
+    setNodes: (incomingNodes) => {
+      const state = get();
+      const existingIds = new Set(state.nodes.map((n) => n.id));
+
+      const newNodes = incomingNodes.filter((n) => !existingIds.has(n.id));
+
+      if (newNodes.length === 0) {
+        set({ nodes: incomingNodes });
+        return;
+      }
+
+      const occupiedLabels = new Set<string>();
+      const addLabels = (ns: Node[]) => {
+        for (const n of ns) {
+          const label = (n.data as any)?.label;
+          if (label) occupiedLabels.add(label);
+        }
+      };
+      addLabels(state.nodes);
+
+      const usedLabels = new Set(occupiedLabels);
+
+      const getMaxNum = (prefix: string) => {
+        let max = 0;
+        const re = new RegExp(`^${prefix}-(\\d+)$`);
+        for (const l of usedLabels) {
+          const m = l.match(re);
+          if (m) max = Math.max(max, parseInt(m[1]));
+        }
+        return max;
+      };
+
+      const LABEL_PREFIX: Record<string, string> = {
+        cstr: 'CSTR',
+        pfr: 'PFR',
+        batch: 'Batch',
+        mixer: 'Mixer',
+        splitter: 'Split',
+        feed: 'Feed',
+        product: 'Product',
+      };
+
+      let cstrCount = getMaxNum('CSTR');
+      let pfrCount = getMaxNum('PFR');
+      let batchCount = getMaxNum('Batch');
+      let mixerCount = getMaxNum('Mixer');
+      let splitterCount = getMaxNum('Split');
+      let feedCount = getMaxNum('Feed');
+      let productCount = getMaxNum('Product');
+
+      const bump = (type: string): number => {
+        const prefix = LABEL_PREFIX[type] ?? type;
+        let count: number;
+        switch (type) {
+          case 'cstr':     cstrCount++;     count = cstrCount; break;
+          case 'pfr':      pfrCount++;      count = pfrCount; break;
+          case 'batch':    batchCount++;    count = batchCount; break;
+          case 'mixer':    mixerCount++;    count = mixerCount; break;
+          case 'splitter': splitterCount++; count = splitterCount; break;
+          case 'feed':     feedCount++;     count = feedCount; break;
+          case 'product':  productCount++;  count = productCount; break;
+          default:         /* fallback */    count = 1;          break;
+        }
+        let label = `${prefix}-${count}`;
+        while (usedLabels.has(label)) {
+          count++;
+          label = `${prefix}-${count}`;
+        }
+        switch (type) {
+          case 'cstr':     cstrCount     = count; break;
+          case 'pfr':      pfrCount      = count; break;
+          case 'batch':    batchCount    = count; break;
+          case 'mixer':    mixerCount    = count; break;
+          case 'splitter': splitterCount = count; break;
+          case 'feed':     feedCount     = count; break;
+          case 'product':  productCount  = count; break;
+        }
+        usedLabels.add(label);
+        return count;
+      };
+
+      const renamed = incomingNodes.map((n) => {
+        const isNewPasted = !existingIds.has(n.id);
+        if (!isNewPasted) return n;
+
+        const label = (n.data as any)?.label as string | undefined;
+        if (!label) return n;
+
+        if (!occupiedLabels.has(label)) {
+          usedLabels.add(label);
+          return n;
+        }
+
+        const type = (n.type ?? 'cstr') as string;
+        const prefix = LABEL_PREFIX[type] ?? type;
+        const num = bump(type);
+        const newLabel = `${prefix}-${num}`;
+        return { ...n, data: { ...n.data, label: newLabel } };
+      });
+
+      set({
+        nodes: renamed,
+        cstrCount,
+        pfrCount,
+        batchCount,
+        mixerCount,
+        splitterCount,
+        feedCount,
+        productCount,
+      });
+    },
     setEdges: (edges) => set({ edges }),
 
     updateReactorTau: (nodeId, tau) =>

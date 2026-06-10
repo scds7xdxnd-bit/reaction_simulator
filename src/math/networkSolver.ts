@@ -3,8 +3,10 @@ import type {
   SimulationParams,
   SimulationResult,
   ReactorSegmentResult,
-  ThermalMode,
+  RecycleIterationRecord,
+  RecycleConvergenceEntry,
 } from '../types/reactor';
+import type { ThermalMode } from '../types/simulation';
 import { buildLevenspielCurve } from './kinetics';
 import { type StreamState, streamToState, stateToStream, annotateStream } from './streamBridge';
 import { buildChemistry } from './chemistryFactory';
@@ -144,6 +146,10 @@ function forwardPass(
       if (botEdge) {
         streams.set(botEdge.id, { ...inlet, flow: (1 - alpha) * inlet.flow });
       }
+      // fallback: assign by edge order when handles don't match 'out-top'/'out-bot'
+      const unset = outEdges.filter(e => !streams.has(e.id));
+      if (unset[0]) streams.set(unset[0].id, { ...inlet, flow: alpha * inlet.flow });
+      if (unset[1]) streams.set(unset[1].id, { ...inlet, flow: (1 - alpha) * inlet.flow });
       outState = inlet;
     } else {
       outState = {
@@ -299,20 +305,23 @@ export function solveNetwork(
 
   if (feedNodes.length === 0 || productNodes.length === 0) return null;
 
+  const nodeIds = new Set(nodes.map(n => n.id));
+  const safeEdges = edges.filter(e => nodeIds.has(e.source) && nodeIds.has(e.target));
+
   const reachableFromAllFeeds = new Set<string>();
   for (const fn of feedNodes) {
-    for (const id of reachableFrom(fn.id, edges)) reachableFromAllFeeds.add(id);
+    for (const id of reachableFrom(fn.id, safeEdges)) reachableFromAllFeeds.add(id);
   }
   if (!productNodes.some((pn) => reachableFromAllFeeds.has(pn.id))) return null;
 
   const chemistry = buildChemistry(params);
 
-  const tearIds = findTearEdgeIds(nodes, edges);
-  const topoOrder = topoSort(nodes, edges, tearIds);
+  const tearIds = findTearEdgeIds(nodes, safeEdges);
+  const topoOrder = topoSort(nodes, safeEdges, tearIds);
   if (topoOrder.length !== nodes.length) return null;
 
   const tearStreams = new Map<string, StreamState>();
-  for (const e of edges.filter((e) => tearIds.has(e.id))) {
+  for (const e of safeEdges.filter((e) => tearIds.has(e.id))) {
     tearStreams.set(e.id, {
       Xa: 0,
       Ca: params.Ca0,
@@ -331,13 +340,15 @@ export function solveNetwork(
   let iterations = 0;
   let lastPass: ReturnType<typeof forwardPass> | null = null;
 
+  const recycleHistory: RecycleIterationRecord[] = [];
+
   for (let iter = 0; iter < MAX_ITER; iter++) {
     iterations = iter + 1;
-    const pass = forwardPass(nodes, edges, tearIds, tearStreams, params, topoOrder, chemistry);
+    const pass = forwardPass(nodes, safeEdges, tearIds, tearStreams, params, topoOrder, chemistry);
     lastPass = pass;
 
     let error = 0;
-    for (const e of edges.filter((e) => tearIds.has(e.id))) {
+    for (const e of safeEdges.filter((e) => tearIds.has(e.id))) {
       const computed = pass.streams.get(e.id)!;
       const assumed = tearStreams.get(e.id)!;
       error = Math.max(
@@ -348,12 +359,14 @@ export function solveNetwork(
       );
     }
 
+    recycleHistory.push({ iteration: iter + 1, maxError: error });
+
     if (error < TOL) {
       converged = true;
       break;
     }
 
-    for (const e of edges.filter((e) => tearIds.has(e.id))) {
+    for (const e of safeEdges.filter((e) => tearIds.has(e.id))) {
       const computed = pass.streams.get(e.id)!;
       const assumed = tearStreams.get(e.id)!;
       tearStreams.set(e.id, {
@@ -369,6 +382,19 @@ export function solveNetwork(
 
   if (!lastPass) return null;
 
+  const recycleConvergenceData: Record<string, RecycleConvergenceEntry> = {};
+  for (const e of safeEdges.filter((e) => tearIds.has(e.id))) {
+    const assumed  = tearStreams.get(e.id)!;
+    const computed = lastPass.streams.get(e.id)!;
+    recycleConvergenceData[e.id] = {
+      assumedXa:  assumed.Xa,
+      computedXa: computed.Xa,
+      assumedCa:  assumed.Ca,
+      computedCa: computed.Ca,
+      error:      Math.abs(computed.Xa - assumed.Xa),
+    };
+  }
+
   const primaryProductId =
     topoOrder.find((id) => productNodes.some((pn) => pn.id === id)) ??
     productNodes[0]?.id ?? null;
@@ -383,13 +409,13 @@ export function solveNetwork(
     if (pOut) finalConversions[pn.id] = pOut.Xa;
   }
 
-  const segments = buildSegments(nodes, edges, tearIds, lastPass, params, chemistry);
+  const segments = buildSegments(nodes, safeEdges, tearIds, lastPass, params, chemistry);
   const levenspielCurve = buildLevenspielCurve(params);
 
   const operatingDiagrams: Record<string, OperatingDiagramData> = {};
   if (params.reactionMode === 'single') {
     const incomingEdges = new Map<string, Edge[]>();
-    for (const e of edges) {
+    for (const e of safeEdges) {
       if (!incomingEdges.has(e.target)) incomingEdges.set(e.target, []);
       incomingEdges.get(e.target)!.push(e);
     }
@@ -414,7 +440,7 @@ export function solveNetwork(
   for (const nodeId of topoOrder) {
     const node = nodeMap.get(nodeId);
     if (!node || node.type === 'product') continue;
-    for (const e of edges.filter(ee => ee.source === nodeId && !tearIds.has(ee.id))) {
+    for (const e of safeEdges.filter(ee => ee.source === nodeId && !tearIds.has(ee.id))) {
       if (streamLabels.has(e.id)) continue;
       const srcLabel = (nodeMap.get(e.source)?.data as any)?.label ?? e.source.split('-')[0].toUpperCase();
       const tgtLabel = (nodeMap.get(e.target)?.data as any)?.label ?? e.target.split('-')[0].toUpperCase();
@@ -426,7 +452,7 @@ export function solveNetwork(
     }
   }
 
-  for (const e of edges.filter(ee => tearIds.has(ee.id))) {
+  for (const e of safeEdges.filter(ee => tearIds.has(ee.id))) {
     if (streamLabels.has(e.id)) continue;
     const srcLabel = (nodeMap.get(e.source)?.data as any)?.label ?? e.source.split('-')[0].toUpperCase();
     const tgtLabel = (nodeMap.get(e.target)?.data as any)?.label ?? e.target.split('-')[0].toUpperCase();
@@ -473,5 +499,7 @@ export function solveNetwork(
     levenspielCurve,
     chemistry,
     operatingDiagrams,
+    recycleHistory,
+    recycleConvergenceData,
   };
 }

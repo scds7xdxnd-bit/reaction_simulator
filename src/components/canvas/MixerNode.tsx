@@ -1,16 +1,23 @@
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import type { MixerNodeData } from '../../types/reactor';
+import { useNodeIssues } from '../../context/ValidationContext';
 
-function MixerNode({ data }: { data: MixerNodeData }) {
+function MixerNode({ id, data }: { id: string; data: MixerNodeData }) {
+  const { isOffPath } = useNodeIssues(id);
+
   return (
     <div
+      title={isOffPath ? 'Not in active flow path' : undefined}
       style={{
         width: 90,
         height: 75,
         borderRadius: 8,
         background: '#ffffff',
-        border: '2px solid #059669',
+        borderTop:    isOffPath ? '2px dashed #f97316' : '3px solid #059669',
+        borderRight:  isOffPath ? '2px dashed #f97316' : '1px solid #e0e6f0',
+        borderBottom: isOffPath ? '2px dashed #f97316' : '1px solid #e0e6f0',
+        borderLeft:   isOffPath ? '2px dashed #f97316' : '1px solid #e0e6f0',
       }}
       className="flex flex-col items-center justify-center"
     >

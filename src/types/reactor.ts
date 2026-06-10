@@ -1,12 +1,7 @@
+import type { KineticsType, ReactorType, ReactionMode, ThermalMode } from './simulation';
 import type { AnnotatedStream } from './stream';
 import type { ChemistryModel } from './chemistry';
 import type { OperatingDiagramData } from '../math/operatingDiagramModel';
-
-export type KineticsType = 'first-order' | 'second-order' | 'autocatalytic' | 'reversible';
-export type ReactorType = 'CSTR' | 'PFR' | 'Batch';
-export type ReactionMode = 'single' | 'series' | 'parallel';
-export type UnitType = 'CSTR' | 'PFR' | 'Mixer' | 'Splitter' | 'Batch';
-export type ThermalMode = 'isothermal' | 'adiabatic' | 'cooled';
 
 export interface ReactorNodeData {
   reactorType: ReactorType;
@@ -19,6 +14,11 @@ export interface ReactorNodeData {
   ic_T: number;
 }
 
+/**
+ * SimulationParams is a stable interface — treat it as versioned.
+ * Before adding any field: grep spreads/destructures, update serializer.ts
+ * migration map, check sweepEngine/targetSolver/comparisonEngine, run purity tests.
+ */
 export interface SimulationParams {
   reactionMode: ReactionMode;
   kinetics: KineticsType;
@@ -52,6 +52,19 @@ export interface ReactorSegmentResult {
   profile: { cumTau: number; Xa: number; Ca: number; Cr: number; Cs: number; T: number }[];
 }
 
+export interface RecycleIterationRecord {
+  iteration: number;
+  maxError: number;
+}
+
+export interface RecycleConvergenceEntry {
+  assumedXa: number;
+  computedXa: number;
+  assumedCa: number;
+  computedCa: number;
+  error: number;
+}
+
 /**
  * @internal — re-exported from streamBridge.ts, the single source of truth.
  * Imported here only for backward compatibility with existing solver imports.
@@ -82,6 +95,8 @@ export interface NetworkResult {
   levenspielCurve: { Xa: number; inv_rA_norm: number }[];
   chemistry: ChemistryModel;
   operatingDiagrams: Record<string, OperatingDiagramData>;
+  recycleHistory: RecycleIterationRecord[];
+  recycleConvergenceData: Record<string, RecycleConvergenceEntry>;
 }
 
 export interface SimulationResult extends NetworkResult {}
