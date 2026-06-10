@@ -5,6 +5,7 @@ import type { ThermalMode } from '../../types/simulation';
 import { useSimulatorStore } from '../../store/simulatorStore';
 import { useReactorNode } from '../../hooks/useReactorNode';
 import { useNodeIssues } from '../../context/ValidationContext';
+import { formatEquation } from '../../math/formatEquation';
 
 type CSTRNodeProps = NodeProps & { data: ReactorNodeData };
 
@@ -113,6 +114,15 @@ function CSTRNode({ id, data, selected }: CSTRNodeProps) {
           {`Da:${Da.toFixed(2)}`}
         </span>
       </div>
+
+      {params.reactionMode === 'custom' && params.customReaction && (
+        <div style={{ padding: '2px 8px', background: '#f5f3ff', borderBottom: '1px solid #ede9fe' }}>
+          <span style={{ fontSize: 9, fontFamily: 'monospace', color: '#7c3aed', display: 'block',
+                         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 140 }}>
+            {formatEquation(params.customReaction.species).slice(0, 16)}
+          </span>
+        </div>
+      )}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 10px', height: 28 }}>
         <span style={{ fontSize: 11, color: '#6b7280' }}>τ =</span>

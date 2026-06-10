@@ -3,6 +3,7 @@ const ReactionBuilderModal = lazy(() => import('./ReactionBuilderModal'));
 import { useSimulatorStore } from '../../store/simulatorStore';
 import type { ReactionMode } from '../../types/simulation';
 import { PRESETS, getPreset } from '../../math/reactionRegistry';
+import { formatEquation } from '../../math/formatEquation';
 import { Input } from '../ui';
 
 const kineticsOptions = PRESETS
@@ -151,7 +152,7 @@ export default function ParameterPanel() {
           minWidth={100}
         />
 
-        {isSingle && (
+        {isSingle && params.reactionMode !== 'custom' && (
           <HoverDropdown
             label="Kinetics"
             options={kineticsOptions}
@@ -159,6 +160,13 @@ export default function ParameterPanel() {
             onChange={(v) => updateParams({ kinetics: v })}
             minWidth={148}
           />
+        )}
+
+        {params.reactionMode === 'custom' && params.customReaction && (
+          <span style={{ fontSize: 11, fontFamily: 'monospace', color: '#7c3aed',
+                         flexShrink: 0, fontWeight: 500 }}>
+            {formatEquation(params.customReaction.species)}
+          </span>
         )}
 
         {params.reactionMode === 'custom' && (
