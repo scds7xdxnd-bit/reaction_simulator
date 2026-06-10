@@ -20,6 +20,7 @@ import OnboardingTour, { shouldShowTour } from './components/OnboardingTour';
 import ParameterPopover from './components/controls/ParameterPopover';
 import PropertiesPanel from './components/panels/PropertiesPanel';
 import SelectivityPanel from './components/panels/SelectivityPanel';
+import RTDPanel from './components/plots/RTDPanel';
 import { useSimulatorStore } from './store/simulatorStore';
 import { useClipboardActions } from './hooks/useClipboardActions';
 import { useDynamicSimulation } from './hooks/useDynamicSimulation';
@@ -240,6 +241,7 @@ export default function App() {
               <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
                 <RecyclePanel />
                 <SelectivityPanel />
+                <RTDPanel />
                 <div className="flex-1 min-h-0 overflow-hidden">
                   <SweepPanel />
                 </div>

@@ -37,6 +37,7 @@ const PURE_FILES = [
   'src/math/formatEquation.ts',
   'src/math/semibatchModel.ts',
   'src/math/equilibrium.ts',
+  'src/math/rtdModel.ts',
 ] as const;
 
 describe('purity invariants — zero store/React runtime imports', () => {
