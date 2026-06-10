@@ -61,6 +61,7 @@ function CSTRNode({ id, data, selected }: CSTRNodeProps) {
         borderRight:  isOffPath ? '2px dashed #f97316' : selected ? `2px solid ${ACCENT}` : '1px solid #e0e6f0',
         borderBottom: isOffPath ? '2px dashed #f97316' : selected ? `2px solid ${ACCENT}` : '1px solid #e0e6f0',
         borderLeft:   isOffPath ? '2px dashed #f97316' : selected ? `2px solid ${ACCENT}` : '1px solid #e0e6f0',
+        boxShadow: selected ? '0 0 0 3px #2563eb40' : 'none',
       }}
     >
       <Handle

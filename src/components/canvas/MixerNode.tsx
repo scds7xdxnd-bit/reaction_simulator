@@ -3,7 +3,7 @@ import { Handle, Position } from '@xyflow/react';
 import type { MixerNodeData } from '../../types/reactor';
 import { useNodeIssues } from '../../context/ValidationContext';
 
-function MixerNode({ id, data }: { id: string; data: MixerNodeData }) {
+function MixerNode({ id, data, selected }: { id: string; data: MixerNodeData; selected?: boolean }) {
   const { isOffPath } = useNodeIssues(id);
 
   return (
@@ -18,6 +18,7 @@ function MixerNode({ id, data }: { id: string; data: MixerNodeData }) {
         borderRight:  isOffPath ? '2px dashed #f97316' : '1px solid #e0e6f0',
         borderBottom: isOffPath ? '2px dashed #f97316' : '1px solid #e0e6f0',
         borderLeft:   isOffPath ? '2px dashed #f97316' : '1px solid #e0e6f0',
+        boxShadow: selected ? '0 0 0 3px #05966940' : 'none',
       }}
       className="flex flex-col items-center justify-center"
     >

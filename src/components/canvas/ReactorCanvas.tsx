@@ -45,6 +45,20 @@ const nodeTypes = {
   splitter: SplitterNode,
 };
 
+function MiniMapNode({ x, y, width, height, color }: { x: number; y: number; width: number; height: number; color?: string }) {
+  return (
+    <rect
+      x={x}
+      y={y}
+      rx={3}
+      ry={3}
+      width={width}
+      height={height}
+      style={{ fill: color, fillOpacity: 0.9 }}
+    />
+  );
+}
+
 const defaultEdgeOptions: Partial<Edge> = {
   type: 'smoothstep',
   style: { stroke: '#94a3b8', strokeWidth: 2 },
@@ -218,6 +232,17 @@ export default function ReactorCanvas() {
           type: MarkerType.ArrowClosed,
           color: isRecycle ? '#7c3aed' : '#94a3b8',
         },
+        label: isRecycle ? '♻' : undefined,
+        labelStyle: isRecycle ? {
+          fontSize: 12,
+          fill: '#7c3aed',
+          fontWeight: 700,
+          filter: 'drop-shadow(0 0 2px #fff)',
+        } : undefined,
+        labelBgStyle: isRecycle ? {
+          fill: '#ffffff',
+          fillOpacity: 0.85,
+        } : undefined,
       };
     });
   // recycleIdsKey is a stable string; avoids recompute on every new result object
@@ -282,6 +307,7 @@ export default function ReactorCanvas() {
             if (node.type === 'splitter') return '#7c3aed';
             return '#6b7280';
           }}
+          nodeComponent={MiniMapNode}
         />
       </ReactFlow>
       <ContextMenu />

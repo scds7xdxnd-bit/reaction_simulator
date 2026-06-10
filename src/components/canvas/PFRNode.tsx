@@ -61,6 +61,7 @@ function PFRNode({ id, data, selected }: PFRNodeProps) {
         borderRight:  isOffPath ? '2px dashed #f97316' : selected ? `2px solid ${ACCENT}` : '1px solid #e0e6f0',
         borderBottom: isOffPath ? '2px dashed #f97316' : selected ? `2px solid ${ACCENT}` : '1px solid #e0e6f0',
         borderLeft:   isOffPath ? '2px dashed #f97316' : selected ? `2px solid ${ACCENT}` : '1px solid #e0e6f0',
+        boxShadow: selected ? '0 0 0 3px #d9770640' : 'none',
       }}
     >
       <Handle

@@ -3,7 +3,7 @@ import { Handle, Position, useReactFlow } from '@xyflow/react';
 import type { SplitterNodeData } from '../../types/reactor';
 import { useNodeIssues } from '../../context/ValidationContext';
 
-function SplitterNode({ id, data }: { id: string; data: SplitterNodeData }) {
+function SplitterNode({ id, data, selected }: { id: string; data: SplitterNodeData; selected?: boolean }) {
   const { updateNodeData } = useReactFlow();
   const [alphaStr, setAlphaStr] = useState(String(data.alpha));
 
@@ -23,6 +23,7 @@ function SplitterNode({ id, data }: { id: string; data: SplitterNodeData }) {
         borderRight:  isOffPath ? '2px dashed #f97316' : '1px solid #e0e6f0',
         borderBottom: isOffPath ? '2px dashed #f97316' : '1px solid #e0e6f0',
         borderLeft:   isOffPath ? '2px dashed #f97316' : '1px solid #e0e6f0',
+        boxShadow: selected ? '0 0 0 3px #7c3aed40' : 'none',
       }}
       className="flex flex-col items-center justify-center gap-1"
     >
