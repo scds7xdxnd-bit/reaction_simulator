@@ -135,6 +135,8 @@ function forwardPass(
         phi:          data.phi          ?? 0.4,
         P0:           data.P0           ?? 101325,
         u0:           data.u0           ?? 0.01,
+        gasPhase:     params.kinetics === 'gas-phase-1st-order',
+        epsilon:      params.epsilon    ?? 0,
       };
       const model = node.type === 'cstr' ? cstrModel : pfrModel;
       const inletStream = stateToStream(inlet);

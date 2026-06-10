@@ -49,6 +49,10 @@ export function getRate(
       );
       return Math.max(0, k_eff * params.Ca0 * ((1 - clamped) - clamped / Math.max(Keq, 1e-9)));
     }
+    case 'gas-phase-1st-order': {
+      const epsilon = params.epsilon ?? 0;
+      return k_eff * params.Ca0 * (1 - clamped) / Math.max(1 + epsilon * clamped, 1e-9);
+    }
   }
 }
 

@@ -69,6 +69,7 @@ describe('solveNetwork — parallel network fixes', () => {
     delta_H: 0,
     rho_Cp: 1,
     T_feed: 300,
+    epsilon: 0,
   };
 
   it('diamond: Feed → Splitter(α=0.5) → [CSTR-A, CSTR-B] → Mixer → Product, Xa = kτ_eff/(1+kτ_eff) ≈ 2/3', () => {

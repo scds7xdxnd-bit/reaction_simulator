@@ -43,6 +43,10 @@ export function deserializeState(json: string): SavedState | null {
     if (!(typeof p.Keq_ref === 'number')) {
       s.params = { ...s.params, Keq_ref: 4.0 };
     }
+    // Back-compat: older saves lack epsilon — fill in the default
+    if (!(typeof p.epsilon === 'number')) {
+      s.params = { ...s.params, epsilon: 0 };
+    }
     return s;
   } catch {
     return null;

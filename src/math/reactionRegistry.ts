@@ -145,6 +145,33 @@ const reversiblePreset: ReactionPreset = {
   computeDa: (k, tau) => k * tau,
 };
 
+const gasPhaseFirstOrderPreset: ReactionPreset = {
+  id: 'single-gas-phase-1st-order',
+  label: 'A → R  (gas-phase, 1st order)',
+  mode: 'single',
+  isSingle: true,
+  uiLabel: 'Gas-Phase 1st Order',
+  kinetics: 'gas-phase-1st-order',
+  kUnit: 's⁻¹',
+
+  buildSpecies: () => [
+    { id: 'A', label: 'Reactant A' },
+    { id: 'R', label: 'Product R' },
+  ],
+
+  // Rate law is unused for gas-phase — unit models use dedicated gas-phase ODE path.
+  // Returned value is rA = k·Ca0·(1-Xa)/(1+ε·Xa) expressed via kineticParams.
+  buildReactions: (params: SimulationParams): ReactionSet => [{
+    id: 'rxn-1',
+    label: 'A → R (gas)',
+    stoichiometry: { A: -1, R: +1, S: 0 },
+    rateLaw: (C, _T, kP) => (kP['k'] ?? 0) * (C['A'] ?? 0),
+    kineticParams: { k: params.k, Ca0: params.Ca0, epsilon: params.epsilon ?? 0 },
+  }],
+
+  computeDa: (k, tau) => k * tau,
+};
+
 const seriesPreset: ReactionPreset = {
   id: 'series',
   label: 'A → R → S  (series)',
@@ -220,6 +247,7 @@ export const PRESETS: ReactionPreset[] = [
   secondOrderPreset,
   autocatalyticPreset,
   reversiblePreset,
+  gasPhaseFirstOrderPreset,
   seriesPreset,
   parallelPreset,
 ];
@@ -230,9 +258,10 @@ export function getPreset(
   if (params.reactionMode === 'series')   return seriesPreset;
   if (params.reactionMode === 'parallel') return parallelPreset;
   switch (params.kinetics) {
-    case 'first-order':   return firstOrderPreset;
-    case 'second-order':  return secondOrderPreset;
-    case 'autocatalytic': return autocatalyticPreset;
-    case 'reversible':    return reversiblePreset;
+    case 'first-order':          return firstOrderPreset;
+    case 'second-order':         return secondOrderPreset;
+    case 'autocatalytic':        return autocatalyticPreset;
+    case 'reversible':           return reversiblePreset;
+    case 'gas-phase-1st-order':  return gasPhaseFirstOrderPreset;
   }
 }

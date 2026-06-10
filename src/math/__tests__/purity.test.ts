@@ -32,6 +32,7 @@ const PURE_FILES = [
   'src/math/comparisonEngine.ts',
   'src/schema/parameterSchema.ts',
   'src/math/pressureDropModel.ts',
+  'src/math/gasPhaseFactor.ts',
 ] as const;
 
 describe('purity invariants — zero store/React runtime imports', () => {

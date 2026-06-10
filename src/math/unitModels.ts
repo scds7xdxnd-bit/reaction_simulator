@@ -3,6 +3,7 @@ import type { ChemistryModel, SpeciesId, Reaction } from '../types/chemistry';
 import type { ThermalMode } from '../types/simulation';
 import { bisect, rk4Step } from './numerics';
 import { ergunDpDtau, type PressureDropConfig } from './pressureDropModel';
+import { gasPhaseConc, gasPhaseXaFromCa, cstrGasPhaseXa, pfrGasPhaseODE } from './gasPhaseFactor';
 
 export interface UnitParams {
   tau: number;
@@ -15,6 +16,8 @@ export interface UnitParams {
   phi?: number;  // void fraction [-]
   P0?: number;   // inlet pressure [Pa]
   u0?: number;   // superficial velocity [m/s]
+  gasPhase?: boolean;
+  epsilon?: number;  // volumetric expansion factor [-]
 }
 
 export interface ProfilePoint {
@@ -217,6 +220,28 @@ function nonIsothermalCstr(
   };
 }
 
+function gasPhaseIsothermalCstr(
+  C_in: Record<SpeciesId, number>,
+  T_in: number,
+  tau: number,
+  params: UnitParams,
+  chemistry: ChemistryModel,
+): { C_out: Record<SpeciesId, number>; T_out: number } {
+  const Ca0 = params.Ca0;
+  const epsilon = params.epsilon ?? 0;
+  const k = chemistry.reactions[0]?.kineticParams?.['k'] as number ?? 0;
+  const Da = k * tau;
+  const Xa = cstrGasPhaseXa(Da, epsilon);
+  return {
+    C_out: {
+      A: gasPhaseConc(Ca0, Xa, epsilon),
+      R: Ca0 * Xa / Math.max(1 + epsilon * Xa, 1e-9),
+      S: 0,
+    },
+    T_out: T_in,
+  };
+}
+
 export const cstrModel: UnitModel = (
   inlet: Stream,
   params: UnitParams,
@@ -225,6 +250,19 @@ export const cstrModel: UnitModel = (
   const C_in = toConc(inlet, params.Ca0);
   const T_in = inlet.T;
   const reactions = chemistry.reactions;
+
+  // Gas-phase isothermal CSTR: use dedicated design equation
+  if (params.gasPhase && params.thermalMode === 'isothermal') {
+    const { C_out, T_out } = gasPhaseIsothermalCstr(C_in, T_in, params.tau, params, chemistry);
+    const totalF = Object.values(inlet.F).reduce((a, b) => a + b, 0);
+    const volFlow = params.Ca0 > 1e-12 ? totalF / params.Ca0 : 1.0;
+    const outlet = fromConc(C_out, volFlow, T_out);
+    const profile: ProfilePoint[] = [
+      { cumTau: 0, C: C_in, T: T_in },
+      { cumTau: params.tau, C: C_out, T: T_out },
+    ];
+    return { outlet, profile, diagnostics: { converged: true, iterations: 1, warnings: [] } };
+  }
 
   let C_out: Record<SpeciesId, number>;
   let T_out: number;
@@ -280,6 +318,46 @@ export const pfrModel: UnitModel = (
   const speciesIds = species.map((s) => s.id);
   const nSteps = 200;
   const h = params.tau / nSteps;
+
+  // Gas-phase isothermal PFR: integrate dXa/dτ = k·(1-Xa)/(1+ε·Xa) using RK4
+  if (params.gasPhase && params.thermalMode === 'isothermal') {
+    const Ca0 = params.Ca0;
+    const epsilon = params.epsilon ?? 0;
+    const k = chemistry.reactions[0]?.kineticParams?.['k'] as number ?? 0;
+    const nStepsGP = 200;
+    const hGP = params.tau / nStepsGP;
+    const gpProfile: ProfilePoint[] = [];
+
+    const fnXa = (_t: number, y: number[]): number[] => [pfrGasPhaseODE(y[0]!, k, epsilon)];
+
+    let yXa = [0];
+    const totalF = Object.values(inlet.F).reduce((a, b) => a + b, 0);
+    const volFlow = Ca0 > 1e-12 ? totalF / Ca0 : 1.0;
+
+    gpProfile.push({ cumTau: 0, C: { ...C_in, A: Ca0, R: 0, S: 0 }, T: T_in });
+
+    for (let i = 0; i < nStepsGP; i++) {
+      yXa = rk4Step(fnXa, i * hGP, yXa, hGP);
+      yXa[0] = Math.max(0, Math.min(0.9999, yXa[0]!));
+      const Xa = yXa[0]!;
+      const Ca = gasPhaseConc(Ca0, Xa, epsilon);
+      const Cr = Ca0 * Xa / Math.max(1 + epsilon * Xa, 1e-9);
+      gpProfile.push({ cumTau: (i + 1) * hGP, C: { A: Ca, R: Cr, S: 0 }, T: T_in });
+    }
+
+    const Xa_final = yXa[0]!;
+    const C_out_gp = {
+      A: gasPhaseConc(Ca0, Xa_final, epsilon),
+      R: Ca0 * Xa_final / Math.max(1 + epsilon * Xa_final, 1e-9),
+      S: 0,
+    };
+    const outlet_gp = fromConc(C_out_gp, volFlow, T_in);
+    return {
+      outlet: outlet_gp,
+      profile: gpProfile,
+      diagnostics: { converged: true, iterations: nStepsGP, warnings: [] },
+    };
+  }
 
   const usePD = !!params.pressureDrop;
   const pdCfg: PressureDropConfig | null = usePD

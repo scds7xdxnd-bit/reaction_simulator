@@ -37,6 +37,7 @@ export interface SimulationParams {
   delta_H: number;
   rho_Cp: number;
   T_feed: number;
+  epsilon: number;
 }
 
 export interface ReactorSegmentResult {
