@@ -33,6 +33,7 @@ const edgeDefaults = {
   style: { stroke: '#94a3b8', strokeWidth: 2 },
   animated: true,
   markerEnd: { type: MarkerType.ArrowClosed, color: '#94a3b8' },
+  interactionWidth: 20,
 };
 
 const initialEdges: Edge[] = [

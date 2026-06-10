@@ -64,6 +64,7 @@ const defaultEdgeOptions: Partial<Edge> = {
   style: { stroke: '#94a3b8', strokeWidth: 2 },
   animated: true,
   markerEnd: { type: MarkerType.ArrowClosed, color: '#94a3b8' },
+  interactionWidth: 20,
 };
 
 export default function ReactorCanvas() {
@@ -259,7 +260,8 @@ export default function ReactorCanvas() {
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onReconnect={onReconnect}
-        edgesReconnectable={true}
+        edgesFocusable={true}
+        edgesReconnectable={false}
         onDragOver={onDragOver}
         onDrop={onDrop}
         onNodesDelete={onDelete}

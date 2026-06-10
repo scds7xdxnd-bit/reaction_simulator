@@ -70,6 +70,15 @@ export default function App() {
       if (e.key === '?' && !inInput) { setShowShortcuts((v) => !v); return; }
       if (e.key === 'Escape') { closeMenu(); closeCanvasMenu(); setShowShortcuts(false); return; }
 
+      if ((e.key === 'Delete' || e.key === 'Backspace') && !inInput) {
+        const { edges: cur, setEdges: se } = useSimulatorStore.getState();
+        if (cur.some(ed => ed.selected)) {
+          e.preventDefault();
+          se(cur.filter(ed => !ed.selected));
+          return;
+        }
+      }
+
       if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
         const t = e.target as HTMLElement;
         if (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable) return;

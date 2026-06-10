@@ -69,6 +69,12 @@ input[type="number"] {
   cursor: default;
 }
 
+.react-flow__edge.selected .react-flow__edge-path,
+.react-flow__edge:focus .react-flow__edge-path {
+  stroke: #2563eb !important;
+  stroke-width: 3px !important;
+}
+
 .react-flow__node.react-flow__node-cstr,
 .react-flow__node.react-flow__node-pfr {
   cursor: grab;
