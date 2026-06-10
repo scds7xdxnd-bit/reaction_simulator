@@ -40,6 +40,30 @@ function BatchIcon() {
   );
 }
 
+function SemibatchIcon() {
+  return (
+    <svg width="24" height="28" viewBox="0 0 24 28" fill="none">
+      <path d="M8 2 H14 V10 L20 22 Q22 28 12 28 Q2 28 4 22 L10 10 Z"
+        stroke="#0369a1" strokeWidth="1.5" fill="#e0f2fe" strokeLinejoin="round" />
+      <path d="M4 22 Q12 20 20 22"
+        stroke="#0369a1" strokeWidth="1.2" strokeDasharray="2 1.5" />
+      <line x1="20" y1="13" x2="24" y2="13" stroke="#0369a1" strokeWidth="1.5" strokeLinecap="round" />
+      <polygon points="21,10 24,13 21,16" fill="#0369a1" />
+    </svg>
+  );
+}
+
+function FixedBedIcon() {
+  return (
+    <svg width="24" height="28" viewBox="0 0 24 28" fill="none">
+      <rect x="3" y="2"  width="18" height="5"  rx="1.5" fill="#fed7aa" stroke="#7c2d12" strokeWidth="1.2" />
+      <rect x="3" y="10" width="18" height="5"  rx="1.5" fill="#fed7aa" stroke="#7c2d12" strokeWidth="1.2" />
+      <rect x="3" y="18" width="18" height="5"  rx="1.5" fill="#fed7aa" stroke="#7c2d12" strokeWidth="1.2" />
+      <line x1="2" y1="26" x2="22" y2="26" stroke="#7c2d12" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function MixerIcon() {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -178,6 +202,44 @@ export default function ReactorToolbar() {
         </div>
         <span className="text-[10px] font-medium uppercase tracking-wider" style={{ color: '#be123c' }}>
           Batch
+        </span>
+      </div>
+
+      <div
+        className="flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing"
+        draggable
+        onDragStart={(e) => onDragStart(e, 'Semibatch')}
+        onClick={() => addReactor('Semibatch', getClickPosition('semibatch'))}
+        title="Semi-batch — click to add, or drag to position"
+        style={{ width: 48 }}
+      >
+        <div
+          className="flex items-center justify-center rounded-md border"
+          style={{ width: 44, height: 44, borderColor: '#0369a1', background: '#e0f2fe' }}
+        >
+          <SemibatchIcon />
+        </div>
+        <span className="text-[10px] font-medium uppercase tracking-wider" style={{ color: '#0369a1' }}>
+          S-Batch
+        </span>
+      </div>
+
+      <div
+        className="flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing"
+        draggable
+        onDragStart={(e) => onDragStart(e, 'FixedBed')}
+        onClick={() => addReactor('FixedBed', getClickPosition('fixedbed'))}
+        title="Fixed-bed — click to add, or drag to position"
+        style={{ width: 48 }}
+      >
+        <div
+          className="flex items-center justify-center rounded-md border"
+          style={{ width: 44, height: 44, borderColor: '#7c2d12', background: '#fef3e2' }}
+        >
+          <FixedBedIcon />
+        </div>
+        <span className="text-[10px] font-medium uppercase tracking-wider" style={{ color: '#7c2d12' }}>
+          F-Bed
         </span>
       </div>
 
