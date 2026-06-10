@@ -509,6 +509,38 @@ export function solveNetwork(
       ? productOutput.Cr / (params.Ca0 * finalXa)
       : 0;
 
+  // Selectivity & yield analysis (series/parallel only)
+  let selectivityAnalysis: import('../types/reactor').SelectivityAnalysis | undefined;
+  if (params.reactionMode !== 'single') {
+    const k1 = params.k;
+    const k2 = params.k2 ?? 0.5;
+    const totalTau = segments.reduce((s, seg) => s + seg.tau, 0);
+    const Da_current = k1 * totalTau;
+
+    if (params.reactionMode === 'parallel') {
+      const SR = k1 / (k1 + k2);
+      const pts: { Da: number; YR: number }[] = [];
+      for (let i = 0; i <= 49; i++) {
+        const Da = (i / 49) * 10;
+        pts.push({ Da, YR: Da * k1 / (1 + Da * (k1 + k2)) });
+      }
+      selectivityAnalysis = { SR, YR_curve: pts, Da_current };
+    } else {
+      // series A→R→S
+      const Da_opt = k2 > 0 ? 1 / Math.sqrt(k1 * k2) : undefined;
+      const SR = Da_current > 0
+        ? (Da_current * k1 / ((1 + Da_current * k1) * (1 + Da_current * k2))) / Math.max(Da_current * k1 / (1 + Da_current * k1), 1e-9)
+        : 0;
+      const pts: { Da: number; YR: number }[] = [];
+      const maxDa = Math.max(10, (Da_opt ?? 5) * 3);
+      for (let i = 0; i <= 49; i++) {
+        const Da = (i / 49) * maxDa;
+        pts.push({ Da, YR: Da * k1 / ((1 + Da * k1) * (1 + Da * k2)) });
+      }
+      selectivityAnalysis = { SR, YR_curve: pts, Da_opt, Da_current };
+    }
+  }
+
   return {
     streams: streamsOut,
     nodeOutputs: nodeOutputsOut,
@@ -525,5 +557,6 @@ export function solveNetwork(
     operatingDiagrams,
     recycleHistory,
     recycleConvergenceData,
+    selectivityAnalysis,
   };
 }

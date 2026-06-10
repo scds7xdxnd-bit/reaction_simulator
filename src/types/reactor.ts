@@ -90,6 +90,13 @@ export interface SplitterNodeData {
   alpha: number;
 }
 
+export interface SelectivityAnalysis {
+  SR: number;
+  YR_curve: { Da: number; YR: number }[];
+  Da_opt?: number;
+  Da_current?: number;
+}
+
 export interface NetworkResult {
   streams: Record<string, AnnotatedStream>;
   nodeOutputs: Record<string, AnnotatedStream>;
@@ -106,6 +113,7 @@ export interface NetworkResult {
   operatingDiagrams: Record<string, OperatingDiagramData>;
   recycleHistory: RecycleIterationRecord[];
   recycleConvergenceData: Record<string, RecycleConvergenceEntry>;
+  selectivityAnalysis?: SelectivityAnalysis;
 }
 
 export interface SimulationResult extends NetworkResult {}

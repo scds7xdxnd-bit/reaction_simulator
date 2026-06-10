@@ -19,6 +19,7 @@ import ShortcutsModal from './components/ShortcutsModal';
 import OnboardingTour, { shouldShowTour } from './components/OnboardingTour';
 import ParameterPopover from './components/controls/ParameterPopover';
 import PropertiesPanel from './components/panels/PropertiesPanel';
+import SelectivityPanel from './components/panels/SelectivityPanel';
 import { useSimulatorStore } from './store/simulatorStore';
 import { useClipboardActions } from './hooks/useClipboardActions';
 import { useDynamicSimulation } from './hooks/useDynamicSimulation';
@@ -238,6 +239,7 @@ export default function App() {
             {!propertiesNodeId && rightTab === 'analysis' && (
               <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
                 <RecyclePanel />
+                <SelectivityPanel />
                 <div className="flex-1 min-h-0 overflow-hidden">
                   <SweepPanel />
                 </div>
