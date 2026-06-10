@@ -30,6 +30,9 @@ export interface SessionSlice {
 
   paramsOpen: boolean;
   setParamsOpen: (v: boolean) => void;
+
+  propertiesNodeId: string | null;
+  setPropertiesNodeId: (id: string | null) => void;
 }
 
 export const createSessionSlice: StateCreator<SimulatorStore, [], [], SessionSlice> =
@@ -63,4 +66,7 @@ export const createSessionSlice: StateCreator<SimulatorStore, [], [], SessionSli
 
   paramsOpen: false,
   setParamsOpen: (v) => set({ paramsOpen: v }),
+
+  propertiesNodeId: null,
+  setPropertiesNodeId: (id) => set({ propertiesNodeId: id }),
 });

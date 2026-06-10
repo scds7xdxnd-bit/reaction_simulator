@@ -63,6 +63,7 @@ export interface TopologySlice {
   addProductNode: (position: { x: number; y: number }) => void;
   updateReactorTau: (nodeId: string, tau: number) => void;
   updateNodeThermal: (nodeId: string, data: { thermalMode?: ThermalMode; Tc?: number; kappa_v?: number }) => void;
+  updateNodeLabel: (nodeId: string, label: string) => void;
   pushHistory: () => void;
   undo: () => void;
   redo: () => void;
@@ -212,6 +213,15 @@ export const createTopologySlice: StateCreator<SimulatorStore, [], [], TopologyS
         nodes: state.nodes.map((n) =>
           n.id === nodeId
             ? { ...n, data: { ...n.data, ...thermal } }
+            : n
+        ),
+      })),
+
+    updateNodeLabel: (nodeId, label) =>
+      set((state) => ({
+        nodes: state.nodes.map((n) =>
+          n.id === nodeId
+            ? { ...n, data: { ...n.data, label } }
             : n
         ),
       })),

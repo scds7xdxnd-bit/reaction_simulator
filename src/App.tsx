@@ -18,6 +18,7 @@ import DynamicControls from './components/controls/DynamicControls';
 import ShortcutsModal from './components/ShortcutsModal';
 import OnboardingTour, { shouldShowTour } from './components/OnboardingTour';
 import ParameterPopover from './components/controls/ParameterPopover';
+import PropertiesPanel from './components/panels/PropertiesPanel';
 import { useSimulatorStore } from './store/simulatorStore';
 import { useClipboardActions } from './hooks/useClipboardActions';
 import { useDynamicSimulation } from './hooks/useDynamicSimulation';
@@ -48,7 +49,9 @@ export default function App() {
   const addToast     = useSimulatorStore((s) => s.addToast);
   const closeMenu       = useSimulatorStore((s) => s.closeMenu);
   const closeCanvasMenu = useSimulatorStore((s) => s.closeCanvasMenu);
-  const setParamsOpen   = useSimulatorStore((s) => s.setParamsOpen);
+  const setParamsOpen        = useSimulatorStore((s) => s.setParamsOpen);
+  const propertiesNodeId     = useSimulatorStore((s) => s.propertiesNodeId);
+  const setPropertiesNodeId  = useSimulatorStore((s) => s.setPropertiesNodeId);
   const { copySelected, paste, cut, duplicate } = useClipboardActions();
   const dynamic = useDynamicSimulation();
 
@@ -160,32 +163,39 @@ export default function App() {
         </div>
 
         <div className="w-[420px] flex flex-col shrink-0 overflow-hidden" style={{ borderLeft: '1px solid var(--border)', background: 'var(--bg)' }}>
-          <div className="flex gap-0 shrink-0 rsi-tab-bar" style={{ borderBottom: '1px solid var(--border)', background: 'var(--surface)' }}>
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setRightTab(tab.id)}
-                className="flex-1 text-[11px] font-medium py-2 transition-colors"
-                style={{
-                  color: rightTab === tab.id ? '#2563eb' : 'var(--text-muted)',
-                  borderBottom: rightTab === tab.id ? '2px solid #2563eb' : '2px solid transparent',
-                  background: rightTab === tab.id ? 'var(--surface-raised)' : 'var(--surface)',
-                }}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+          {!propertiesNodeId && (
+            <div className="flex gap-0 shrink-0 rsi-tab-bar" style={{ borderBottom: '1px solid var(--border)', background: 'var(--surface)' }}>
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setRightTab(tab.id)}
+                  className="flex-1 text-[11px] font-medium py-2 transition-colors"
+                  style={{
+                    color: rightTab === tab.id ? '#2563eb' : 'var(--text-muted)',
+                    borderBottom: rightTab === tab.id ? '2px solid #2563eb' : '2px solid transparent',
+                    background: rightTab === tab.id ? 'var(--surface-raised)' : 'var(--surface)',
+                  }}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          )}
 
           <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-            {rightTab === 'levenspiel' && (
+            {propertiesNodeId && (
+              <div className="flex-1 min-h-0 overflow-y-auto">
+                <PropertiesPanel onClose={() => setPropertiesNodeId(null)} />
+              </div>
+            )}
+            {!propertiesNodeId && rightTab === 'levenspiel' && (
               <div className="h-[55%] border-b border-[#dde3f0] shrink-0">
                 <div className="h-full">
                   <LevenspielPlot />
                 </div>
               </div>
             )}
-            {rightTab === 'profiles' && (
+            {!propertiesNodeId && rightTab === 'profiles' && (
               <>
                 {reactionMode === 'single' ? (
                   <>
@@ -203,12 +213,12 @@ export default function App() {
                 )}
               </>
             )}
-            {rightTab === 'thermal' && (
+            {!propertiesNodeId && rightTab === 'thermal' && (
               <div className="flex-1">
                 <OperatingDiagram />
               </div>
             )}
-            {rightTab === 'dynamic' && (
+            {!propertiesNodeId && rightTab === 'dynamic' && (
               <>
                 <div className="h-[55%] border-b border-[#dde3f0] shrink-0">
                   <DynamicResponse
@@ -225,7 +235,7 @@ export default function App() {
                 </div>
               </>
             )}
-            {rightTab === 'analysis' && (
+            {!propertiesNodeId && rightTab === 'analysis' && (
               <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
                 <RecyclePanel />
                 <div className="flex-1 min-h-0 overflow-hidden">
@@ -233,12 +243,12 @@ export default function App() {
                 </div>
               </div>
             )}
-            {rightTab === 'scenarios' && (
+            {!propertiesNodeId && rightTab === 'scenarios' && (
               <div className="flex-1 min-h-0 overflow-hidden">
                 <ScenariosPanel />
               </div>
             )}
-            {rightTab !== 'dynamic' && rightTab !== 'analysis' && rightTab !== 'scenarios' && (
+            {!propertiesNodeId && rightTab !== 'dynamic' && rightTab !== 'analysis' && rightTab !== 'scenarios' && (
               <div className="shrink-0">
                 <StreamTablePanel />
               </div>

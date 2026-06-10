@@ -14,7 +14,7 @@ export default function ContextMenu() {
   const setNodes          = useSimulatorStore((s) => s.setNodes);
   const setEdges          = useSimulatorStore((s) => s.setEdges);
   const pushHistory       = useSimulatorStore((s) => s.pushHistory);
-  const setSelectedNodeId = useSimulatorStore((s) => s.setSelectedNodeId);
+  const setPropertiesNodeId = useSimulatorStore((s) => s.setPropertiesNodeId);
 
   const { copySelected, cut, duplicate } = useClipboardActions();
   const menuRef = useRef<HTMLDivElement>(null);
@@ -39,9 +39,9 @@ export default function ContextMenu() {
 
   const handleProperties = useCallback(() => {
     if (!menuTargetId) return;
-    setSelectedNodeId(menuTargetId);
+    setPropertiesNodeId(menuTargetId);
     closeMenu();
-  }, [menuTargetId, setSelectedNodeId, closeMenu]);
+  }, [menuTargetId, setPropertiesNodeId, closeMenu]);
 
   useEffect(() => {
     if (!menuVisible) return;
