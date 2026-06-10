@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, lazy, Suspense } from 'react';
+const ReactionBuilderModal = lazy(() => import('./ReactionBuilderModal'));
 import { useSimulatorStore } from '../../store/simulatorStore';
 import type { ReactionMode } from '../../types/simulation';
 import { PRESETS, getPreset } from '../../math/reactionRegistry';
@@ -9,9 +10,10 @@ const kineticsOptions = PRESETS
   .map((p) => ({ value: p.kinetics!, label: p.uiLabel }));
 
 const modeOptions: { value: ReactionMode; label: string }[] = [
-  { value: 'single', label: 'Single' },
-  { value: 'series', label: 'Series A→R→S' },
+  { value: 'single',   label: 'Single' },
+  { value: 'series',   label: 'Series A→R→S' },
   { value: 'parallel', label: 'Parallel A→R/A→S' },
+  { value: 'custom',   label: 'Custom…' },
 ];
 
 function HoverDropdown<T extends string>({
@@ -123,6 +125,7 @@ function HoverDropdown<T extends string>({
 export default function ParameterPanel() {
   const params = useSimulatorStore((s) => s.params);
   const updateParams = useSimulatorStore((s) => s.updateParams);
+  const [showBuilder, setShowBuilder] = useState(false);
 
   const preset = getPreset(params);
   const isSingle = preset.isSingle;
@@ -156,6 +159,19 @@ export default function ParameterPanel() {
             onChange={(v) => updateParams({ kinetics: v })}
             minWidth={148}
           />
+        )}
+
+        {params.reactionMode === 'custom' && (
+          <button
+            onClick={() => setShowBuilder(true)}
+            style={{
+              fontSize: 10, padding: '3px 10px', borderRadius: 4, flexShrink: 0,
+              border: '1px solid #7c3aed', background: '#f5f3ff', color: '#7c3aed',
+              fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
+            }}
+          >
+            Edit Reaction…
+          </button>
         )}
 
         <div style={{ width: 1, height: 24, background: '#e0e6f0', flexShrink: 0 }} />
@@ -213,6 +229,11 @@ export default function ParameterPanel() {
         )}
       </div>
 
+      {showBuilder && (
+        <Suspense fallback={null}>
+          <ReactionBuilderModal onClose={() => setShowBuilder(false)} />
+        </Suspense>
+      )}
     </div>
   );
 }

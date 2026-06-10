@@ -1,4 +1,4 @@
-import type { KineticsType, ReactorType, ReactionMode, ThermalMode } from './simulation';
+import type { KineticsType, ReactorType, ReactionMode, ThermalMode, CustomReaction } from './simulation';
 import type { AnnotatedStream } from './stream';
 import type { ChemistryModel } from './chemistry';
 import type { OperatingDiagramData } from '../math/operatingDiagramModel';
@@ -39,6 +39,7 @@ export interface SimulationParams {
   T_feed: number;
   epsilon: number;
   Q_feed: number;
+  customReaction: CustomReaction | null;
 }
 
 export interface ReactorSegmentResult {
