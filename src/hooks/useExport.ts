@@ -2,6 +2,7 @@ import { toPng } from 'html-to-image';
 import { useSimulatorStore } from '../store/simulatorStore';
 import { concentration, conversion, totalMolarFlow } from '../types/stream';
 import { makeFeedStream } from '../math/streamBridge';
+import { formatEquation } from '../math/formatEquation';
 
 export function useExport() {
   const result = useSimulatorStore((s) => s.result);
@@ -68,6 +69,10 @@ export function useExport() {
     const isSingle = params.reactionMode === 'single';
     const feedStream = makeFeedStream(params.Ca0, params.T_feed);
 
+    const reactionLabel = params.reactionMode === 'custom' && params.customReaction
+      ? formatEquation(params.customReaction.species)
+      : params.kinetics;
+
     let flowsheetImg = '';
     try {
       const flowEl = document.querySelector<HTMLElement>('.react-flow');
@@ -123,7 +128,7 @@ export function useExport() {
 </head>
 <body>
 <h1>Reaction Simulator — Simulation Report</h1>
-<div class="meta">Generated ${new Date().toLocaleString()} · Kinetics: ${params.kinetics} · k = ${params.k} · Ca0 = ${params.Ca0} mol/L</div>
+<div class="meta">Generated ${new Date().toLocaleString()} · Reaction: ${reactionLabel} · k = ${params.k} · Ca0 = ${params.Ca0} mol/L</div>
 ${flowsheetImg ? `<h2>Flowsheet Diagram</h2>${flowsheetImg}` : ''}
 <div class="summary">
   <div class="kpi"><div class="kpi-label">Final Conversion</div><div class="kpi-value">${(result.finalConversion * 100).toFixed(1)}%</div></div>

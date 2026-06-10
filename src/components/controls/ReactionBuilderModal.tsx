@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { CustomSpecies, CustomReaction, RateType } from '../../types/simulation';
 import { useSimulatorStore } from '../../store/simulatorStore';
+import { formatEquation } from '../../math/formatEquation';
 
 const RATE_TYPES: { value: RateType; label: string; params: { key: string; label: string; default: number }[] }[] = [
   {
@@ -31,15 +32,20 @@ const RATE_TYPES: { value: RateType; label: string; params: { key: string; label
   },
 ];
 
-function formatEquation(species: CustomSpecies[]): string {
-  const fmt = (sp: CustomSpecies) =>
-    sp.stoich === 1 ? sp.label : `${sp.stoich}${sp.label}`;
-  const reactants = species.filter((s) => s.role === 'reactant').map(fmt).join(' + ');
-  const products  = species.filter((s) => s.role === 'product').map(fmt).join(' + ');
-  if (!reactants && !products) return '?';
-  if (!reactants) return `→ ${products}`;
-  if (!products)  return `${reactants} →`;
-  return `${reactants} → ${products}`;
+const PRESETS_KEY = 'rsi-custom-presets';
+const MAX_PRESETS = 10;
+
+interface SavedPreset { name: string; reaction: CustomReaction; }
+
+function loadPresets(): SavedPreset[] {
+  try {
+    const raw = localStorage.getItem(PRESETS_KEY);
+    return raw ? (JSON.parse(raw) as SavedPreset[]) : [];
+  } catch { return []; }
+}
+
+function savePresetsToStorage(presets: SavedPreset[]): void {
+  localStorage.setItem(PRESETS_KEY, JSON.stringify(presets));
 }
 
 function validate(species: CustomSpecies[]): string | null {
@@ -73,6 +79,10 @@ export default function ReactionBuilderModal({ onClose }: { onClose: () => void 
     return def;
   });
 
+  const [savedPresets, setSavedPresets] = useState<SavedPreset[]>(loadPresets);
+  const [presetName, setPresetName] = useState('');
+  const [showSaveInput, setShowSaveInput] = useState(false);
+
   const rateDef = RATE_TYPES.find((r) => r.value === rateType)!;
   const error = validate(species);
 
@@ -103,6 +113,31 @@ export default function ReactionBuilderModal({ onClose }: { onClose: () => void 
     onClose();
   };
 
+  const handleSavePreset = () => {
+    if (!presetName.trim() || error) return;
+    const cr: CustomReaction = { species, rateType, rateParams };
+    const updated = [
+      { name: presetName.trim(), reaction: cr },
+      ...savedPresets.filter((p) => p.name !== presetName.trim()),
+    ].slice(0, MAX_PRESETS);
+    savePresetsToStorage(updated);
+    setSavedPresets(updated);
+    setPresetName('');
+    setShowSaveInput(false);
+  };
+
+  const handleLoadPreset = (preset: SavedPreset) => {
+    setSpecies(preset.reaction.species);
+    setRateType(preset.reaction.rateType);
+    setRateParams(preset.reaction.rateParams);
+  };
+
+  const handleDeletePreset = (name: string) => {
+    const updated = savedPresets.filter((p) => p.name !== name);
+    savePresetsToStorage(updated);
+    setSavedPresets(updated);
+  };
+
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 300,
@@ -125,6 +160,32 @@ export default function ReactionBuilderModal({ onClose }: { onClose: () => void 
         </div>
 
         <div style={{ overflowY: 'auto', flex: 1, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {/* My Presets */}
+          {savedPresets.length > 0 && (
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>
+                My Presets
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                {savedPresets.map((p) => (
+                  <div key={p.name} style={{ display: 'flex', alignItems: 'center', gap: 2,
+                    background: 'var(--surface-raised)', border: '1px solid var(--border)', borderRadius: 5, padding: '2px 6px 2px 8px' }}>
+                    <button
+                      onClick={() => handleLoadPreset(p)}
+                      style={{ fontSize: 10, color: '#7c3aed', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 600 }}>
+                      {p.name}
+                    </button>
+                    <button
+                      onClick={() => handleDeletePreset(p.name)}
+                      style={{ fontSize: 11, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px', lineHeight: 1 }}>
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Equation preview */}
           <div style={{
             background: 'var(--surface-raised)', border: '1px solid var(--border-subtle)',
@@ -241,6 +302,49 @@ export default function ReactionBuilderModal({ onClose }: { onClose: () => void 
               ))}
             </div>
           </div>
+
+          {/* Save as preset */}
+          {showSaveInput ? (
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <input
+                autoFocus
+                placeholder="Preset name…"
+                value={presetName}
+                onChange={(e) => setPresetName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleSavePreset(); if (e.key === 'Escape') setShowSaveInput(false); }}
+                maxLength={30}
+                style={{
+                  flex: 1, fontSize: 11, padding: '4px 8px', borderRadius: 4,
+                  background: 'var(--surface-raised)', border: '1px solid var(--border)',
+                  color: 'var(--text-primary)', outline: 'none',
+                }}
+              />
+              <button
+                onClick={handleSavePreset}
+                disabled={!presetName.trim() || !!error || savedPresets.length >= MAX_PRESETS}
+                style={{ fontSize: 10, padding: '4px 10px', borderRadius: 4, border: 'none',
+                  background: '#7c3aed', color: '#fff', fontWeight: 600, cursor: 'pointer',
+                  opacity: (!presetName.trim() || !!error) ? 0.5 : 1 }}>
+                Save
+              </button>
+              <button
+                onClick={() => setShowSaveInput(false)}
+                style={{ fontSize: 10, padding: '4px 8px', borderRadius: 4, border: '1px solid var(--border)',
+                  background: 'var(--surface-raised)', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowSaveInput(true)}
+              disabled={!!error || savedPresets.length >= MAX_PRESETS}
+              style={{ alignSelf: 'flex-start', fontSize: 10, padding: '3px 10px', borderRadius: 4,
+                border: '1px solid #7c3aed', background: '#f5f3ff', color: '#7c3aed',
+                cursor: !!error ? 'not-allowed' : 'pointer', opacity: !!error ? 0.5 : 1,
+                fontWeight: 600 }}>
+              {savedPresets.length >= MAX_PRESETS ? 'Presets full (10 max)' : '+ Save as preset'}
+            </button>
+          )}
         </div>
 
         {/* Footer */}
