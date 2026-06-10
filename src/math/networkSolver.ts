@@ -117,14 +117,24 @@ function forwardPass(
         thermalMode?: ThermalMode;
         Tc?: number;
         kappa_v?: number;
+        pressureDrop?: boolean;
+        Dp?: number;
+        phi?: number;
+        P0?: number;
+        u0?: number;
       };
       const tauEff = data.tau / Math.max(inlet.flow, 0.001);
       const unitParams: UnitParams = {
-        tau:         tauEff,
-        thermalMode: data.thermalMode ?? 'isothermal',
-        Tc:          data.Tc          ?? 300,
-        kappa_v:     data.kappa_v     ?? 0.5,
-        Ca0:         params.Ca0,
+        tau:          tauEff,
+        thermalMode:  data.thermalMode  ?? 'isothermal',
+        Tc:           data.Tc           ?? 300,
+        kappa_v:      data.kappa_v      ?? 0.5,
+        Ca0:          params.Ca0,
+        pressureDrop: data.pressureDrop ?? false,
+        Dp:           data.Dp           ?? 0.005,
+        phi:          data.phi          ?? 0.4,
+        P0:           data.P0           ?? 101325,
+        u0:           data.u0           ?? 0.01,
       };
       const model = node.type === 'cstr' ? cstrModel : pfrModel;
       const inletStream = stateToStream(inlet);
@@ -194,6 +204,11 @@ function buildSegments(
       thermalMode?: ThermalMode;
       Tc?: number;
       kappa_v?: number;
+      pressureDrop?: boolean;
+      Dp?: number;
+      phi?: number;
+      P0?: number;
+      u0?: number;
     };
     const output = pass.nodeOutputs.get(nodeId);
     if (!output) continue;
@@ -214,11 +229,16 @@ function buildSegments(
     if (node.type === 'batch') cumTauOffset = 0;
 
     const unitParams: UnitParams = {
-      tau:         tauEff,
-      thermalMode: data.thermalMode ?? 'isothermal',
-      Tc:          data.Tc          ?? 300,
-      kappa_v:     data.kappa_v     ?? 0.5,
-      Ca0:         params.Ca0,
+      tau:          tauEff,
+      thermalMode:  data.thermalMode  ?? 'isothermal',
+      Tc:           data.Tc           ?? 300,
+      kappa_v:      data.kappa_v      ?? 0.5,
+      Ca0:          params.Ca0,
+      pressureDrop: data.pressureDrop ?? false,
+      Dp:           data.Dp           ?? 0.005,
+      phi:          data.phi          ?? 0.4,
+      P0:           data.P0           ?? 101325,
+      u0:           data.u0           ?? 0.01,
     };
     const model = node.type === 'cstr' ? cstrModel : pfrModel;
     const inletStream = stateToStream(inlet);
@@ -264,6 +284,7 @@ function buildSegments(
       yield_R: yieldR,
       selectivity_R: selectivity,
       profile,
+      P_out: unitResult.outlet.P,
     });
   }
 

@@ -2,6 +2,7 @@ import type { Stream } from '../types/stream';
 import type { ChemistryModel, SpeciesId, Reaction } from '../types/chemistry';
 import type { ThermalMode } from '../types/simulation';
 import { bisect, rk4Step } from './numerics';
+import { ergunDpDtau, type PressureDropConfig } from './pressureDropModel';
 
 export interface UnitParams {
   tau: number;
@@ -9,12 +10,18 @@ export interface UnitParams {
   Tc: number;
   kappa_v: number;
   Ca0: number;
+  pressureDrop?: boolean;
+  Dp?: number;   // particle diameter [m]
+  phi?: number;  // void fraction [-]
+  P0?: number;   // inlet pressure [Pa]
+  u0?: number;   // superficial velocity [m/s]
 }
 
 export interface ProfilePoint {
   cumTau: number;
   C: Record<SpeciesId, number>;
   T: number;
+  P?: number;
 }
 
 export interface UnitDiagnostics {
@@ -274,8 +281,16 @@ export const pfrModel: UnitModel = (
   const nSteps = 200;
   const h = params.tau / nSteps;
 
+  const usePD = !!params.pressureDrop;
+  const pdCfg: PressureDropConfig | null = usePD
+    ? { Dp: params.Dp ?? 0.005, phi: params.phi ?? 0.4, P0: params.P0 ?? 101325, u0: params.u0 ?? 0.01 }
+    : null;
+  const dPdTau = pdCfg ? ergunDpDtau(pdCfg) : 0;
+
+  // y = [...species concentrations, T]  or  [...species, T, P] when usePD
   const y0: number[] = speciesIds.map((id) => C_in[id] ?? 0);
   y0.push(T_in);
+  if (usePD) y0.push(pdCfg!.P0);
 
   const volFlow = (() => {
     const totalF = Object.values(inlet.F).reduce((a, b) => a + b, 0);
@@ -283,7 +298,7 @@ export const pfrModel: UnitModel = (
   })();
 
   const profile: ProfilePoint[] = [
-    { cumTau: 0, C: { ...C_in }, T: T_in },
+    { cumTau: 0, C: { ...C_in }, T: T_in, ...(usePD ? { P: pdCfg!.P0 } : {}) },
   ];
 
   const fn = (_t: number, y: number[]): number[] => {
@@ -313,8 +328,13 @@ export const pfrModel: UnitModel = (
       }
     }
 
+    if (usePD) dydt.push(dPdTau);
+
     return dydt;
   };
+
+  const TIdx = speciesIds.length;
+  const PIdx = speciesIds.length + 1;
 
   let y = [...y0];
   for (let i = 0; i < nSteps; i++) {
@@ -322,7 +342,8 @@ export const pfrModel: UnitModel = (
     for (let j = 0; j < speciesIds.length; j++) {
       y[j] = Math.max(0, y[j]);
     }
-    y[speciesIds.length] = Math.max(200, Math.min(1500, y[speciesIds.length]));
+    y[TIdx] = Math.max(200, Math.min(1500, y[TIdx]));
+    if (usePD) y[PIdx] = Math.max(0, y[PIdx]);
 
     const C: Record<SpeciesId, number> = {};
     for (let j = 0; j < speciesIds.length; j++) {
@@ -331,7 +352,8 @@ export const pfrModel: UnitModel = (
     profile.push({
       cumTau: (i + 1) * h,
       C,
-      T: y[speciesIds.length],
+      T: y[TIdx],
+      ...(usePD ? { P: y[PIdx] } : {}),
     });
   }
 
@@ -339,8 +361,9 @@ export const pfrModel: UnitModel = (
   for (let j = 0; j < speciesIds.length; j++) {
     C_out[speciesIds[j]] = y[j];
   }
-  const T_out = y[speciesIds.length];
-  const outlet = fromConc(C_out, volFlow, T_out);
+  const T_out = y[TIdx];
+  const P_final = usePD ? Math.max(0, y[PIdx]) : 101325;
+  const outlet = { ...fromConc(C_out, volFlow, T_out), P: P_final };
 
   return {
     outlet,

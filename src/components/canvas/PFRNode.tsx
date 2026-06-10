@@ -37,9 +37,10 @@ function PFRNode({ id, data, selected }: PFRNodeProps) {
   const isSingle = params.reactionMode === 'single';
   const thermalMode = data.thermalMode ?? 'isothermal';
 
-  const base = !isSingle
+  const base = (!isSingle
     ? 88
-    : thermalMode === 'cooled' ? 170 : thermalMode === 'adiabatic' ? 130 : 110;
+    : thermalMode === 'cooled' ? 170 : thermalMode === 'adiabatic' ? 130 : 110)
+    + (isSingle && data.pressureDrop ? 54 : 0);
   const nodeHeight = simulationMode === 'dynamic' ? base + 48 : base;
 
   const conversionColor = segment
@@ -237,6 +238,56 @@ function PFRNode({ id, data, selected }: PFRNodeProps) {
           </span>
         </div>
       </div>
+
+      {isSingle && (
+        <div style={{ padding: '4px 10px 2px' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer', fontSize: 10, color: '#64748b' }}>
+            <input
+              type="checkbox"
+              checked={data.pressureDrop ?? false}
+              onChange={(e) => { e.stopPropagation(); updateNodeData(id, { ...data, pressureDrop: e.target.checked }); }}
+              style={{ accentColor: ACCENT, width: 11, height: 11 }}
+            />
+            ΔP (Ergun)
+            {data.pressureDrop && segment?.P_out !== undefined && (
+              <span style={{ marginLeft: 'auto', fontFamily: 'monospace', color: ACCENT }}>
+                {`${(((data.P0 ?? 101325) - segment.P_out) / 1000).toFixed(1)} kPa`}
+              </span>
+            )}
+          </label>
+          {data.pressureDrop && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px 6px', marginTop: 3 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <span style={{ fontSize: 9, color: '#6b7280' }}>Dp</span>
+                <input type="number" min={0.0001} max={0.1} step={0.001} value={data.Dp ?? 0.005}
+                  onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) updateNodeData(id, { ...data, Dp: Math.max(0.0001, v) }); }}
+                  style={{ width: 42, fontSize: 10, fontFamily: 'monospace', background: PILL_BG, border: 'none', borderRadius: 4, padding: '1px 3px', outline: 'none', color: '#0f1730' }} />
+                <span style={{ fontSize: 8, color: '#94a3b8' }}>m</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <span style={{ fontSize: 9, color: '#6b7280' }}>φ</span>
+                <input type="number" min={0.1} max={0.9} step={0.01} value={data.phi ?? 0.4}
+                  onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) updateNodeData(id, { ...data, phi: Math.min(0.9, Math.max(0.1, v)) }); }}
+                  style={{ width: 42, fontSize: 10, fontFamily: 'monospace', background: PILL_BG, border: 'none', borderRadius: 4, padding: '1px 3px', outline: 'none', color: '#0f1730' }} />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <span style={{ fontSize: 9, color: '#6b7280' }}>P₀</span>
+                <input type="number" min={10000} max={2000000} step={1000} value={data.P0 ?? 101325}
+                  onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) updateNodeData(id, { ...data, P0: Math.max(10000, v) }); }}
+                  style={{ width: 42, fontSize: 10, fontFamily: 'monospace', background: PILL_BG, border: 'none', borderRadius: 4, padding: '1px 3px', outline: 'none', color: '#0f1730' }} />
+                <span style={{ fontSize: 8, color: '#94a3b8' }}>Pa</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <span style={{ fontSize: 9, color: '#6b7280' }}>u₀</span>
+                <input type="number" min={0.0001} max={1} step={0.001} value={data.u0 ?? 0.01}
+                  onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) updateNodeData(id, { ...data, u0: Math.max(0.0001, v) }); }}
+                  style={{ width: 42, fontSize: 10, fontFamily: 'monospace', background: PILL_BG, border: 'none', borderRadius: 4, padding: '1px 3px', outline: 'none', color: '#0f1730' }} />
+                <span style={{ fontSize: 8, color: '#94a3b8' }}>m/s</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {simulationMode === 'dynamic' && (
         <div style={{ margin: '4px 10px 0', paddingTop: 4, borderTop: '1px solid #e0e6f0' }}>

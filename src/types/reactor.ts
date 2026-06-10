@@ -12,6 +12,11 @@ export interface ReactorNodeData {
   kappa_v: number;
   ic_Ca: number;
   ic_T: number;
+  pressureDrop?: boolean;
+  Dp?: number;
+  phi?: number;
+  P0?: number;
+  u0?: number;
 }
 
 /**
@@ -50,6 +55,7 @@ export interface ReactorSegmentResult {
   yield_R: number;
   selectivity_R: number;
   profile: { cumTau: number; Xa: number; Ca: number; Cr: number; Cs: number; T: number }[];
+  P_out?: number;
 }
 
 export interface RecycleIterationRecord {
