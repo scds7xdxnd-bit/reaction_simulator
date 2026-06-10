@@ -115,6 +115,7 @@ export interface NetworkResult {
   recycleHistory: RecycleIterationRecord[];
   recycleConvergenceData: Record<string, RecycleConvergenceEntry>;
   selectivityAnalysis?: SelectivityAnalysis;
+  Xa_eq?: number;
 }
 
 export interface SimulationResult extends NetworkResult {}

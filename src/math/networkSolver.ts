@@ -17,6 +17,7 @@ import type { AnnotatedStream } from '../types/stream';
 import type { ChemistryModel } from '../types/chemistry';
 
 import { findTearEdgeIds, topoSort, reachableFrom, reachableTo } from './topology';
+import { computeXeq } from './equilibrium';
 import { buildOperatingDiagram, type OperatingDiagramData } from './operatingDiagramModel';
 
 function getInletStream(
@@ -622,6 +623,10 @@ export function solveNetwork(
     }
   }
 
+  const Xa_eq = params.kinetics === 'reversible'
+    ? computeXeq(params.Keq_ref)
+    : undefined;
+
   return {
     streams: streamsOut,
     nodeOutputs: nodeOutputsOut,
@@ -639,5 +644,6 @@ export function solveNetwork(
     recycleHistory,
     recycleConvergenceData,
     selectivityAnalysis,
+    Xa_eq,
   };
 }

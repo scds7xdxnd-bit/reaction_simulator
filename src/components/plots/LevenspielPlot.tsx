@@ -212,6 +212,23 @@ export default function LevenspielPlot() {
               </g>
             ))}
 
+            {result.Xa_eq != null && (
+              <ReferenceLine
+                x={result.Xa_eq}
+                stroke="#dc2626"
+                strokeDasharray="6 3"
+                strokeWidth={1.5}
+              >
+                <Label
+                  value={`Xeq=${result.Xa_eq.toFixed(2)}`}
+                  position="top"
+                  fill="#dc2626"
+                  fontSize={9}
+                  offset={4}
+                />
+              </ReferenceLine>
+            )}
+
             <Line
               dataKey="inv_rA_norm"
               stroke={curveStroke}
