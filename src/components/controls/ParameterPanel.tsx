@@ -136,6 +136,7 @@ function ParamRow({ label, unit, children }: { label: string; unit: string; chil
 export default function ParameterPanel() {
   const params = useSimulatorStore((s) => s.params);
   const updateParams = useSimulatorStore((s) => s.updateParams);
+  const paramsOpen = useSimulatorStore((s) => s.paramsOpen);
   const [showBuilder, setShowBuilder] = useState(false);
 
   const preset = getPreset(params);
@@ -194,8 +195,8 @@ export default function ParameterPanel() {
 
       </div>
 
-      {/* ── Numeric params body ── */}
-      <div style={{ padding: '8px 16px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {/* ── Numeric params body — shown only when paramsOpen ── */}
+      {paramsOpen && <div style={{ padding: '8px 16px 10px', display: 'flex', flexDirection: 'column', gap: 6, overflowY: 'auto', maxHeight: 320 }}>
 
         {/* Feed Conditions */}
         <div style={{ fontSize: 9, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 2 }}>Feed Conditions</div>
@@ -267,7 +268,7 @@ export default function ParameterPanel() {
             onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) updateParams({ rho_Cp: Math.max(0.1, Math.min(10, v)) }); }}
             className="w-20" />
         </ParamRow>
-      </div>
+      </div>}
 
       {showBuilder && (
         <Suspense fallback={null}>
