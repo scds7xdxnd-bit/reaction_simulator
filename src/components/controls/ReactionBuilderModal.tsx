@@ -73,6 +73,8 @@ export default function ReactionBuilderModal({ onClose }: { onClose: () => void 
   const [species, setSpecies] = useState<CustomSpecies[]>(
     existing?.species ?? DEFAULT_SPECIES
   );
+  const [reversible, setReversible] = useState<boolean>(existing?.reversible ?? false);
+  const [Keq_custom, setKeq_custom] = useState<number>(existing?.Keq_custom ?? 4.0);
   const [rateType, setRateType] = useState<RateType>(existing?.rateType ?? 'power-law');
   const [rateParams, setRateParams] = useState<Record<string, number>>(() => {
     if (existing?.rateParams) return existing.rateParams;
@@ -138,14 +140,14 @@ export default function ReactionBuilderModal({ onClose }: { onClose: () => void 
 
   const handleSave = () => {
     if (error) return;
-    const cr: CustomReaction = { species, rateType, rateParams };
+    const cr: CustomReaction = { species, rateType, rateParams, reversible, Keq_custom: reversible ? Keq_custom : undefined };
     updateParams({ customReaction: cr, reactionMode: 'custom' });
     onClose();
   };
 
   const handleSavePreset = () => {
     if (!presetName.trim() || error) return;
-    const cr: CustomReaction = { species, rateType, rateParams };
+    const cr: CustomReaction = { species, rateType, rateParams, reversible, Keq_custom: reversible ? Keq_custom : undefined };
     const updated = [
       { name: presetName.trim(), reaction: cr },
       ...savedPresets.filter((p) => p.name !== presetName.trim()),
@@ -160,6 +162,8 @@ export default function ReactionBuilderModal({ onClose }: { onClose: () => void 
     setSpecies(preset.reaction.species);
     setRateType(preset.reaction.rateType);
     setRateParams(preset.reaction.rateParams);
+    setReversible(preset.reaction.reversible ?? false);
+    setKeq_custom(preset.reaction.Keq_custom ?? 4.0);
   };
 
   const handleDeletePreset = (name: string) => {
@@ -223,7 +227,7 @@ export default function ReactionBuilderModal({ onClose }: { onClose: () => void 
             fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'monospace',
             letterSpacing: '0.04em',
           }}>
-            {formatEquation(species)}
+            {formatEquation(species, reversible)}
           </div>
 
           {/* Species editor */}
@@ -284,6 +288,35 @@ export default function ReactionBuilderModal({ onClose }: { onClose: () => void 
                 style={{ fontSize: 10, padding: '3px 10px', borderRadius: 4, border: '1px solid var(--border)', background: 'var(--surface-raised)', color: 'var(--text-muted)', cursor: 'pointer' }}>
                 + Product
               </button>
+            </div>
+
+            {/* Reversible toggle */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', userSelect: 'none' }}>
+                <input
+                  type="checkbox"
+                  checked={reversible}
+                  onChange={(e) => setReversible(e.target.checked)}
+                />
+                <span style={{ fontSize: 11, color: reversible ? 'var(--text-primary)' : 'var(--text-muted)', fontWeight: reversible ? 600 : 400 }}>
+                  ⇌ Make reversible
+                </span>
+              </label>
+              {reversible && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'monospace' }}>Keq</span>
+                  <input
+                    type="number" min={0.01} max={1000} step={0.1}
+                    value={Keq_custom}
+                    onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v) && v > 0) setKeq_custom(Math.min(1000, v)); }}
+                    style={{
+                      width: 72, fontSize: 11,
+                      background: 'var(--surface-raised)', border: '1px solid var(--border)',
+                      borderRadius: 4, padding: '3px 6px', color: 'var(--text-primary)', outline: 'none',
+                    }}
+                  />
+                </div>
+              )}
             </div>
           </div>
 

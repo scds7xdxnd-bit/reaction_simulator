@@ -16,4 +16,6 @@ export interface CustomReaction {
   species: CustomSpecies[];
   rateType: RateType;
   rateParams: Record<string, number>;
+  reversible?: boolean;
+  Keq_custom?: number;
 }

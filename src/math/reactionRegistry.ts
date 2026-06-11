@@ -258,11 +258,12 @@ export const PRESETS: ReactionPreset[] = [
   parallelPreset,
 ];
 
-function formatCustomEquation(cr: CustomReaction): string {
+function formatCustomEquation(cr: CustomReaction, reversible?: boolean): string {
   const fmt = (label: string, stoich: number) => stoich === 1 ? label : `${stoich}${label}`;
   const reactants = cr.species.filter((s) => s.role === 'reactant').map((s) => fmt(s.label, s.stoich)).join(' + ');
   const products  = cr.species.filter((s) => s.role === 'product').map((s) => fmt(s.label, s.stoich)).join(' + ');
-  return reactants && products ? `${reactants} → ${products}` : '?';
+  const arrow = reversible ? '⇌' : '→';
+  return reactants && products ? `${reactants} ${arrow} ${products}` : '?';
 }
 
 export function buildCustomPreset(cr: CustomReaction): ReactionPreset {
@@ -275,6 +276,9 @@ export function buildCustomPreset(cr: CustomReaction): ReactionPreset {
   const firstReactant = reactants[0]?.label ?? 'A';
   const secondReactant = reactants[1]?.label ?? firstReactant;
   const rp = cr.rateParams;
+
+  const products = cr.species.filter((s) => s.role === 'product');
+  const Keq = cr.reversible ? Math.max(cr.Keq_custom ?? 4, 1e-9) : Infinity;
 
   let rateLawFn: RateLawFn;
   if (cr.rateType === 'michaelis-menten') {
@@ -294,14 +298,17 @@ export function buildCustomPreset(cr: CustomReaction): ReactionPreset {
       return k * CA / Math.max(1 + K_A * CA + K_B * CB, 1e-12);
     };
   } else {
-    // Power law
+    // Power law (with optional reversible term)
     rateLawFn = (C, T) => {
       const k_eff = arrhenius(rp['k'] ?? 0.5, rp['Ea'] ?? 0, rp['T_ref'] ?? 300, T);
-      return k_eff * reactants.reduce((acc, sp) => acc * Math.max(C[sp.label] ?? 0, 0) ** (rp[`n_${sp.label}`] ?? sp.stoich), 1);
+      const r_fwd = k_eff * reactants.reduce((acc, sp) => acc * Math.max(C[sp.label] ?? 0, 0) ** (rp[`n_${sp.label}`] ?? sp.stoich), 1);
+      if (!cr.reversible) return r_fwd;
+      const r_rev = (k_eff / Keq) * products.reduce((acc, sp) => acc * Math.max(C[sp.label] ?? 0, 0) ** sp.stoich, 1);
+      return r_fwd - r_rev;
     };
   }
 
-  const eqLabel = formatCustomEquation(cr);
+  const eqLabel = formatCustomEquation(cr, cr.reversible);
 
   return {
     id: 'custom',

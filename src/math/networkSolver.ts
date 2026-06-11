@@ -625,7 +625,9 @@ export function solveNetwork(
 
   const Xa_eq = params.kinetics === 'reversible'
     ? computeXeq(params.Keq_ref)
-    : undefined;
+    : (params.reactionMode === 'custom' && params.customReaction?.reversible && params.customReaction.Keq_custom != null)
+      ? computeXeq(params.customReaction.Keq_custom)
+      : undefined;
 
   return {
     streams: streamsOut,
