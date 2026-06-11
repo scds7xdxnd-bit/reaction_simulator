@@ -4,7 +4,6 @@ import { useSimulatorStore } from '../../store/simulatorStore';
 import type { ReactionMode } from '../../types/simulation';
 import { PRESETS, getPreset } from '../../math/reactionRegistry';
 import { formatEquation } from '../../math/formatEquation';
-import { Input } from '../ui';
 
 const kineticsOptions = PRESETS
   .filter((p) => p.kinetics != null)
@@ -126,27 +125,13 @@ function HoverDropdown<T extends string>({
 }
 
 
-function ParamRow({ label, unit, children }: { label: string; unit: string; children: React.ReactNode }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-      <span style={{ fontSize: 10, color: '#6b7280', fontFamily: 'monospace', width: 72, flexShrink: 0 }}>{label}</span>
-      {children}
-      {unit && <span style={{ fontSize: 9, color: '#94a3b8', flexShrink: 0 }}>{unit}</span>}
-    </div>
-  );
-}
-
 export default function ParameterPanel() {
   const params = useSimulatorStore((s) => s.params);
   const updateParams = useSimulatorStore((s) => s.updateParams);
-  const paramsOpen = useSimulatorStore((s) => s.paramsOpen);
   const [showBuilder, setShowBuilder] = useState(false);
 
   const preset = getPreset(params);
   const isSingle = preset.isSingle;
-  const kUnit = preset.kUnit ?? 's⁻¹';
-
-  const kLabel = isSingle ? 'k₁' : 'k₁';
 
   const modeAccent = params.reactionMode === 'series'   ? '#0d9488'
                    : params.reactionMode === 'series3'  ? '#0d9488'
@@ -198,102 +183,6 @@ export default function ParameterPanel() {
         )}
 
       </div>
-
-      {/* ── Numeric params body — shown only when paramsOpen ── */}
-      {paramsOpen && <div style={{ padding: '8px 16px 10px', display: 'flex', flexDirection: 'column', gap: 6, overflowY: 'auto', maxHeight: 320 }}>
-
-        {/* Feed Conditions */}
-        <div style={{ fontSize: 9, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 2 }}>Feed Conditions</div>
-        <ParamRow label="Cₐ₀" unit="mol/L">
-          <Input type="number" min="0.1" max="100" step="0.1" value={params.Ca0}
-            onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) updateParams({ Ca0: Math.max(0.1, Math.min(100, v)) }); }}
-            className="w-20" />
-        </ParamRow>
-        {params.reactionMode === 'series-parallel' && (
-          <ParamRow label="C_B₀" unit="mol/L">
-            <Input type="number" min="0.1" max="100" step="0.1" value={params.Cb0}
-              onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) updateParams({ Cb0: Math.max(0.1, Math.min(100, v)) }); }}
-              className="w-20" />
-          </ParamRow>
-        )}
-        <ParamRow label="T feed" unit="K">
-          <Input type="number" min="200" max="600" step="1" value={params.T_feed}
-            onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) updateParams({ T_feed: Math.max(200, Math.min(600, v)) }); }}
-            className="w-20" />
-        </ParamRow>
-
-        <div style={{ borderTop: '1px solid #e2e8f0', marginTop: 2, marginBottom: 2 }} />
-
-        {/* Kinetics */}
-        <div style={{ fontSize: 9, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 2 }}>Kinetics</div>
-        <ParamRow label={kLabel} unit={kUnit}>
-          <Input type="number" min="0.01" max="10" step="0.01" value={params.k}
-            onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) updateParams({ k: Math.max(0.01, Math.min(10, v)) }); }}
-            className="w-20" />
-        </ParamRow>
-        {params.reactionMode !== 'single' && (
-          <ParamRow label="k₂" unit={kUnit}>
-            <Input type="number" min="0.01" max="10" step="0.01" value={params.k2}
-              onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) updateParams({ k2: Math.max(0.01, Math.min(10, v)) }); }}
-              className="w-20" />
-          </ParamRow>
-        )}
-        {(params.reactionMode === 'series3' || params.reactionMode === 'denbigh') && (
-          <ParamRow label="k₃" unit={kUnit}>
-            <Input type="number" min="0.01" max="10" step="0.01" value={params.k3}
-              onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) updateParams({ k3: Math.max(0.01, Math.min(10, v)) }); }}
-              className="w-20" />
-          </ParamRow>
-        )}
-        {params.reactionMode === 'denbigh' && (
-          <ParamRow label="k₄" unit={kUnit}>
-            <Input type="number" min="0.01" max="10" step="0.01" value={params.k4}
-              onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) updateParams({ k4: Math.max(0.01, Math.min(10, v)) }); }}
-              className="w-20" />
-          </ParamRow>
-        )}
-        {params.kinetics === 'reversible' && (
-          <ParamRow label="Keq_ref" unit="">
-            <Input type="number" min="0.01" max="1000" step="0.01" value={params.Keq_ref}
-              onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) updateParams({ Keq_ref: Math.max(0.01, Math.min(1000, v)) }); }}
-              className="w-20" />
-          </ParamRow>
-        )}
-        {params.kinetics === 'autocatalytic' && (
-          <ParamRow label="Cᵣ₀/Cₐ₀" unit="">
-            <Input type="number" min="0.001" max="0.5" step="0.001" value={params.Cr0_fraction}
-              onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) updateParams({ Cr0_fraction: Math.max(0.001, Math.min(0.5, v)) }); }}
-              className="w-20" />
-          </ParamRow>
-        )}
-        {params.kinetics === 'gas-phase-1st-order' && (
-          <ParamRow label="ε" unit="">
-            <Input type="number" min="-0.5" max="2" step="0.01" value={params.epsilon}
-              onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) updateParams({ epsilon: Math.max(-0.5, Math.min(2, v)) }); }}
-              className="w-20" />
-          </ParamRow>
-        )}
-
-        <div style={{ borderTop: '1px solid #e2e8f0', marginTop: 2, marginBottom: 2 }} />
-
-        {/* Thermodynamics */}
-        <div style={{ fontSize: 9, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 2 }}>Thermodynamics</div>
-        <ParamRow label="Ea" unit="kJ/mol">
-          <Input type="number" min="0" max="200" step="1" value={params.Ea}
-            onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) updateParams({ Ea: Math.max(0, Math.min(200, v)) }); }}
-            className="w-20" />
-        </ParamRow>
-        <ParamRow label="ΔH" unit="kJ/mol">
-          <Input type="number" min="-200" max="200" step="1" value={params.delta_H}
-            onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) updateParams({ delta_H: Math.max(-200, Math.min(200, v)) }); }}
-            className="w-20" />
-        </ParamRow>
-        <ParamRow label="ρCp" unit="kJ/(L·K)">
-          <Input type="number" min="0.1" max="10" step="0.1" value={params.rho_Cp}
-            onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) updateParams({ rho_Cp: Math.max(0.1, Math.min(10, v)) }); }}
-            className="w-20" />
-        </ParamRow>
-      </div>}
 
       {showBuilder && (
         <Suspense fallback={null}>

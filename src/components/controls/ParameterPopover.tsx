@@ -33,12 +33,15 @@ export default function ParameterPopover() {
   };
 
   function isFieldVisible(field: ParamFieldDef): boolean {
-    if (field.key === 'k' || field.key === 'Ca0' || field.key === 'Cr0_fraction') return false;
     switch (field.key) {
-      case 'k2':      return !isSingle;
-      case 'Keq_ref': return isSingle && params.kinetics === 'reversible';
-      case 'epsilon': return isSingle && params.kinetics === 'gas-phase-1st-order';
-      default:        return true;
+      case 'Cb0':          return params.reactionMode === 'series-parallel';
+      case 'epsilon':      return isSingle && params.kinetics === 'gas-phase-1st-order';
+      case 'Cr0_fraction': return isSingle && params.kinetics === 'autocatalytic';
+      case 'k2':           return !isSingle;
+      case 'k3':           return params.reactionMode === 'series3' || params.reactionMode === 'denbigh';
+      case 'k4':           return params.reactionMode === 'denbigh';
+      case 'Keq_ref':      return isSingle && params.kinetics === 'reversible';
+      default:             return true;
     }
   }
 
@@ -64,8 +67,8 @@ export default function ParameterPopover() {
         left: 76,
         top: '50%',
         transform: 'translateY(-50%)',
-        width: 320,
-        maxHeight: '80vh',
+        width: 340,
+        maxHeight: 'calc(100vh - 120px)',
         overflowY: 'auto',
         zIndex: 200,
         background: 'var(--surface)',
