@@ -55,6 +55,10 @@ export function deserializeState(json: string): SavedState | null {
     if (!('customReaction' in p)) {
       s.params = { ...s.params, customReaction: null };
     }
+    // Back-compat: older saves lack k3
+    if (!(typeof p.k3 === 'number')) {
+      s.params = { ...s.params, k3: 0.1 };
+    }
     return s;
   } catch {
     return null;

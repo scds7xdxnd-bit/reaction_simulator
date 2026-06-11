@@ -29,6 +29,7 @@ export interface SimulationParams {
   kinetics: KineticsType;
   k: number;
   k2: number;
+  k3: number;
   Keq_ref: number;
   Ca0: number;
   Cr0_fraction: number;

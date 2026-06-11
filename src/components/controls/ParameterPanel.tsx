@@ -13,6 +13,7 @@ const kineticsOptions = PRESETS
 const modeOptions: { value: ReactionMode; label: string }[] = [
   { value: 'single',   label: 'Single' },
   { value: 'series',   label: 'Series A→R→S' },
+  { value: 'series3',  label: 'A→R→S→T' },
   { value: 'parallel', label: 'Parallel A→R/A→S' },
   { value: 'custom',   label: 'Custom…' },
 ];
@@ -146,6 +147,7 @@ export default function ParameterPanel() {
   const kLabel = isSingle ? 'k₁' : 'k₁';
 
   const modeAccent = params.reactionMode === 'series'   ? '#0d9488'
+                   : params.reactionMode === 'series3'  ? '#0d9488'
                    : params.reactionMode === 'parallel' ? '#7c3aed'
                    : '#2563eb';
 
@@ -224,6 +226,13 @@ export default function ParameterPanel() {
           <ParamRow label="k₂" unit={kUnit}>
             <Input type="number" min="0.01" max="10" step="0.01" value={params.k2}
               onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) updateParams({ k2: Math.max(0.01, Math.min(10, v)) }); }}
+              className="w-20" />
+          </ParamRow>
+        )}
+        {params.reactionMode === 'series3' && (
+          <ParamRow label="k₃" unit={kUnit}>
+            <Input type="number" min="0.01" max="10" step="0.01" value={params.k3}
+              onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) updateParams({ k3: Math.max(0.01, Math.min(10, v)) }); }}
               className="w-20" />
           </ParamRow>
         )}

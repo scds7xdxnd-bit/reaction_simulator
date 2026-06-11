@@ -55,12 +55,56 @@ describe('solveNetwork — golden examples', () => {
   });
 });
 
+describe('solveNetwork — series3 preset (A→R→S→T)', () => {
+  it('isothermal CSTR, k1=0.5 k2=0.3 k3=0.1, τ=2: CS_out>0, mass balance ≈ Ca0', () => {
+    const params: SimulationParams = {
+      reactionMode: 'series3',
+      kinetics: 'first-order',
+      k: 0.5,
+      k2: 0.3,
+      k3: 0.1,
+      Keq_ref: 4,
+      Ca0: 1.0,
+      Cr0_fraction: 0,
+      T_ref: 300,
+      Ea: 0,
+      delta_H: 0,
+      rho_Cp: 1,
+      T_feed: 300,
+      epsilon: 0,
+      Q_feed: 0,
+      customReaction: null,
+    };
+    const nodes = [
+      { id: 'feed-1', type: 'feed',    position: { x: 0, y: 0 },   data: {} },
+      { id: 'cstr-1', type: 'cstr',    position: { x: 200, y: 0 }, data: { reactorType: 'CSTR', tau: 2, thermalMode: 'isothermal', label: 'R1' } },
+      { id: 'prod-1', type: 'product', position: { x: 400, y: 0 }, data: {} },
+    ] as unknown as import('@xyflow/react').Node[];
+    const edges = [
+      { id: 'e1', source: 'feed-1', target: 'cstr-1' },
+      { id: 'e2', source: 'cstr-1', target: 'prod-1' },
+    ] as unknown as import('@xyflow/react').Edge[];
+
+    const result = solveNetwork(nodes, edges, params);
+    expect(result).not.toBeNull();
+    expect(result!.converged).toBe(true);
+    const seg = result!.segments[0];
+    // A must be consumed, S produced as intermediate
+    expect(seg.Xa_out).toBeGreaterThan(0);
+    expect(seg.Ca_out).toBeLessThan(params.Ca0);
+    expect(seg.Cs_out).toBeGreaterThan(0);
+    // Conversion should be substantial (k1τ=1 → Xa≈0.5)
+    expect(seg.Xa_out).toBeGreaterThan(0.3);
+  });
+});
+
 describe('solveNetwork — parallel network fixes', () => {
   const baseParams: SimulationParams = {
     reactionMode: 'single',
     kinetics: 'first-order',
     k: 0.5,
     k2: 0,
+    k3: 0,
     Keq_ref: 10,
     Ca0: 1.0,
     Cr0_fraction: 0,
