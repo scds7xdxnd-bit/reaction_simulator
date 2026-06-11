@@ -1,5 +1,20 @@
 export type SpeciesId = string;
 
+export interface SpeciesLibraryEntry {
+  id: string;
+  name: string;
+  formula: string;
+  mw: number;
+  phase: 'g' | 'l' | 's';
+  dHf298: number;
+  S298: number;
+  Cp: { A: number; B: number; C: number; D: number; E: number };
+  antoine?: { A: number; B: number; C: number };
+  rhoLiq?: number;
+  Tc?: number;
+  Pc?: number;
+}
+
 export interface Species {
   id: SpeciesId;
   label: string;

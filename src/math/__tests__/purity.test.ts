@@ -41,6 +41,7 @@ const PURE_FILES = [
   'src/math/equationParser.ts',
   'src/math/units.ts',
   'src/math/numerics.ts',
+  'src/math/thermoLibrary.ts',
 ] as const;
 
 describe('purity invariants — zero store/React runtime imports', () => {
