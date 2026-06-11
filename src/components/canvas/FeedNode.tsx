@@ -1,4 +1,4 @@
-import { memo, useState, useEffect } from 'react';
+import { memo, useState, useEffect, useRef } from 'react';
 import { Handle, Position, useReactFlow, type NodeProps } from '@xyflow/react';
 import { useSimulatorStore } from '../../store/simulatorStore';
 
@@ -12,6 +12,19 @@ interface FeedData {
 
 type FeedNodeProps = NodeProps & { data: FeedData };
 
+const SPECIES_COLORS: Record<string, string> = {
+  A: '#2563eb',
+  B: '#16a34a',
+  R: '#d97706',
+  S: '#dc2626',
+  T: '#7c3aed',
+  U: '#ea580c',
+};
+
+function speciesColor(s: string): string {
+  return SPECIES_COLORS[s.toUpperCase()] ?? '#6b7280';
+}
+
 function FeedNode({ id, data, selected }: FeedNodeProps) {
   const params = useSimulatorStore((s) => s.params);
   const { updateNodeData } = useReactFlow();
@@ -19,14 +32,26 @@ function FeedNode({ id, data, selected }: FeedNodeProps) {
   const [ca0Str,  setCa0Str]  = useState(data.Ca0      !== undefined ? String(data.Ca0)      : '');
   const [tStr,    setTStr]    = useState(data.T_feed   !== undefined ? String(data.T_feed)   : '');
   const [flowStr, setFlowStr] = useState(data.flowrate !== undefined ? String(data.flowrate) : '');
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameVal,  setRenameVal]  = useState('');
+  const renameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { setCa0Str(data.Ca0      !== undefined ? String(data.Ca0)      : ''); }, [data.Ca0]);
   useEffect(() => { setTStr(data.T_feed     !== undefined ? String(data.T_feed)   : ''); }, [data.T_feed]);
   useEffect(() => { setFlowStr(data.flowrate !== undefined ? String(data.flowrate) : ''); }, [data.flowrate]);
+  useEffect(() => { if (isRenaming) renameRef.current?.focus(); }, [isRenaming]);
 
-  const hasOverride  = data.Ca0 !== undefined || data.T_feed !== undefined || data.flowrate !== undefined;
-  const displayLabel = data.label ?? 'Feed';
-  const displayCa0   = data.Ca0 ?? params.Ca0;
+  const displaySpecies = data.speciesLabel ?? 'A';
+  const displayCa0     = data.Ca0 ?? params.Ca0;
+  const displayT       = data.T_feed ?? params.T_feed;
+  const hasOverride    = data.Ca0 !== undefined || data.T_feed !== undefined || data.flowrate !== undefined;
+  const color          = speciesColor(displaySpecies);
+
+  const commitRename = () => {
+    const v = renameVal.trim().slice(0, 2) || displaySpecies;
+    updateNodeData(id, { ...data, speciesLabel: v });
+    setIsRenaming(false);
+  };
 
   return (
     <div className="relative">
@@ -35,24 +60,61 @@ function FeedNode({ id, data, selected }: FeedNodeProps) {
           width: 70, height: 70,
           borderRadius: '50%',
           background: '#ffffff',
-          border: selected ? '2px solid #2563eb' : '2px dashed #b0bcd4',
+          border: selected ? `2px solid ${color}` : '2px dashed #b0bcd4',
           display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center',
           position: 'relative',
+          gap: 1,
         }}
       >
         <Handle
           type="source" position={Position.Right} id="out"
           style={{ width: 10, height: 10, background: '#6b7280', border: 'none', right: -5, top: '50%' }}
         />
-        <span style={{ fontSize: 11, fontWeight: 500, color: '#0f1730', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-          {displayLabel}
+        {isRenaming ? (
+          <input
+            ref={renameRef}
+            className="nodrag nowheel"
+            value={renameVal}
+            onChange={(e) => setRenameVal(e.target.value.slice(0, 2))}
+            onBlur={commitRename}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') commitRename();
+              if (e.key === 'Escape') setIsRenaming(false);
+              e.stopPropagation();
+            }}
+            style={{
+              width: 32, textAlign: 'center',
+              fontSize: 18, fontWeight: 800,
+              color, border: `1px solid ${color}`,
+              borderRadius: 4, padding: '1px 2px',
+              fontFamily: 'monospace',
+              background: 'transparent',
+              outline: 'none',
+            }}
+          />
+        ) : (
+          <span
+            title="Click to rename species"
+            onClick={() => { setRenameVal(displaySpecies); setIsRenaming(true); }}
+            style={{
+              fontSize: 20, fontWeight: 800, color,
+              fontFamily: 'monospace', cursor: 'text',
+              lineHeight: 1,
+              userSelect: 'none',
+            }}
+          >
+            {displaySpecies}
+          </span>
+        )}
+        <span style={{ fontSize: 9, fontFamily: 'monospace', color: '#374151', lineHeight: 1.2 }}>
+          {displayCa0.toFixed(1)} mol/L
         </span>
-        <span style={{ fontSize: 10, fontFamily: 'monospace', color: '#374151', marginTop: 2 }}>
-          Cₐ₀={displayCa0.toFixed(1)}
+        <span style={{ fontSize: 9, fontFamily: 'monospace', color: '#374151', lineHeight: 1.2 }}>
+          {displayT} K
         </span>
         {hasOverride && (
-          <span style={{ position: 'absolute', top: 4, right: 8, width: 6, height: 6, borderRadius: '50%', background: '#2563eb' }} />
+          <span style={{ position: 'absolute', top: 4, right: 8, width: 6, height: 6, borderRadius: '50%', background: color }} />
         )}
       </div>
 
