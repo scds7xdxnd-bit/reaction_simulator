@@ -53,6 +53,8 @@ function validate(species: CustomSpecies[]): string | null {
   if (!species.some((s) => s.role === 'product'))  return 'Need at least 1 product';
   if (species.some((s) => s.stoich <= 0))           return 'All stoich coefficients must be > 0';
   if (species.some((s) => !s.label.trim()))         return 'All species need a label';
+  const labels = species.map((s) => s.label.trim());
+  if (new Set(labels).size !== labels.length)       return 'Species labels must be unique';
   return null;
 }
 
@@ -94,7 +96,17 @@ export default function ReactionBuilderModal({ onClose }: { onClose: () => void 
   };
 
   const addSpecies = (role: 'reactant' | 'product') => {
-    const label = role === 'reactant' ? 'B' : 'S';
+    const usedLabels = new Set(species.map((s) => s.label));
+    const seq = role === 'reactant'
+      ? ['A', 'B', 'C', 'D', 'E', 'F']
+      : ['R', 'S', 'T', 'U', 'P', 'Q'];
+    let label = seq.find((l) => !usedLabels.has(l));
+    if (!label) {
+      const base = role === 'reactant' ? 'A' : 'R';
+      let n = 2;
+      while (usedLabels.has(`${base}${n}`)) n++;
+      label = `${base}${n}`;
+    }
     setSpecies((prev) => [...prev, { id: nextId(), label, role, stoich: 1 }]);
   };
 
