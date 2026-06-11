@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reaction Simulator — Phase 5 Roadmap</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #f1f5f9; color: #1e293b; padding: 32px; min-height: 100vh;
+}
+h1 { font-size: 22px; font-weight: 800; color: #0f172a; margin-bottom: 4px; letter-spacing: -0.3px; }
+.subtitle { font-size: 13px; color: #64748b; margin-bottom: 24px; }
+
+.legend { display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap;
+  background: white; padding: 10px 16px; border-radius: 8px; border: 1px solid #e2e8f0; }
+.legend-item { display: flex; align-items: center; gap: 7px; font-size: 11px; color: #475569; font-weight: 500; }
+.legend-swatch { width: 14px; height: 14px; border-radius: 3px; border: 2px solid; flex-shrink: 0; }
+
+.layer { background: white; border-radius: 12px; border: 1px solid #e2e8f0;
+  margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); overflow: hidden; }
+.layer-header { padding: 12px 18px; font-size: 12px; font-weight: 800; letter-spacing: 0.06em;
+  text-transform: uppercase; color: #334155; border-bottom: 1px solid #e2e8f0; }
+.layer-body { display: grid; gap: 10px; padding: 14px; }
+.cols-2 { grid-template-columns: repeat(2, 1fr); }
+.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+/* Layer accent colours */
+.layer.p1 .layer-header { background: #fef9c3; border-bottom-color: #fde047; }
+.layer.p2 .layer-header { background: #ede9fe; border-bottom-color: #c4b5fd; }
+.layer.p3 .layer-header { background: #dcfce7; border-bottom-color: #86efac; }
+.layer.p4 .layer-header { background: #dbeafe; border-bottom-color: #93c5fd; }
+.layer.p5 .layer-header { background: #fee2e2; border-bottom-color: #fca5a5; }
+
+/* Cards */
+.card {
+  background: #f8faff; border: 1px solid #dde3f0; border-radius: 8px;
+  padding: 12px 14px; font-size: 12px; color: #334155; transition: box-shadow 0.15s;
+}
+.card.done { background: #f0fdf4; border-color: #86efac; opacity: 0.75; }
+.card-top { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+.card-num { width: 22px; height: 22px; border-radius: 50%; background: #0f1730;
+  color: white; font-size: 10px; font-weight: 800; display: flex; align-items: center;
+  justify-content: center; flex-shrink: 0; }
+.card-name { font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.3; }
+.card-job { font-size: 11.5px; color: #475569; line-height: 1.6; margin-bottom: 8px; }
+.card-job code { background: #e8edff; padding: 1px 4px; border-radius: 3px; font-size: 10.5px;
+  font-family: monospace; color: #3730a3; }
+
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px;
+  font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+.badge-done  { background: #0369a1; color: white; }
+.badge-next  { background: #c2410c; color: white; box-shadow: 0 0 0 2px #fed7aa; }
+.badge-key   { background: #7c3aed; color: white; }
+.badge-note  { background: #d97706; color: white; }
+
+.depth-axis { background: #f0f4ff; border: 1px solid #dde3f0; border-radius: 6px;
+  padding: 6px 10px; margin-top: 8px; }
+.depth-label { font-size: 9px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.08em; color: #94a3b8; margin-bottom: 4px; }
+.depth-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.depth-from { font-size: 10px; color: #64748b; font-style: italic; }
+.depth-arrow { font-size: 12px; color: #0369a1; font-weight: 900; flex-shrink: 0; }
+.depth-to   { font-size: 10px; color: #0f1730; font-weight: 600; }
+
+.build-order { background: white; border: 1px solid #e2e8f0; border-radius: 10px;
+  padding: 14px 18px; margin-bottom: 16px; }
+.build-order h3 { font-size: 12px; font-weight: 800; color: #374151;
+  text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+.order-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.order-step { background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 6px;
+  padding: 5px 10px; font-size: 10.5px; font-weight: 700; color: #1e3a8a;
+  white-space: nowrap; }
+.order-step small { display: block; font-weight: 400; color: #64748b; font-size: 9px; }
+.order-arrow { color: #94a3b8; font-size: 14px; }
+
+/* Layer tint classes for order steps */
+.order-step.q1c { background:#fefce8; border-color:#fde047; color:#713f12; }
+.order-step.p2c { background:#ede9fe; border-color:#c4b5fd; color:#4c1d95; }
+.order-step.r3c { background:#dcfce7; border-color:#86efac; color:#14532d; }
+.order-step.u4c { background:#dbeafe; border-color:#93c5fd; color:#1e3a8a; }
+.order-step.c5c { background:#fee2e2; border-color:#fca5a5; color:#7f1d1d; }
+
+.invariant-box { background: #fef9c3; border: 1.5px solid #fde047; border-radius: 10px;
+  padding: 14px 18px; margin-bottom: 16px; font-size: 11.5px; color: #713f12; line-height: 1.7; }
+.invariant-box h3 { font-size: 12px; font-weight: 800; color: #713f12;
+  text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<h1>Reaction Simulator — Phase 5 Roadmap</h1>
+<p class="subtitle">12 items · UX polish · parameter redesign · canvas interaction · chemistry engine v2 · Levenspiel/toolbar refinements</p>
+
+<div class="build-order">
+  <h3>Build Order — strict left-to-right (each item unblocks the next)</h3>
+  <div class="order-row">
+    <div class="order-step q1c">Q1.1<br/><small>Compact toolbar</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step q1c">Q1.2<br/><small>PFR shading fix</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step q1c">Q1.3<br/><small>Hover tooltips</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step u4c">Q1.4<br/><small>Canvas add-menu</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step r3c">R2.1<br/><small>Relocate params</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step r3c">R2.2<br/><small>Flat param layout</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p2c">B3.1<br/><small>Smart naming</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p2c">B3.2<br/><small>Param sync</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step p2c">B3.3<br/><small>Reversible editor</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step c5c">C4.1<br/><small>3-step series</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step c5c">C4.2<br/><small>Series-parallel</small></div>
+    <div class="order-arrow">→</div>
+    <div class="order-step c5c">C4.3<br/><small>Denbigh system</small></div>
+  </div>
+</div>
+
+<div class="invariant-box">
+  <h3>Phase 5 Invariants (enforce every iteration)</h3>
+  <strong>PURE_FILES:</strong> <code>src/math/*</code> and <code>src/io/serializer.ts</code> must never import from zustand or react at runtime. Verify: <code>grep -rn "from.*zustand\|from.*react" src/math/ src/io/serializer.ts</code> — must return only <code>import type</code> lines. &nbsp;
+  <strong>getPreset()</strong> in <code>src/math/reactionRegistry.ts</code> is the SOLE kinetics branching point — no new switch/if on kinetics string anywhere else. &nbsp;
+  <strong>SimulationParams migrations:</strong> any new field requires (a) default in <code>deserializeState()</code>, (b) grep all <code>{...params}</code> spreads, (c) check <code>sweepEngine</code> + <code>targetSolver</code>. &nbsp;
+  <strong>No import cycles:</strong> run <code>npx madge --circular src/</code> after any iteration that adds files. &nbsp;
+  <strong>Build check:</strong> <code>npm run build</code> must exit 0 (tsc + vite). <strong>Test count:</strong> must never decrease below 40; C4.x adds 3+ new tests.
+</div>
+
+<!-- ─────────────────────────────────────────────────────── -->
+<!-- Pillar Q1: Quick UI Polish                              -->
+<!-- ─────────────────────────────────────────────────────── -->
+<div class="layer p1">
+  <div class="layer-header">⚡ Pillar Q1 — Quick UI Polish &nbsp;·&nbsp; 4 items · toolbar · plots · tooltips · canvas menu</div>
+  <div class="layer-body cols-2">
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-next">Next — Q1.1</span></div>
+      <div class="card-top">
+        <div class="card-num">1</div>
+        <div class="card-name">Compact Toolbar</div>
+      </div>
+      <div class="card-job">
+        The left toolbar overflows vertically — all 14 items (CSTR → Export) must fit without scroll at 900 px viewport height. <strong>Changes to <code>ReactorToolbar.tsx</code>:</strong> reduce icon container <code>width/height: 44 → 32px</code>; icon SVG <code>viewBox</code> scaling stays, just outer div shrinks. Reduce label font <code>10px → 8px</code> and item gap <code>gap-2 → gap-1</code>. Shorten long labels: "S-Batch" → "SB", "F-Bed" → "FB". Reduce the two <code>Divider</code> vertical margins from <code>mb-1 / mt-auto</code> to nothing — let flex-col natural spacing handle it. Bottom action buttons (Save/Load/Examples/Export): reduce from <code>w-16</code> to <code>w-[52px]</code>, font <code>9px → 7.5px</code>. The <code>data-params-trigger</code> Params button icon shrinks from <code>36px</code> tall to <code>28px</code>. Test: at <code>window.innerHeight = 900</code>, the Export button must be fully visible without overflow.
+      </div>
+      <div class="depth-axis">
+        <div class="depth-label">Transforms</div>
+        <div class="depth-row">
+          <span class="depth-from">toolbar overflows at 900px viewport</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">all 14 items visible, no scroll, no overflow</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-next">Next — Q1.2</span></div>
+      <div class="card-top">
+        <div class="card-num">2</div>
+        <div class="card-name">Levenspiel PFR Area Shading</div>
+      </div>
+      <div class="card-job">
+        The PFR area under the Levenspiel curve is implemented with 20 narrow <code>ReferenceArea</code> strips but is nearly invisible — <code>pfrFill</code> opacity is 0.22 in light mode. <strong>Fix in <code>LevenspielPlot.tsx</code>:</strong> replace the strip approach with a single continuous <code>Area</code> component rendered over the <code>levenspielCurve</code> data — mask it to the PFR Xa range using <code>activeDot=false</code> and a custom clip approach, or keep strips but set <code>fillOpacity={0.45}</code> in light mode (<code>0.35</code> in dark). Also change PFR strip <code>fill</code> to a solid amber <code>#f59e0b</code> at 45% opacity instead of the RGBA string, and add a <code>stroke="#d97706"</code> with <code>strokeWidth={0.5}</code> to the left/right border reference lines so the region is visually bounded. The dashed <code>strokeDasharray</code> on the vertical bounds should be removed — use solid. Result: PFR area is clearly amber-shaded, CSTR remains blue-rectangle.
+      </div>
+      <div class="depth-axis">
+        <div class="depth-label">Fixes</div>
+        <div class="depth-row">
+          <span class="depth-from">PFR area invisible (opacity 0.22, rgba string)</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">clearly visible amber fill, solid PFR bounds</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-next">Next — Q1.3</span></div>
+      <div class="card-top">
+        <div class="card-num">3</div>
+        <div class="card-name">Toolbar Hover Tooltip Cards</div>
+      </div>
+      <div class="card-job">
+        Replace browser <code>title=""</code> native tooltips with custom CSS tooltip cards. <strong>Create <code>src/components/ui/Tooltip.tsx</code>:</strong> a wrapper component that accepts <code>content: string</code> and <code>children</code>. On hover, renders a floating <code>div</code> via absolute positioning (right of the toolbar: <code>left: 72px</code>) showing the element name in bold and a one-line description. Use <code>pointer-events: none</code>, <code>z-index: 200</code>, <code>white-space: nowrap</code>. <strong>Descriptions per icon:</strong> CSTR — "Continuous Stirred Tank Reactor · well-mixed, steady-state"; PFR — "Plug Flow Reactor · tubular, no axial mixing"; Batch — "Batch Reactor · closed vessel, time-based"; S-Batch/SB — "Semi-batch · continuous B feed into batch vessel"; F-Bed/FB — "Fixed-Bed Catalytic · W_cat basis, Ergun ΔP"; Mixer — "Flow combiner · merges 2+ streams"; Split — "Flow splitter · splits by fraction α"; Params — "Global parameters panel"; Feed — "Feed node · additional inlet stream"; Product — "Product node · additional outlet stream"; Save/Load/Examples/Export keep browser <code>title</code>. Wrap each toolbar draggable div with <code>&lt;Tooltip&gt;</code>. Export <code>Tooltip</code> from <code>src/components/ui/index.ts</code>.
+      </div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">browser title="" tooltip — ugly, delayed, no styling</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">instant custom tooltip card with icon name + description</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-next">Next — Q1.4</span></div>
+      <div class="card-top">
+        <div class="card-num">4</div>
+        <div class="card-name">Click-to-Add Canvas Menu</div>
+      </div>
+      <div class="card-job">
+        Clicking on empty canvas (not on a node or edge) should open a floating add-menu at the click position. <strong>Mechanism:</strong> use ReactFlow's <code>onPaneClick</code> callback in <code>ReactorCanvas.tsx</code>, which receives a <code>MouseEvent</code>. Compute canvas coordinates from <code>screenToFlowPosition({ x: e.clientX, y: e.clientY })</code>. Store click position and open state in a local <code>useState</code>. <strong>Menu component <code>CanvasAddMenu.tsx</code>:</strong> positioned <code>fixed</code> at <code>{ top: e.clientY, left: e.clientX }</code>. If <code>store.clipboard != null</code>, show "📋 Paste here" at top (calls <code>pasteAt(flowPos)</code> — new hook action that pastes clipboard nodes centred on the given position). Below that, show a grid of element buttons: CSTR, PFR, Batch, SB, FB, Mixer, Split — each calls <code>addReactor(type, flowPos)</code> or <code>addUnit(type, flowPos)</code>. Dismiss on outside-click or Escape. <strong>Do not</strong> open the menu when clicking a node/edge — ReactFlow's <code>onPaneClick</code> already only fires on empty space. Add <code>pasteAt(pos: {x,y}): void</code> to <code>useClipboardActions.ts</code>.
+      </div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">add elements only via toolbar drag or click</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">click anywhere on canvas → instant add menu + paste-here</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────────────────── -->
+<!-- Pillar R2: Parameter Panel Redesign                     -->
+<!-- ─────────────────────────────────────────────────────── -->
+<div class="layer p3">
+  <div class="layer-header">🎛 Pillar R2 — Parameter Panel Redesign &nbsp;·&nbsp; 2 items · relocate params · flatten layout</div>
+  <div class="layer-body cols-2">
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-next">Next — R2.1</span></div>
+      <div class="card-top">
+        <div class="card-num">5</div>
+        <div class="card-name">Relocate Global Parameters to Settings Panel</div>
+      </div>
+      <div class="card-job">
+        The top bar (<code>ParameterPanel.tsx</code>) currently shows MODE, KINETICS, k₁, Cₐ₀, and Cᵣ₀/Cₐ₀ in a single horizontal row. This is cramped and mixes controls of different importance. <strong>Goal:</strong> top bar keeps only <strong>MODE selector</strong> and <strong>KINETICS selector</strong> (+ equation label / Edit button for custom mode). All numeric inputs move into the settings slide-out panel. <strong>Changes:</strong> In <code>ParameterPanel.tsx</code>, remove the <code>k</code>, <code>Ca0</code>, and <code>Cr0_fraction</code> inline inputs from the 48px horizontal row — the row should contain only the two <code>HoverDropdown</code> components and a vertical divider. Create a new section below the top row (still inside <code>ParameterPanel</code>): a collapsible or always-visible vertical form containing all numeric params — <code>Ca0</code>, <code>k</code> (labelled per preset: "k₁"), <code>k2</code> (shown only for series/parallel mode), <code>Keq_ref</code> (shown only for reversible kinetics), <code>Cr0_fraction</code> (shown only for autocatalytic), <code>T_feed</code>, <code>Ea</code>, <code>delta_H</code>, <code>rho_Cp</code>, <code>epsilon</code>. This section is the "body" of the settings panel and will be styled flat in R2.2. Guard visibility: show <code>k2</code> when <code>reactionMode !== 'single'</code>; show <code>Keq_ref</code> when <code>kinetics === 'reversible'</code>; show <code>Cr0_fraction</code> when <code>kinetics === 'autocatalytic'</code>; show <code>epsilon</code> when <code>kinetics === 'gas-phase-1st-order'</code>.
+      </div>
+      <div class="depth-axis">
+        <div class="depth-label">Transforms</div>
+        <div class="depth-row">
+          <span class="depth-from">cramped top bar: MODE · KINETICS · k · Ca0 · Cr0 all in one row</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">top bar = MODE + KINETICS only; all numbers in settings panel body</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-next">Next — R2.2</span></div>
+      <div class="card-top">
+        <div class="card-num">6</div>
+        <div class="card-name">Flat Parameter Layout (Remove Accordion)</div>
+      </div>
+      <div class="card-job">
+        After R2.1, the settings panel body contains all numeric params. <strong>Remove any accordion / collapsible wrapper</strong> from <code>ParameterPanel.tsx</code> and from <code>PropertiesPanel.tsx</code> (per-reactor panel). Each parameter should be a plain labeled row: <code>[label][input][unit]</code> stacked vertically with 6px gap, full-width, no expand/collapse arrows. Use a 2-column grid for the parameter rows where space allows (label on left ~80px, input+unit on right). Add section headers as small uppercase dividers: "Feed Conditions", "Kinetics", "Thermodynamics" — plain text, no border, no toggle. If the PropertiesPanel uses any <code>details/summary</code>, <code>Accordion</code>, or expandable <code>div</code> toggled by a useState boolean for collapsing sections, remove those. Replace with always-visible grouped rows. Add a thin <code>1px solid #e2e8f0</code> horizontal separator between section groups. The panel must be scrollable via CSS <code>overflow-y: auto</code> if content exceeds panel height.
+      </div>
+      <div class="depth-axis">
+        <div class="depth-label">Transforms</div>
+        <div class="depth-row">
+          <span class="depth-from">accordion sections hide params behind click</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">all params always visible, flat grouped rows, scrollable</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────────────────── -->
+<!-- Pillar B3: Reaction Builder UX                          -->
+<!-- ─────────────────────────────────────────────────────── -->
+<div class="layer p2">
+  <div class="layer-header">🧪 Pillar B3 — Reaction Builder UX &nbsp;·&nbsp; 3 items · smart naming · param sync · reversible steps</div>
+  <div class="layer-body cols-3">
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-next">Next — B3.1</span></div>
+      <div class="card-top">
+        <div class="card-num">7</div>
+        <div class="card-name">Smart Species Auto-Naming</div>
+      </div>
+      <div class="card-job">
+        In <code>ReactionBuilderModal.tsx</code>, <code>addSpecies()</code> hardcodes <code>label = 'B'</code> for reactants and <code>'S'</code> for products — so clicking "Add Reactant" multiple times always appends another 'B'. <strong>Fix:</strong> compute the next available label from the current <code>species</code> array. Use uppercase sequential letters A–Z. For reactants: find the first letter in <code>['A','B','C','D','E','F']</code> not already present in <code>species.map(s =&gt; s.label)</code>. For products: find the first letter in <code>['R','S','T','U','P','Q']</code> not already present. If all are taken, append a number suffix (e.g. "A2"). This ensures clicking "Add Reactant" three times gives A → B → C (if A is taken, B → C → D), and "Add Product" three times gives R → S → T. <strong>Also fix label uniqueness validation</strong> in <code>validateReaction()</code>: add a check that no two species share the same label, returning an error if duplicates found.
+      </div>
+      <div class="depth-axis">
+        <div class="depth-label">Fixes</div>
+        <div class="depth-row">
+          <span class="depth-from">clicking "Add Reactant" 3× gives B, B, B</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">gives B, C, D (next available unused letter)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-next">Next — B3.2</span></div>
+      <div class="card-top">
+        <div class="card-num">8</div>
+        <div class="card-name">Dynamic Rate Parameter Sync</div>
+      </div>
+      <div class="card-job">
+        When the user switches <code>rateType</code> (power-law → Michaelis-Menten → LH), the <code>rateParams</code> reset to defaults but do not reflect the current <code>species</code> state. For power-law specifically, the rate <code>r = k · ∏ Cᵢⁿⁱ</code> has one order parameter per reactant (e.g. <code>n_A</code>, <code>n_B</code>). <strong>Changes in <code>ReactionBuilderModal.tsx</code>:</strong> (1) When <code>rateType === 'power-law'</code>, dynamically generate order fields from the reactant list. For each reactant species, show a field <code>n_[label]</code> (e.g. <code>n_A</code>, <code>n_B</code>) with default 1. Use a <code>useEffect</code> that watches <code>species</code> changes: when a reactant is added, add <code>n_[label]: 1</code> to <code>rateParams</code>; when a reactant is removed, delete its order key. (2) Add the generated order params to <code>RATE_TYPES[power-law].params</code> via a dynamic render (separate from the static params list). (3) Update <code>buildCustomPreset()</code> in <code>reactionRegistry.ts</code> to read per-species order from <code>rateParams[`n_${sp.label}`] ?? sp.stoich</code> when computing <code>∏ C^n</code>. Do-not-touch: the <code>michaelis-menten</code> and <code>langmuir-hinshelwood</code> param fields remain static.
+      </div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">power-law always uses stoich as order, no per-species control</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">separate n_A, n_B order fields, auto-sync on species add/remove</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-next">Next — B3.3</span></div>
+      <div class="card-top">
+        <div class="card-num">9</div>
+        <div class="card-name">Reversible Reaction Support in Editor</div>
+      </div>
+      <div class="card-job">
+        The custom reaction editor only supports irreversible reactions. Add a <strong>"⇌ Reversible"</strong> toggle checkbox to the reaction builder. <strong>Type changes in <code>src/types/simulation.ts</code>:</strong> extend <code>CustomReaction</code> with <code>reversible?: boolean; Keq_custom?: number</code>. <strong>UI in <code>ReactionBuilderModal.tsx</code>:</strong> add a checkbox row below the species list: "⇌ Make reversible". When checked, show a <code>Keq</code> number input (default 4.0, min 0.01, max 1000). The equation display changes from "A → R" to "A ⇌ R". <strong>Chemistry in <code>buildCustomPreset()</code> in <code>reactionRegistry.ts</code>:</strong> when <code>cr.reversible === true</code>, modify the <code>rateLawFn</code> to include a reverse term: <code>r = r_fwd - r_rev</code> where <code>r_rev = (r_fwd_at_eq) * C_products / (Keq * C_reactants_at_eq)</code>. Simplified for power-law: <code>r = k·∏Cᵢ^nᵢ - (k/Keq)·∏Cⱼ^nⱼ</code> (using stoich orders for products). <strong>Serializer:</strong> <code>deserializeState()</code> already handles <code>customReaction</code> as an object — the new optional fields are backward-compatible; no migration needed. <strong>Also:</strong> compute <code>Xa_eq = Keq_custom / (1 + Keq_custom)</code> and expose it via <code>SimulationResult.Xa_eq</code> (already exists from P5.2 for built-in reversible; extend to custom reversible).
+      </div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">custom reactions always irreversible A → R</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">⇌ toggle + Keq input → A ⇌ R with thermodynamic limit</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────────────────── -->
+<!-- Pillar C4: Chemistry Engine v2                          -->
+<!-- ─────────────────────────────────────────────────────── -->
+<div class="layer p5">
+  <div class="layer-header">⚗️ Pillar C4 — Chemistry Engine v2 &nbsp;·&nbsp; 3 items · 3-step series · series-parallel · Denbigh system</div>
+  <div class="layer-body cols-3">
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-next">Next — C4.1</span> <span class="badge badge-key">🔑 Key</span></div>
+      <div class="card-top">
+        <div class="card-num">10</div>
+        <div class="card-name">3-Step Series Reactions A→R→S→T</div>
+      </div>
+      <div class="card-job">
+        Extend the series reaction mode to support <strong>3 sequential steps</strong>: A→R (k₁), R→S (k₂), S→T (k₃). <strong>Type changes:</strong> add <code>k3: number</code> to <code>SimulationParams</code> (default 0.1, same migration checklist). <strong>New preset in <code>reactionRegistry.ts</code>:</strong> add <code>series3Preset</code> when <code>reactionMode === 'series3'</code>. Species: A, R, S, T. Three reactions: <code>rxn1: stoich={A:-1,R:+1}, rateLaw=k1·CA</code>; <code>rxn2: stoich={R:-1,S:+1}, rateLaw=k2·CR</code>; <code>rxn3: stoich={S:-1,T:+1}, rateLaw=k3·CS</code>. Rate of disappearance of A: <code>-rA = k1·CA</code>. <strong>Add <code>'series3'</code> to <code>ReactionMode</code> type</strong> in <code>simulation.ts</code>. Add to MODE dropdown in <code>ParameterPanel.tsx</code> as "A→R→S→T". Add <code>k3</code> input to settings panel body (shown only when <code>reactionMode === 'series3'</code>). The CSTR/PFR ODE solver already handles multi-species via <code>ChemistryModel.reactions</code> — no solver changes needed. <strong>Test:</strong> add 1 test in networkSolver.test.ts: isothermal CSTR, k1=0.5, k2=0.3, k3=0.1, τ=2 → verify CS_out > 0 and CA_out + CR_out + CS_out + CT_out ≈ Ca0.
+      </div>
+      <div class="depth-axis">
+        <div class="depth-label">Transforms</div>
+        <div class="depth-row">
+          <span class="depth-from">series mode: A→R→S only (k₁, k₂)</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">series3 mode: A→R→S→T (k₁, k₂, k₃) — Levenspiel Chapter 8</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-next">Next — C4.2</span> <span class="badge badge-key">🔑 Key</span></div>
+      <div class="card-top">
+        <div class="card-num">11</div>
+        <div class="card-name">Series-Parallel (Consecutive-Competitive) Reactions</div>
+      </div>
+      <div class="card-job">
+        Implement the series-parallel scheme from Levenspiel Ch. 8: <strong>A+B→R (k₁), R+B→S (k₂), S+B→T (k₃)</strong> — consecutive and competitive for B. <strong>New <code>reactionMode: 'series-parallel'</code></strong> in <code>simulation.ts</code>. Species: A, B, R, S, T. The rate expressions are second-order bimolecular: <code>r₁ = k₁·CA·CB</code>, <code>r₂ = k₂·CR·CB</code>, <code>r₃ = k₃·CS·CB</code>. <strong>New preset</strong> in <code>reactionRegistry.ts</code>: <code>seriesParallelPreset</code> with three reactions, each bimolecular. <strong>New param <code>Cb0: number</code></strong> added to <code>SimulationParams</code> (initial B concentration, default 1.0 mol/L) — only shown when <code>reactionMode === 'series-parallel'</code>. The solver initialises <code>C['B'] = params.Cb0</code> at the feed. <strong>SpeciesProfile chart</strong> should show A, B, R, S, T curves when mode is series-parallel (already multi-species capable via ChemistryModel). Add MODE dropdown option "A+B→R+B→S" (series-parallel). <strong>Test:</strong> PFR, k1=k2=k3=0.5, Ca0=1, Cb0=2, τ=2 → B not fully consumed (stoichiometric excess), CR_out peaks before CS_out.
+      </div>
+      <div class="depth-axis">
+        <div class="depth-label">Transforms</div>
+        <div class="depth-row">
+          <span class="depth-from">no bimolecular multi-step support</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">A+B→R+B→S+B→T with CB₀ control — consecutive-competitive</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:4px"><span class="badge badge-next">Next — C4.3</span></div>
+      <div class="card-top">
+        <div class="card-num">12</div>
+        <div class="card-name">Denbigh Reaction System</div>
+      </div>
+      <div class="card-job">
+        Implement the Denbigh scheme from Levenspiel Ch. 8: <strong>A→R (k₁), A→T (k₂), R→S (k₃), R→U (k₄)</strong>. Rate equations: <code>-rA = (k₁+k₂)·CA = k₁₂·CA</code>, <code>rR = k₁·CA − (k₃+k₄)·CR = k₁·CA − k₃₄·CR</code>, <code>rS = k₃·CR</code>, <code>rT = k₂·CA</code>, <code>rU = k₄·CR</code>. <strong>New <code>reactionMode: 'denbigh'</code></strong> in <code>simulation.ts</code>. <strong>New <code>denbighPreset</code></strong> in <code>reactionRegistry.ts</code> using <code>params.k</code> as k₁, <code>params.k2</code> as k₂, <code>params.k3</code> as k₃, and new param <code>params.k4: number</code> (default 0.1) as k₄. Species: A, R, S, T, U. Five components. <strong>Add <code>k4: number</code> to <code>SimulationParams</code></strong> (default 0.1, same migration checklist — sweepEngine, targetSolver, serializer). Add MODE dropdown option "Denbigh". Show k₃, k₄ inputs in settings panel when <code>reactionMode === 'denbigh'</code>. <strong>SpeciesProfile</strong> renders all 5 species. Levenspiel plot uses <code>-rA = k₁₂·CA</code> as the primary rate. <strong>Selectivity:</strong> define <code>φR = CR_out / (Ca0 − CA_out)</code> for instantaneous selectivity of R — display in the Analysis tab when denbigh mode is active. <strong>Test:</strong> CSTR, k1=1, k2=0.5, k3=2, k4=1, τ=1, Ca0=1 → verify CT_out = k₂/(k₁+k₂) · Xa (analytical: T yield = k2*Da/(k12*(1+k12*Da))).
+      </div>
+      <div class="depth-axis">
+        <div class="depth-label">Enables</div>
+        <div class="depth-row">
+          <span class="depth-from">parallel or series only — no branching multi-product network</span>
+          <span class="depth-arrow">→</span>
+          <span class="depth-to">full Denbigh network: A→{R→S/U, T} — 5-species, 4-rate system</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Build order visual footer -->
+<div class="build-order" style="margin-top:8px; margin-bottom:0">
+  <h3>Dependency Notes</h3>
+  <p style="font-size:11.5px; color:#475569; line-height:1.7">
+    <strong>Q1.1–Q1.4</strong> are independent of each other and of all other pillars — pull any forward if there's a gap. &nbsp;
+    <strong>R2.1 must precede R2.2</strong> (flat layout requires the relocate step first). &nbsp;
+    <strong>B3.1 must precede B3.2 and B3.3</strong> (smart naming is the foundation for correct param sync). &nbsp;
+    <strong>C4.1 must precede C4.2 and C4.3</strong> (k3 param added in C4.1 is reused by C4.3 as k3 in Denbigh; multi-reaction ChemistryModel validated in C4.1). &nbsp;
+    <strong>C4.x adds new SimulationParams fields</strong> (k3, k4, Cb0) — run the full migration checklist for each. &nbsp;
+    Test count must reach <strong>≥ 43</strong> after C4.3 (3 new tests added in C4.1–C4.3).
+  </p>
+</div>
+
+</body>
+</html>
