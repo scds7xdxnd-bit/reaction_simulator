@@ -6,11 +6,12 @@ import { createSessionSlice,  type SessionSlice  } from './slices/sessionSlice';
 import { createToastSlice,    type ToastSlice    } from './slices/toastSlice';
 import { createSweepSlice,    type SweepSlice    } from './slices/sweepSlice';
 import { createPlotConfigSlice, type PlotConfigSlice } from './slices/plotConfigSlice';
-import { createUnitsSlice,     type UnitsSlice     } from './slices/unitsSlice';
+import { createUnitsSlice,        type UnitsSlice        } from './slices/unitsSlice';
+import { createDesignSpecsSlice,  type DesignSpecsSlice  } from './slices/designSpecsSlice';
 
 export type SimulatorStore =
   TopologySlice & ParamsSlice & ResultSlice & SessionSlice & ToastSlice &
-  SweepSlice & PlotConfigSlice & UnitsSlice;
+  SweepSlice & PlotConfigSlice & UnitsSlice & DesignSpecsSlice;
 
 export const useSimulatorStore = create<SimulatorStore>()((...a) => ({
   ...createTopologySlice(...a),
@@ -21,4 +22,5 @@ export const useSimulatorStore = create<SimulatorStore>()((...a) => ({
   ...createSweepSlice(...a),
   ...createPlotConfigSlice(...a),
   ...createUnitsSlice(...a),
+  ...createDesignSpecsSlice(...a),
 }));

@@ -201,3 +201,49 @@ export function resampleUniform(
 
   return { t: tOut, y: yOut };
 }
+
+/**
+ * Brent's method: bisection + secant + inverse quadratic interpolation.
+ * Typically converges in ~10 iterations (vs ~50 for bisect).
+ * Returns { root, converged: false } when bracket is invalid.
+ */
+export function brent(
+  f: (x: number) => number,
+  lo: number,
+  hi: number,
+  tol = 1e-8,
+  maxIter = 100,
+): { root: number; converged: boolean } {
+  let a = lo, b = hi;
+  let fa = f(a), fb = f(b);
+  if (fa * fb > 0) return { root: Math.abs(fa) < Math.abs(fb) ? a : b, converged: false };
+  if (Math.abs(fa) < tol) return { root: a, converged: true };
+  if (Math.abs(fb) < tol) return { root: b, converged: true };
+  if (Math.abs(fa) < Math.abs(fb)) { [a, b] = [b, a]; [fa, fb] = [fb, fa]; }
+  let c = a, fc = fa, s = 0, d = 0, mflag = true;
+  for (let i = 0; i < maxIter; i++) {
+    if (Math.abs(fb) < tol || Math.abs(b - a) < tol) return { root: b, converged: true };
+    if (fa !== fc && fb !== fc) {
+      s = (a * fb * fc) / ((fa - fb) * (fa - fc))
+        + (b * fa * fc) / ((fb - fa) * (fb - fc))
+        + (c * fa * fb) / ((fc - fa) * (fc - fb));
+    } else if (fa !== fb) {
+      s = b - fb * (b - a) / (fb - fa);
+    } else {
+      s = (a + b) / 2;
+    }
+    const lo4 = (3 * a + b) / 4;
+    const notBetween = !(Math.min(lo4, b) < s && s < Math.max(lo4, b));
+    const c2 = mflag  && Math.abs(s - b) >= Math.abs(b - c) / 2;
+    const c3 = !mflag && Math.abs(s - b) >= Math.abs(c - d) / 2;
+    const c4 = mflag  && Math.abs(b - c) < tol;
+    const c5 = !mflag && Math.abs(c - d) < tol;
+    if (notBetween || c2 || c3 || c4 || c5) { s = (a + b) / 2; mflag = true; }
+    else mflag = false;
+    const fs = f(s);
+    d = c; c = b; fc = fb;
+    if (fa * fs < 0) { b = s; fb = fs; } else { a = s; fa = fs; }
+    if (Math.abs(fa) < Math.abs(fb)) { [a, b] = [b, a]; [fa, fb] = [fb, fa]; }
+  }
+  return { root: b, converged: false };
+}

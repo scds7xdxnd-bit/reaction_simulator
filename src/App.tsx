@@ -20,6 +20,7 @@ import OnboardingTour, { shouldShowTour } from './components/OnboardingTour';
 import ParameterPopover from './components/controls/ParameterPopover';
 import PropertiesPanel from './components/panels/PropertiesPanel';
 import SelectivityPanel from './components/panels/SelectivityPanel';
+import DesignSpecsPanel from './components/panels/DesignSpecsPanel';
 import RTDPanel from './components/plots/RTDPanel';
 import { useSimulatorStore } from './store/simulatorStore';
 import { useClipboardActions } from './hooks/useClipboardActions';
@@ -30,7 +31,7 @@ import Toaster from './components/Toaster';
 
 const LS_KEY = 'reaction-simulator-v1';
 
-type RightTab = 'levenspiel' | 'profiles' | 'thermal' | 'dynamic' | 'analysis' | 'scenarios';
+type RightTab = 'levenspiel' | 'profiles' | 'thermal' | 'dynamic' | 'analysis' | 'scenarios' | 'design';
 
 export default function App() {
   useTheme(); // initialize dark class on <html> from system/localStorage
@@ -54,10 +55,13 @@ export default function App() {
   const setParamsOpen        = useSimulatorStore((s) => s.setParamsOpen);
   const propertiesNodeId     = useSimulatorStore((s) => s.propertiesNodeId);
   const setPropertiesNodeId  = useSimulatorStore((s) => s.setPropertiesNodeId);
+  const storeRightTab        = useSimulatorStore((s) => s.rightTab) as RightTab;
+  const setStoreRightTab     = useSimulatorStore((s) => s.setRightTab);
   const { copySelected, paste, cut, duplicate } = useClipboardActions();
   const dynamic = useDynamicSimulation();
 
-  const [rightTab, setRightTab] = useState<RightTab>('levenspiel');
+  const rightTab = storeRightTab;
+  const setRightTab = (t: RightTab) => setStoreRightTab(t);
 
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -68,6 +72,7 @@ export default function App() {
     { id: 'dynamic', label: 'Dynamic' },
     { id: 'analysis', label: 'Analysis' },
     { id: 'scenarios', label: 'Scenarios' },
+    { id: 'design', label: 'Design' },
   ];
 
   useEffect(() => {
@@ -252,7 +257,12 @@ export default function App() {
                 <ScenariosPanel />
               </div>
             )}
-            {!propertiesNodeId && rightTab !== 'dynamic' && rightTab !== 'analysis' && rightTab !== 'scenarios' && (
+            {!propertiesNodeId && rightTab === 'design' && (
+              <div className="flex-1 min-h-0 overflow-hidden">
+                <DesignSpecsPanel />
+              </div>
+            )}
+            {!propertiesNodeId && rightTab !== 'dynamic' && rightTab !== 'analysis' && rightTab !== 'scenarios' && rightTab !== 'design' && (
               <div className="shrink-0">
                 <StreamTablePanel />
               </div>

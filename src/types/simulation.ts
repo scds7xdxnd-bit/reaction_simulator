@@ -20,3 +20,22 @@ export interface CustomReaction {
   Keq_custom?: number;
   label?: string;
 }
+
+export type DesignMetric = 'Xa' | 'Ca_out' | 'T_out' | 'yield_R' | 'selectivity_R';
+
+export interface DesignSpec {
+  id: string;
+  vary: {
+    nodeId?: string;
+    param: string;
+    lo: number;
+    hi: number;
+  };
+  target: {
+    metric: DesignMetric;
+    nodeId?: string;
+    speciesId?: string;
+    value: number;
+  };
+  active: boolean;
+}

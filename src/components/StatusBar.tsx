@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useSimulatorStore } from '../store/simulatorStore';
 import { getPreset } from '../math/reactionRegistry';
 import { useValidation } from '../hooks/useValidation';
@@ -7,6 +8,9 @@ import { useTheme } from '../hooks/useTheme';
 export default function StatusBar() {
   const result = useSimulatorStore((s) => s.result);
   const params = useSimulatorStore((s) => s.params);
+  const setRightTab       = useSimulatorStore((s) => s.setRightTab);
+  const setPendingTarget  = useSimulatorStore((s) => s.setPendingDesignTarget);
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; metric: string; value: number } | null>(null);
   const nodes = useSimulatorStore((s) => s.nodes);
   const simulationMode = useSimulatorStore((s) => s.simulationMode);
   const setSimulationMode = useSimulatorStore((s) => s.setSimulationMode);
@@ -57,12 +61,55 @@ export default function StatusBar() {
   const errorCount = issues.filter((i) => i.level === 'error').length;
   const warnCount  = issues.filter((i) => i.level === 'warning').length;
 
+  const handleCtxMenuAction = (e: React.MouseEvent, metric: string, value: number) => {
+    e.preventDefault();
+    setCtxMenu({ x: e.clientX, y: e.clientY, metric, value });
+  };
+
+  const applyTarget = () => {
+    if (!ctxMenu) return;
+    setPendingTarget({ metric: ctxMenu.metric, value: ctxMenu.value });
+    setRightTab('design');
+    setCtxMenu(null);
+  };
+
   return (
-    <div className="h-12 flex items-center px-4 gap-3 text-[12px] shrink-0" style={{ background: 'var(--surface-raised)', borderTop: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+    <div
+      className="h-12 flex items-center px-4 gap-3 text-[12px] shrink-0"
+      style={{ background: 'var(--surface-raised)', borderTop: '1px solid var(--border)', color: 'var(--text-secondary)' }}
+      onClick={() => ctxMenu && setCtxMenu(null)}
+    >
+      {ctxMenu && (
+        <div
+          style={{
+            position: 'fixed',
+            left: ctxMenu.x,
+            top: ctxMenu.y - 36,
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: 6,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            zIndex: 9999,
+            padding: '4px 0',
+          }}
+        >
+          <button
+            onClick={applyTarget}
+            style={{ display: 'block', width: '100%', textAlign: 'left', padding: '5px 12px', fontSize: 12, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}
+          >
+            Make this a target…
+          </button>
+        </div>
+      )}
       {result ? (
         <>
           <span className="text-[#374151]">Final Xₐ:</span>
-          <span className="font-mono font-bold" style={{ color: conversionColor }}>
+          <span
+            className="font-mono font-bold"
+            style={{ color: conversionColor, cursor: 'context-menu' }}
+            onContextMenu={(e) => handleCtxMenuAction(e, 'Xa', finalXa ?? 0)}
+            title="Right-click to set as design target"
+          >
             {(finalXa! * 100).toFixed(1)}%
           </span>
 
@@ -70,12 +117,22 @@ export default function StatusBar() {
             <>
               <span className="text-[#b0bcd4]">|</span>
               <span className="text-[#374151]">Yield Y_R:</span>
-              <span className="font-mono font-bold" style={{ color: yieldColor }}>
+              <span
+                className="font-mono font-bold"
+                style={{ color: yieldColor, cursor: 'context-menu' }}
+                onContextMenu={(e) => handleCtxMenuAction(e, 'yield_R', finalYield)}
+                title="Right-click to set as design target"
+              >
                 {(finalYield * 100).toFixed(1)}%
               </span>
               <span className="text-[#b0bcd4]">|</span>
               <span className="text-[#374151]">Selectivity S_R:</span>
-              <span className="font-mono font-bold" style={{ color: selColor }}>
+              <span
+                className="font-mono font-bold"
+                style={{ color: selColor, cursor: 'context-menu' }}
+                onContextMenu={(e) => handleCtxMenuAction(e, 'selectivity_R', finalSelectivity)}
+                title="Right-click to set as design target"
+              >
                 {(finalSelectivity * 100).toFixed(1)}%
               </span>
             </>

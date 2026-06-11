@@ -33,6 +33,12 @@ export interface SessionSlice {
 
   propertiesNodeId: string | null;
   setPropertiesNodeId: (id: string | null) => void;
+
+  rightTab: string;
+  setRightTab: (t: string) => void;
+
+  pendingDesignTarget: { metric: string; value: number } | null;
+  setPendingDesignTarget: (t: { metric: string; value: number } | null) => void;
 }
 
 export const createSessionSlice: StateCreator<SimulatorStore, [], [], SessionSlice> =
@@ -69,4 +75,10 @@ export const createSessionSlice: StateCreator<SimulatorStore, [], [], SessionSli
 
   propertiesNodeId: null,
   setPropertiesNodeId: (id) => set({ propertiesNodeId: id }),
+
+  rightTab: 'levenspiel',
+  setRightTab: (t) => set({ rightTab: t }),
+
+  pendingDesignTarget: null,
+  setPendingDesignTarget: (t) => set({ pendingDesignTarget: t }),
 });
