@@ -1,4 +1,4 @@
-import { rk4Step } from './numerics';
+import { odeAdaptive, resampleUniform } from './numerics';
 import type { ChemistryModel, SpeciesId } from '../types/chemistry';
 
 export interface SemibatchParams {
@@ -31,8 +31,6 @@ export function semibatchSolve(
 ): SemibatchResult {
   const { reactions, species } = chemistry;
   const speciesIds = species.map((s) => s.id);
-  const nSteps = 200;
-  const h = params.tau_batch / nSteps;
   const Q_in = params.FB0 / Math.max(params.CB_feed, 1e-12);
 
   // State: [NA, NB, NR, NS, V]  (moles of each species + volume)
@@ -74,34 +72,29 @@ export function semibatchSolve(
     return [...dN, dV];
   };
 
-  const profile: SemibatchProfilePoint[] = [];
   const Na0 = params.Na0;
+  const VIdx = speciesIds.length;
+  const idxB = speciesIds.indexOf('B');
 
-  let y = [...y0];
-  profile.push({ t: 0, Xa: 0, Ca: Na0 / Math.max(params.V0, 1e-9), Cb: 0, V: params.V0 });
+  const { tPoints, yPoints } = odeAdaptive(fn, 0, params.tau_batch, y0);
+  const { t: tUnif, y: yUnif } = resampleUniform(tPoints, yPoints, 201);
 
-  for (let i = 0; i < nSteps; i++) {
-    y = rk4Step(fn, i * h, y, h);
-    for (let j = 0; j < speciesIds.length; j++) y[j] = Math.max(0, y[j]);
-    y[speciesIds.length] = Math.max(params.V0, y[speciesIds.length]);
+  const profile: SemibatchProfilePoint[] = tUnif.map((t, idx) => {
+    const yi = yUnif[idx];
+    const V = Math.max(params.V0, yi[VIdx]);
+    const NA = Math.max(0, yi[idxA >= 0 ? idxA : 0]);
+    const NB = idxB >= 0 ? Math.max(0, yi[idxB]) : 0;
+    return {
+      t, Xa: Math.min(0.9999, Math.max(0, (Na0 - NA) / Math.max(Na0, 1e-12))),
+      Ca: NA / V, Cb: NB / V, V,
+    };
+  });
 
-    const V = y[speciesIds.length];
-    const NA = y[idxA >= 0 ? idxA : 0];
-    const NB = idxR >= 0 ? y[speciesIds.indexOf('B')] : 0;
-    const Xa = Math.min(0.9999, Math.max(0, (Na0 - NA) / Math.max(Na0, 1e-12)));
-    profile.push({
-      t: (i + 1) * h,
-      Xa,
-      Ca: NA / V,
-      Cb: Math.max(0, NB) / V,
-      V,
-    });
-  }
-
-  const finalV = y[speciesIds.length];
-  const finalNA = y[idxA >= 0 ? idxA : 0];
-  const finalNR = idxR >= 0 ? y[idxR] : 0;
-  const Xa_out = Math.min(0.9999, Math.max(0, (Na0 - finalNA) / Math.max(Na0, 1e-12)));
+  const yLast = yUnif[yUnif.length - 1];
+  const finalV  = Math.max(params.V0, yLast[VIdx]);
+  const finalNA = Math.max(0, yLast[idxA >= 0 ? idxA : 0]);
+  const finalNR = idxR >= 0 ? Math.max(0, yLast[idxR]) : 0;
+  const Xa_out  = Math.min(0.9999, Math.max(0, (Na0 - finalNA) / Math.max(Na0, 1e-12)));
   const consumed = Na0 - finalNA;
   const selectivity_R = consumed > 1e-9 ? Math.min(1, finalNR / consumed) : 0;
 

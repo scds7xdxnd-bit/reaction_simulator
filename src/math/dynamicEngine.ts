@@ -5,7 +5,7 @@ import type { ChemistryModel, SpeciesId } from '../types/chemistry';
 import type { Stream } from '../types/stream';
 import { findTearEdgeIds, topoSort } from './topology';
 import { pfrModel, type UnitParams } from './unitModels';
-import { rk4Step as rk4StepBase } from './numerics';
+import { odeAdaptive } from './numerics';
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -307,9 +307,6 @@ function rk4Step(
 ): DynamicNodeState {
   const n = speciesIds.length;
 
-  const toArr = (C: Record<SpeciesId, number>): number[] =>
-    speciesIds.map((id) => C[id] ?? 0);
-
   const toRec = (arr: number[]): Record<SpeciesId, number> => {
     const rec: Record<SpeciesId, number> = {};
     for (let i = 0; i < n; i++) rec[speciesIds[i]] = arr[i];
@@ -323,8 +320,9 @@ function rk4Step(
     return [...speciesIds.map((id) => dC[id] ?? 0), dT];
   };
 
-  const y0 = [...toArr(C_in), T_in];
-  const yNext = rk4StepBase(yDeriv, 0, y0, dt);
+  const y0 = [...speciesIds.map((id) => C_in[id] ?? 0), T_in];
+  const { yPoints } = odeAdaptive(yDeriv, 0, dt, y0, 1e-6, 1e-9);
+  const yNext = yPoints[yPoints.length - 1];
 
   for (let i = 0; i < n; i++) yNext[i] = Math.max(0, yNext[i]);
   yNext[n] = Math.max(200, Math.min(1500, yNext[n]));

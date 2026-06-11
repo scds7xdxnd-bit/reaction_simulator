@@ -1,7 +1,7 @@
 import type { Stream } from '../types/stream';
 import type { ChemistryModel, SpeciesId, Reaction } from '../types/chemistry';
 import type { ThermalMode } from '../types/simulation';
-import { bisect, rk4Step } from './numerics';
+import { bisect, rk4Step, rk45Step, odeAdaptive, resampleUniform } from './numerics';
 import { ergunDpDtau, type PressureDropConfig } from './pressureDropModel';
 import { gasPhaseConc, gasPhaseXaFromCa, cstrGasPhaseXa, pfrGasPhaseODE } from './gasPhaseFactor';
 
@@ -31,6 +31,7 @@ export interface UnitDiagnostics {
   converged: boolean;
   iterations: number;
   warnings: string[];
+  stiff?: boolean;
 }
 
 export interface UnitResult {
@@ -333,36 +334,27 @@ export const pfrModel: UnitModel = (
   const T_in = inlet.T;
   const { reactions, species, thermo } = chemistry;
   const speciesIds = species.map((s) => s.id);
-  const nSteps = 200;
-  const h = params.tau / nSteps;
 
-  // Gas-phase isothermal PFR: integrate dXa/dτ = k·(1-Xa)/(1+ε·Xa) using RK4
+  // Gas-phase isothermal PFR: integrate dXa/dτ = k·(1-Xa)/(1+ε·Xa) with RK45
   if (params.gasPhase && params.thermalMode === 'isothermal') {
     const Ca0 = params.Ca0;
     const epsilon = params.epsilon ?? 0;
     const k = chemistry.reactions[0]?.kineticParams?.['k'] as number ?? 0;
-    const nStepsGP = 200;
-    const hGP = params.tau / nStepsGP;
-    const gpProfile: ProfilePoint[] = [];
-
-    const fnXa = (_t: number, y: number[]): number[] => [pfrGasPhaseODE(y[0]!, k, epsilon)];
-
-    let yXa = [0];
     const totalF = Object.values(inlet.F).reduce((a, b) => a + b, 0);
     const volFlow = Ca0 > 1e-12 ? totalF / Ca0 : 1.0;
 
-    gpProfile.push({ cumTau: 0, C: { ...C_in, A: Ca0, R: 0, S: 0 }, T: T_in });
+    const fnXa = (_t: number, y: number[]): number[] => [pfrGasPhaseODE(y[0]!, k, epsilon)];
+    const { tPoints, yPoints, stiff, steps: gpSteps } = odeAdaptive(fnXa, 0, params.tau, [0]);
+    const { t: tUnif, y: yUnif } = resampleUniform(tPoints, yPoints, 201);
 
-    for (let i = 0; i < nStepsGP; i++) {
-      yXa = rk4Step(fnXa, i * hGP, yXa, hGP);
-      yXa[0] = Math.max(0, Math.min(0.9999, yXa[0]!));
-      const Xa = yXa[0]!;
+    const gpProfile: ProfilePoint[] = tUnif.map((cumTau, idx) => {
+      const Xa = Math.max(0, Math.min(0.9999, yUnif[idx][0]));
       const Ca = gasPhaseConc(Ca0, Xa, epsilon);
       const Cr = Ca0 * Xa / Math.max(1 + epsilon * Xa, 1e-9);
-      gpProfile.push({ cumTau: (i + 1) * hGP, C: { A: Ca, R: Cr, S: 0 }, T: T_in });
-    }
+      return { cumTau, C: { A: Ca, R: Cr, S: 0 }, T: T_in };
+    });
 
-    const Xa_final = yXa[0]!;
+    const Xa_final = Math.max(0, Math.min(0.9999, yUnif[yUnif.length - 1][0]));
     const C_out_gp = {
       A: gasPhaseConc(Ca0, Xa_final, epsilon),
       R: Ca0 * Xa_final / Math.max(1 + epsilon * Xa_final, 1e-9),
@@ -372,7 +364,11 @@ export const pfrModel: UnitModel = (
     return {
       outlet: outlet_gp,
       profile: gpProfile,
-      diagnostics: { converged: true, iterations: nStepsGP, warnings: [] },
+      diagnostics: {
+        converged: true, iterations: gpSteps,
+        warnings: stiff ? ['stiff: step-size collapsed — consider implicit solver'] : [],
+        stiff,
+      },
     };
   }
 
@@ -391,10 +387,6 @@ export const pfrModel: UnitModel = (
     const totalF = Object.values(inlet.F).reduce((a, b) => a + b, 0);
     return params.Ca0 > 1e-12 ? totalF / params.Ca0 : 1.0;
   })();
-
-  const profile: ProfilePoint[] = [
-    { cumTau: 0, C: { ...C_in }, T: T_in, ...(usePD ? { P: pdCfg!.P0 } : {}) },
-  ];
 
   const fn = (_t: number, y: number[]): number[] => {
     const C: Record<SpeciesId, number> = {};
@@ -431,39 +423,36 @@ export const pfrModel: UnitModel = (
   const TIdx = speciesIds.length;
   const PIdx = speciesIds.length + 1;
 
-  let y = [...y0];
-  for (let i = 0; i < nSteps; i++) {
-    y = rk4Step(fn, i * h, y, h);
-    for (let j = 0; j < speciesIds.length; j++) {
-      y[j] = Math.max(0, y[j]);
-    }
-    y[TIdx] = Math.max(200, Math.min(1500, y[TIdx]));
-    if (usePD) y[PIdx] = Math.max(0, y[PIdx]);
+  const { tPoints, yPoints, stiff, steps: pfrSteps } = odeAdaptive(fn, 0, params.tau, y0);
+  const { t: tUnif, y: yUnif } = resampleUniform(tPoints, yPoints, 201);
 
+  const profile: ProfilePoint[] = tUnif.map((cumTau, idx) => {
+    const yi = yUnif[idx];
     const C: Record<SpeciesId, number> = {};
-    for (let j = 0; j < speciesIds.length; j++) {
-      C[speciesIds[j]] = y[j];
-    }
-    profile.push({
-      cumTau: (i + 1) * h,
+    for (let j = 0; j < speciesIds.length; j++) C[speciesIds[j]] = Math.max(0, yi[j]);
+    return {
+      cumTau,
       C,
-      T: y[TIdx],
-      ...(usePD ? { P: y[PIdx] } : {}),
-    });
-  }
+      T: Math.max(200, Math.min(1500, yi[TIdx])),
+      ...(usePD ? { P: Math.max(0, yi[PIdx]) } : {}),
+    };
+  });
 
+  const yFinal = yUnif[yUnif.length - 1];
   const C_out: Record<SpeciesId, number> = {};
-  for (let j = 0; j < speciesIds.length; j++) {
-    C_out[speciesIds[j]] = y[j];
-  }
-  const T_out = y[TIdx];
-  const P_final = usePD ? Math.max(0, y[PIdx]) : 101325;
+  for (let j = 0; j < speciesIds.length; j++) C_out[speciesIds[j]] = Math.max(0, yFinal[j]);
+  const T_out = Math.max(200, Math.min(1500, yFinal[TIdx]));
+  const P_final = usePD ? Math.max(0, yFinal[PIdx]) : 101325;
   const outlet = { ...fromConc(C_out, volFlow, T_out), P: P_final };
 
   return {
     outlet,
     profile,
-    diagnostics: { converged: true, iterations: nSteps, warnings: [] },
+    diagnostics: {
+      converged: true, iterations: pfrSteps,
+      warnings: stiff ? ['stiff: step-size collapsed — consider implicit solver'] : [],
+      stiff,
+    },
   };
 };
 
@@ -483,8 +472,6 @@ export const sideFeedPFR: (
   // Extend speciesIds with 'B' if not already tracked
   const allIds: SpeciesId[] = hasBinChem ? speciesIds : [...speciesIds, 'B'];
 
-  const nSteps = 200;
-  const h = params.tau / nSteps;
   const Q0 = 1.0;  // unit inlet volumetric flow reference
   const CB_feed_side = params.CB_feed_side ?? params.Ca0;
   const FB0_dist = params.FB0_side / params.tau;       // distributed B rate per unit τ
@@ -530,28 +517,35 @@ export const sideFeedPFR: (
   };
 
   const TIdx = allIds.length;
-  const profile: ProfilePoint[] = [{ cumTau: 0, C: { ...C_in }, T: T_in }];
 
-  let y = [...y0];
-  for (let i = 0; i < nSteps; i++) {
-    y = rk4Step(fn, i * h, y, h);
-    for (let j = 0; j < allIds.length; j++) y[j] = Math.max(0, y[j]);
-    y[TIdx] = Math.max(200, Math.min(1500, y[TIdx]));
+  const { tPoints, yPoints, stiff: sfStiff, steps: sfSteps } = odeAdaptive(fn, 0, params.tau, y0);
+  const { t: tUnif, y: yUnif } = resampleUniform(tPoints, yPoints, 201);
+
+  const profile: ProfilePoint[] = tUnif.map((cumTau, idx) => {
+    const yi = yUnif[idx];
     const C: Record<SpeciesId, number> = {};
-    for (let j = 0; j < allIds.length; j++) C[allIds[j]] = y[j];
-    profile.push({ cumTau: (i + 1) * h, C, T: y[TIdx] });
-  }
+    for (let j = 0; j < allIds.length; j++) C[allIds[j]] = Math.max(0, yi[j]);
+    return { cumTau, C, T: Math.max(200, Math.min(1500, yi[TIdx])) };
+  });
 
+  const yFinal = yUnif[yUnif.length - 1];
   const C_out: Record<SpeciesId, number> = {};
-  for (let j = 0; j < speciesIds.length; j++) C_out[speciesIds[j]] = y[j];
-  const T_out = y[TIdx];
+  for (let j = 0; j < speciesIds.length; j++) C_out[speciesIds[j]] = Math.max(0, yFinal[j]);
+  const T_out = Math.max(200, Math.min(1500, yFinal[TIdx]));
   const volFlow = (() => {
     const totalF = Object.values(inlet.F).reduce((a, b) => a + b, 0);
     return params.Ca0 > 1e-12 ? totalF / params.Ca0 : 1.0;
   })();
   const outlet = fromConc(C_out, volFlow, T_out);
 
-  return { outlet, profile, diagnostics: { converged: true, iterations: nSteps, warnings: [] } };
+  return {
+    outlet, profile,
+    diagnostics: {
+      converged: true, iterations: sfSteps,
+      warnings: sfStiff ? ['stiff: step-size collapsed — consider implicit solver'] : [],
+      stiff: sfStiff,
+    },
+  };
 };
 
 export interface CatalyticPFRParams extends UnitParams {

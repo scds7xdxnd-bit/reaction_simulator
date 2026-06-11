@@ -261,6 +261,35 @@ describe('solveNetwork — Denbigh system (A→R/T, R→S/U)', () => {
   });
 });
 
+describe('F13.2 — RK45 adaptive PFR accuracy (golden)', () => {
+  it('first-order isothermal PFR: Ca_out matches exp(-k·τ) to rtol=1e-4', () => {
+    const params: SimulationParams = {
+      reactionMode: 'single', kinetics: 'first-order',
+      k: 1.0, k2: 0, k3: 0, k4: 0, Cb0: 1, Keq_ref: 4,
+      Ca0: 1.0, Cr0_fraction: 0, T_ref: 300, Ea: 0,
+      delta_H: 0, rho_Cp: 1, T_feed: 300, epsilon: 0, Q_feed: 0,
+      recycleMethod: 'direct', customReaction: null,
+    };
+    const nodes = [
+      { id: 'feed-1', type: 'feed',    position: { x: 0, y: 0 }, data: {} },
+      { id: 'pfr-1',  type: 'pfr',     position: { x: 2, y: 0 }, data: { reactorType: 'PFR', tau: 2, thermalMode: 'isothermal', label: 'P1' } },
+      { id: 'prod-1', type: 'product', position: { x: 4, y: 0 }, data: {} },
+    ] as unknown as import('@xyflow/react').Node[];
+    const edges = [
+      { id: 'e1', source: 'feed-1', target: 'pfr-1' },
+      { id: 'e2', source: 'pfr-1',  target: 'prod-1' },
+    ] as unknown as import('@xyflow/react').Edge[];
+
+    const result = solveNetwork(nodes, edges, params);
+    expect(result).not.toBeNull();
+    const Ca_exact = Math.exp(-1.0 * 2.0);  // Ca0 * exp(-k*tau)
+    const Xa_exact = 1 - Ca_exact;
+    expect(Math.abs(result!.finalConversion - Xa_exact)).toBeLessThan(1e-4);
+    // Profile has 201 points (resampled onto uniform grid)
+    expect(result!.segments[0].profile.length).toBe(201);
+  });
+});
+
 describe('solveNetwork — Wegstein vs Direct convergence (F13.1)', () => {
   // Tight recycle loop: Feed → Mixer → CSTR(τ=2,k=1) → Splitter(50% recycle) → Product
   // Direct damping converges at ~0.5^n rate (~29 iters); Wegstein extrapolates to ~5 iters.
