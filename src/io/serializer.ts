@@ -59,6 +59,10 @@ export function deserializeState(json: string): SavedState | null {
     if (!(typeof p.k3 === 'number')) {
       s.params = { ...s.params, k3: 0.1 };
     }
+    // Back-compat: older saves lack Cb0
+    if (!(typeof p.Cb0 === 'number')) {
+      s.params = { ...s.params, Cb0: 1.0 };
+    }
     return s;
   } catch {
     return null;

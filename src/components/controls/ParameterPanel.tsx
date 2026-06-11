@@ -13,8 +13,9 @@ const kineticsOptions = PRESETS
 const modeOptions: { value: ReactionMode; label: string }[] = [
   { value: 'single',   label: 'Single' },
   { value: 'series',   label: 'Series A→R→S' },
-  { value: 'series3',  label: 'A→R→S→T' },
-  { value: 'parallel', label: 'Parallel A→R/A→S' },
+  { value: 'series3',         label: 'A→R→S→T' },
+  { value: 'series-parallel', label: 'A+B→R+B→S' },
+  { value: 'parallel',        label: 'Parallel A→R/A→S' },
   { value: 'custom',   label: 'Custom…' },
 ];
 
@@ -207,6 +208,13 @@ export default function ParameterPanel() {
             onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) updateParams({ Ca0: Math.max(0.1, Math.min(100, v)) }); }}
             className="w-20" />
         </ParamRow>
+        {params.reactionMode === 'series-parallel' && (
+          <ParamRow label="C_B₀" unit="mol/L">
+            <Input type="number" min="0.1" max="100" step="0.1" value={params.Cb0}
+              onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) updateParams({ Cb0: Math.max(0.1, Math.min(100, v)) }); }}
+              className="w-20" />
+          </ParamRow>
+        )}
         <ParamRow label="T feed" unit="K">
           <Input type="number" min="200" max="600" step="1" value={params.T_feed}
             onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) updateParams({ T_feed: Math.max(200, Math.min(600, v)) }); }}

@@ -31,4 +31,5 @@ export interface ChemistryModel {
   reactions: ReactionSet;
   thermo: ThermoModel;
   keyReactantId: SpeciesId;
+  initialConcentrations?: Record<SpeciesId, number>;
 }

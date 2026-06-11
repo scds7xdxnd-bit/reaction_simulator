@@ -248,6 +248,12 @@ export const cstrModel: UnitModel = (
   chemistry: ChemistryModel
 ): UnitResult => {
   const C_in = toConc(inlet, params.Ca0);
+  // Seed species not present in the inlet stream (e.g. co-reactant B for series-parallel mode)
+  if (chemistry.initialConcentrations) {
+    for (const [id, c] of Object.entries(chemistry.initialConcentrations)) {
+      if (!(id in C_in)) C_in[id] = c;
+    }
+  }
   const T_in = inlet.T;
   const reactions = chemistry.reactions;
 
@@ -313,6 +319,12 @@ export const pfrModel: UnitModel = (
   chemistry: ChemistryModel
 ): UnitResult => {
   const C_in = toConc(inlet, params.Ca0);
+  // Seed species not present in the inlet stream (e.g. co-reactant B for series-parallel mode)
+  if (chemistry.initialConcentrations) {
+    for (const [id, c] of Object.entries(chemistry.initialConcentrations)) {
+      if (!(id in C_in)) C_in[id] = c;
+    }
+  }
   const T_in = inlet.T;
   const { reactions, species, thermo } = chemistry;
   const speciesIds = species.map((s) => s.id);

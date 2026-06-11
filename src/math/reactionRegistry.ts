@@ -244,6 +244,48 @@ const parallelPreset: ReactionPreset = {
   computeDa: (k, tau) => k * tau,
 };
 
+const seriesParallelPreset: ReactionPreset = {
+  id: 'series-parallel',
+  label: 'A+B→R, R+B→S, S+B→T  (series-parallel)',
+  mode: 'series-parallel',
+  isSingle: false,
+  uiLabel: 'Series-Parallel A+B→R',
+
+  buildSpecies: () => [
+    { id: 'A', label: 'Reactant A' },
+    { id: 'B', label: 'Reactant B' },
+    { id: 'R', label: 'Product R' },
+    { id: 'S', label: 'Product S' },
+    { id: 'T', label: 'Product T' },
+  ],
+
+  buildReactions: (params: SimulationParams): ReactionSet => [
+    {
+      id: 'rxn-1',
+      label: 'A + B → R',
+      stoichiometry: { A: -1, B: -1, R: +1, S: 0, T: 0 },
+      rateLaw: (C, T, kP) => arrhenius(kP['k'] ?? 0, kP['Ea'] ?? 0, kP['T_ref'] ?? 300, T) * (C['A'] ?? 0) * (C['B'] ?? 0),
+      kineticParams: { k: params.k, Ea: params.Ea, T_ref: params.T_ref },
+    },
+    {
+      id: 'rxn-2',
+      label: 'R + B → S',
+      stoichiometry: { A: 0, B: -1, R: -1, S: +1, T: 0 },
+      rateLaw: (C, T, kP) => arrhenius(kP['k'] ?? 0, kP['Ea'] ?? 0, kP['T_ref'] ?? 300, T) * (C['R'] ?? 0) * (C['B'] ?? 0),
+      kineticParams: { k: params.k2, Ea: params.Ea, T_ref: params.T_ref },
+    },
+    {
+      id: 'rxn-3',
+      label: 'S + B → T',
+      stoichiometry: { A: 0, B: -1, R: 0, S: -1, T: +1 },
+      rateLaw: (C, T, kP) => arrhenius(kP['k'] ?? 0, kP['Ea'] ?? 0, kP['T_ref'] ?? 300, T) * (C['S'] ?? 0) * (C['B'] ?? 0),
+      kineticParams: { k: params.k3, Ea: params.Ea, T_ref: params.T_ref },
+    },
+  ],
+
+  computeDa: (k, tau, Ca0) => k * Ca0 * tau,
+};
+
 const series3Preset: ReactionPreset = {
   id: 'series3',
   label: 'A → R → S → T  (3-step series)',
@@ -381,9 +423,10 @@ export function getPreset(
   if (params.reactionMode === 'custom' && params.customReaction) {
     return buildCustomPreset(params.customReaction);
   }
-  if (params.reactionMode === 'series')   return seriesPreset;
-  if (params.reactionMode === 'series3')  return series3Preset;
-  if (params.reactionMode === 'parallel') return parallelPreset;
+  if (params.reactionMode === 'series')          return seriesPreset;
+  if (params.reactionMode === 'series3')         return series3Preset;
+  if (params.reactionMode === 'series-parallel') return seriesParallelPreset;
+  if (params.reactionMode === 'parallel')        return parallelPreset;
   switch (params.kinetics) {
     case 'first-order':          return firstOrderPreset;
     case 'second-order':         return secondOrderPreset;

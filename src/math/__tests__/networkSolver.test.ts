@@ -63,6 +63,7 @@ describe('solveNetwork — series3 preset (A→R→S→T)', () => {
       k: 0.5,
       k2: 0.3,
       k3: 0.1,
+      Cb0: 1.0,
       Keq_ref: 4,
       Ca0: 1.0,
       Cr0_fraction: 0,
@@ -105,6 +106,7 @@ describe('solveNetwork — parallel network fixes', () => {
     k: 0.5,
     k2: 0,
     k3: 0,
+    Cb0: 1.0,
     Keq_ref: 10,
     Ca0: 1.0,
     Cr0_fraction: 0,
@@ -160,5 +162,49 @@ describe('solveNetwork — parallel network fixes', () => {
     expect(() => solveNetwork(nodes, edges, baseParams)).not.toThrow();
     const result = solveNetwork(nodes, edges, baseParams);
     expect(result).not.toBeNull();
+  });
+});
+
+describe('solveNetwork — series-parallel preset (A+B→R, R+B→S, S+B→T)', () => {
+  it('isothermal PFR, k1=k2=k3=0.5, Ca0=1, Cb0=2, τ=2: B not fully consumed, CR_out>0', () => {
+    const params: SimulationParams = {
+      reactionMode: 'series-parallel',
+      kinetics: 'first-order',
+      k: 0.5,
+      k2: 0.5,
+      k3: 0.5,
+      Cb0: 2.0,
+      Keq_ref: 4,
+      Ca0: 1.0,
+      Cr0_fraction: 0,
+      T_ref: 300,
+      Ea: 0,
+      delta_H: 0,
+      rho_Cp: 1,
+      T_feed: 300,
+      epsilon: 0,
+      Q_feed: 0,
+      customReaction: null,
+    };
+    const nodes = [
+      { id: 'feed-1', type: 'feed',    position: { x: 0, y: 0 },   data: {} },
+      { id: 'pfr-1',  type: 'pfr',     position: { x: 200, y: 0 }, data: { reactorType: 'PFR', tau: 2, thermalMode: 'isothermal', label: 'P1' } },
+      { id: 'prod-1', type: 'product', position: { x: 400, y: 0 }, data: {} },
+    ] as unknown as import('@xyflow/react').Node[];
+    const edges = [
+      { id: 'e1', source: 'feed-1', target: 'pfr-1' },
+      { id: 'e2', source: 'pfr-1',  target: 'prod-1' },
+    ] as unknown as import('@xyflow/react').Edge[];
+
+    const result = solveNetwork(nodes, edges, params);
+    expect(result).not.toBeNull();
+    expect(result!.converged).toBe(true);
+    const seg = result!.segments[0];
+    // A must be consumed; R must be produced as bimolecular product
+    expect(seg.Xa_out).toBeGreaterThan(0);
+    expect(seg.Cr_out).toBeGreaterThan(0);
+    // Ca0=1, Cb0=2 (excess B) — A is significantly consumed
+    expect(seg.Ca_out).toBeLessThan(params.Ca0);
+    expect(seg.Xa_out).toBeGreaterThan(0.3);
   });
 });
