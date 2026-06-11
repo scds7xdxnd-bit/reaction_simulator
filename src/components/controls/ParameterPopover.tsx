@@ -4,6 +4,7 @@ import { getPreset } from '../../math/reactionRegistry';
 import { Input } from '../ui';
 import { PARAM_SECTIONS } from '../../schema/parameterSchema';
 import type { ParamFieldDef } from '../../schema/parameterSchema';
+import ReactionModeCards from './ReactionModeCards';
 
 const STORAGE_KEY = 'rsi-param-sections';
 function loadSectionState(): Record<string, boolean> {
@@ -91,6 +92,32 @@ export default function ParameterPopover() {
         >
           ✕
         </button>
+      </div>
+
+      <div>
+        <div
+          onClick={() => toggleSection('reaction')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer',
+            borderTop: '1px solid var(--border)',
+            background: openSections['reaction'] ? '#faf5ff' : 'var(--surface)',
+            padding: '5px 12px',
+          }}
+        >
+          <span style={{ width: 3, height: 14, background: '#7c3aed', borderRadius: 2, flexShrink: 0 }} />
+          <span style={{ fontSize: 10, fontWeight: 700, color: '#7c3aed', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            Reaction
+          </span>
+          <svg width="8" height="5" viewBox="0 0 8 5" fill="none"
+            style={{ marginLeft: 2, transform: openSections['reaction'] ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>
+            <path d="M1 1L4 4L7 1" stroke="#7c3aed" strokeWidth="1.4" strokeLinecap="round" />
+          </svg>
+        </div>
+        {openSections['reaction'] && (
+          <div style={{ background: '#faf5ff', borderBottom: '1px solid var(--border)' }}>
+            <ReactionModeCards />
+          </div>
+        )}
       </div>
 
       {PARAM_SECTIONS.map((sec) => {
