@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ReactFlow,
   Background,
@@ -33,9 +33,11 @@ import MixerNode from './MixerNode';
 import SplitterNode from './SplitterNode';
 import ContextMenu from './ContextMenu';
 import CanvasContextMenu from './CanvasContextMenu';
+import CanvasAddMenu from './CanvasAddMenu';
 import { ValidationProvider } from '../../context/ValidationContext';
 import { useSimulatorStore } from '../../store/simulatorStore';
 import { useSimulation } from '../../hooks/useSimulation';
+import { useClipboardActions } from '../../hooks/useClipboardActions';
 
 const nodeTypes = {
   cstr: CSTRNode,
@@ -91,6 +93,10 @@ export default function ReactorCanvas() {
 
   const containerRef = useRef<HTMLDivElement>(null);
   const viewportRef  = useRef<Viewport>({ x: 0, y: 0, zoom: 1 });
+  const [addMenu, setAddMenu] = useState<{ screenX: number; screenY: number; flowPos: { x: number; y: number } } | null>(null);
+
+  const clipboard = useSimulatorStore((s) => s.clipboard);
+  const { pasteAt } = useClipboardActions();
 
   useSimulation();
 
@@ -213,9 +219,14 @@ export default function ReactorCanvas() {
     [storeSetNodes, openMenu, closeCanvasMenu]
   );
 
-  const onPaneClick = useCallback(() => {
+  const onPaneClick = useCallback((event: React.MouseEvent) => {
     closeMenu();
     closeCanvasMenu();
+    const rect = containerRef.current?.getBoundingClientRect() ?? { left: 0, top: 0 };
+    const { x: vx, y: vy, zoom } = viewportRef.current;
+    const flowX = (event.clientX - rect.left - vx) / zoom;
+    const flowY = (event.clientY - rect.top - vy) / zoom;
+    setAddMenu({ screenX: event.clientX, screenY: event.clientY, flowPos: { x: flowX, y: flowY } });
   }, [closeMenu, closeCanvasMenu]);
 
   // Recycle edge styling is DISPLAY-ONLY — never written back to `edges` state.
@@ -318,6 +329,20 @@ export default function ReactorCanvas() {
       </ReactFlow>
       <ContextMenu />
       <CanvasContextMenu />
+      {addMenu && (
+        <CanvasAddMenu
+          screenX={addMenu.screenX}
+          screenY={addMenu.screenY}
+          flowPos={addMenu.flowPos}
+          clipboard={clipboard}
+          onClose={() => setAddMenu(null)}
+          onAddReactor={(type, pos) => addReactor(type as Parameters<typeof addReactor>[0], pos)}
+          onAddUnit={(type, pos) => addUnit(type as Parameters<typeof addUnit>[0], pos)}
+          onAddFeed={addFeedNode}
+          onAddProduct={addProductNode}
+          onPasteAt={(fx, fy) => pasteAt(fx, fy)}
+        />
+      )}
     </div>
     </ValidationProvider>
   );
