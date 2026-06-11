@@ -67,6 +67,12 @@ export function deserializeState(json: string): SavedState | null {
     if (!(typeof p.k4 === 'number')) {
       s.params = { ...s.params, k4: 0.1 };
     }
+    // Back-compat: older saves lack speciesLabel on feed nodes
+    s.nodes = (s.nodes as Node[]).map((n: Node) =>
+      n.type === 'feed' && !(n.data as Record<string, unknown>).speciesLabel
+        ? { ...n, data: { ...n.data, speciesLabel: 'A' } }
+        : n
+    );
     return s;
   } catch {
     return null;

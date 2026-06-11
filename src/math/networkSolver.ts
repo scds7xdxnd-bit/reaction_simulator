@@ -97,13 +97,14 @@ function forwardPass(
     let outState: StreamState;
 
     if (node.type === 'feed') {
-      const fData = node.data as { Ca0?: number; T_feed?: number; flowrate?: number };
+      const fData = node.data as { Ca0?: number; T_feed?: number; flowrate?: number; speciesLabel?: string };
       outState = {
         Xa: 0,
         Ca:   fData.Ca0      ?? params.Ca0,
         Cr: 0, Cs: 0,
         flow: fData.flowrate ?? 1.0,
         T:    fData.T_feed   ?? params.T_feed,
+        speciesLabel: fData.speciesLabel,
       };
     } else if (node.type === 'product') {
       const inEdges = incomingEdges.get(nodeId) ?? [];

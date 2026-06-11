@@ -7,10 +7,14 @@ export interface StreamState {
   Cs: number;
   flow: number;
   T: number;
+  speciesLabel?: string; // primary reactant key in F (default 'A')
 }
 
+const BYPRODUCT_KEYS = new Set(['R', 'S', 'T', 'U']);
+
 export function streamToState(s: Stream, Ca0: number): StreamState {
-  const FA = s.F['A'] ?? 0;
+  const primary = 'A' in s.F ? 'A' : (Object.keys(s.F).find(k => !BYPRODUCT_KEYS.has(k)) ?? 'A');
+  const FA = s.F[primary] ?? 0;
   const FR = s.F['R'] ?? 0;
   const FS = s.F['S'] ?? 0;
   const totalF = FA + FR + FS;
@@ -19,13 +23,14 @@ export function streamToState(s: Stream, Ca0: number): StreamState {
   const Cr   = flow > 1e-12 ? FR / flow : 0;
   const Cs   = flow > 1e-12 ? FS / flow : 0;
   const Xa   = Ca0 > 1e-12 ? Math.max(0, Math.min(0.9999, 1 - Ca / Ca0)) : 0;
-  return { Xa, Ca, Cr, Cs, flow, T: s.T };
+  return { Xa, Ca, Cr, Cs, flow, T: s.T, speciesLabel: primary === 'A' ? undefined : primary };
 }
 
 export function stateToStream(s: StreamState): Stream {
+  const primary = s.speciesLabel ?? 'A';
   return {
     F: {
-      'A': Math.max(0, s.Ca * s.flow),
+      [primary]: Math.max(0, s.Ca * s.flow),
       'R': Math.max(0, s.Cr * s.flow),
       'S': Math.max(0, s.Cs * s.flow),
     },

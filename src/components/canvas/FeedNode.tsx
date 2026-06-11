@@ -7,6 +7,7 @@ interface FeedData {
   T_feed?: number;
   flowrate?: number;
   label?: string;
+  speciesLabel?: string;
 }
 
 type FeedNodeProps = NodeProps & { data: FeedData };

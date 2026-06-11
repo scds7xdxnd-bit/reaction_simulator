@@ -310,11 +310,13 @@ export const createTopologySlice: StateCreator<SimulatorStore, [], [], TopologyS
       if (trimmed.length > 50) trimmed.shift();
 
       const num = findLowestAvailable(state.nodes, 'Feed');
+      const feedCount = state.nodes.filter(n => n.type === 'feed').length;
+      const speciesLabel = String.fromCharCode(65 + feedCount); // 'A', 'B', 'C', ...
       const newNode: Node = {
         id: `feed-${num}`,
         type: 'feed',
         position,
-        data: { label: `Feed-${num}` },
+        data: { label: `Feed-${num}`, speciesLabel },
         draggable: true,
         deletable: true,
       };
