@@ -31,6 +31,7 @@ export interface SimulationParams {
   k2: number;
   k3: number;
   Cb0: number;
+  k4: number;
   Keq_ref: number;
   Ca0: number;
   Cr0_fraction: number;

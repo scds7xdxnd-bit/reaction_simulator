@@ -327,6 +327,55 @@ const series3Preset: ReactionPreset = {
   computeDa: (k, tau) => k * tau,
 };
 
+const denbighPreset: ReactionPreset = {
+  id: 'denbigh',
+  label: 'A→R (k₁), A→T (k₂), R→S (k₃), R→U (k₄)  (Denbigh)',
+  mode: 'denbigh',
+  isSingle: false,
+  uiLabel: 'Denbigh',
+
+  buildSpecies: () => [
+    { id: 'A', label: 'Reactant A' },
+    { id: 'R', label: 'Desired R' },
+    { id: 'S', label: 'Side S' },
+    { id: 'T', label: 'Side T' },
+    { id: 'U', label: 'Side U' },
+  ],
+
+  buildReactions: (params: SimulationParams): ReactionSet => [
+    {
+      id: 'rxn-1',
+      label: 'A → R',
+      stoichiometry: { A: -1, R: +1, S: 0, T: 0, U: 0 },
+      rateLaw: (C, T, kP) => arrhenius(kP['k'] ?? 0, kP['Ea'] ?? 0, kP['T_ref'] ?? 300, T) * (C['A'] ?? 0),
+      kineticParams: { k: params.k, Ea: params.Ea, T_ref: params.T_ref },
+    },
+    {
+      id: 'rxn-2',
+      label: 'A → T',
+      stoichiometry: { A: -1, R: 0, S: 0, T: +1, U: 0 },
+      rateLaw: (C, T, kP) => arrhenius(kP['k'] ?? 0, kP['Ea'] ?? 0, kP['T_ref'] ?? 300, T) * (C['A'] ?? 0),
+      kineticParams: { k: params.k2, Ea: params.Ea, T_ref: params.T_ref },
+    },
+    {
+      id: 'rxn-3',
+      label: 'R → S',
+      stoichiometry: { A: 0, R: -1, S: +1, T: 0, U: 0 },
+      rateLaw: (C, T, kP) => arrhenius(kP['k'] ?? 0, kP['Ea'] ?? 0, kP['T_ref'] ?? 300, T) * (C['R'] ?? 0),
+      kineticParams: { k: params.k3, Ea: params.Ea, T_ref: params.T_ref },
+    },
+    {
+      id: 'rxn-4',
+      label: 'R → U',
+      stoichiometry: { A: 0, R: -1, S: 0, T: 0, U: +1 },
+      rateLaw: (C, T, kP) => arrhenius(kP['k'] ?? 0, kP['Ea'] ?? 0, kP['T_ref'] ?? 300, T) * (C['R'] ?? 0),
+      kineticParams: { k: params.k4, Ea: params.Ea, T_ref: params.T_ref },
+    },
+  ],
+
+  computeDa: (k, tau) => k * tau,
+};
+
 // ---------------------------------------------------------------------------
 // Public lookup
 // ---------------------------------------------------------------------------
@@ -426,6 +475,7 @@ export function getPreset(
   if (params.reactionMode === 'series')          return seriesPreset;
   if (params.reactionMode === 'series3')         return series3Preset;
   if (params.reactionMode === 'series-parallel') return seriesParallelPreset;
+  if (params.reactionMode === 'denbigh')         return denbighPreset;
   if (params.reactionMode === 'parallel')        return parallelPreset;
   switch (params.kinetics) {
     case 'first-order':          return firstOrderPreset;

@@ -15,6 +15,7 @@ const modeOptions: { value: ReactionMode; label: string }[] = [
   { value: 'series',   label: 'Series A→R→S' },
   { value: 'series3',         label: 'A→R→S→T' },
   { value: 'series-parallel', label: 'A+B→R+B→S' },
+  { value: 'denbigh',         label: 'Denbigh' },
   { value: 'parallel',        label: 'Parallel A→R/A→S' },
   { value: 'custom',   label: 'Custom…' },
 ];
@@ -237,10 +238,17 @@ export default function ParameterPanel() {
               className="w-20" />
           </ParamRow>
         )}
-        {params.reactionMode === 'series3' && (
+        {(params.reactionMode === 'series3' || params.reactionMode === 'denbigh') && (
           <ParamRow label="k₃" unit={kUnit}>
             <Input type="number" min="0.01" max="10" step="0.01" value={params.k3}
               onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) updateParams({ k3: Math.max(0.01, Math.min(10, v)) }); }}
+              className="w-20" />
+          </ParamRow>
+        )}
+        {params.reactionMode === 'denbigh' && (
+          <ParamRow label="k₄" unit={kUnit}>
+            <Input type="number" min="0.01" max="10" step="0.01" value={params.k4}
+              onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) updateParams({ k4: Math.max(0.01, Math.min(10, v)) }); }}
               className="w-20" />
           </ParamRow>
         )}

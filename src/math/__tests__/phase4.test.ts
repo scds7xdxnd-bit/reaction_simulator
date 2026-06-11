@@ -16,6 +16,7 @@ const baseParams: SimulationParams = {
   k2: 0,
   k3: 0,
   Cb0: 1.0,
+  k4: 0,
   Keq_ref: 4.0,
   Ca0: 1.0,
   Cr0_fraction: 0.01,

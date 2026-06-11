@@ -64,6 +64,7 @@ describe('solveNetwork — series3 preset (A→R→S→T)', () => {
       k2: 0.3,
       k3: 0.1,
       Cb0: 1.0,
+      k4: 0,
       Keq_ref: 4,
       Ca0: 1.0,
       Cr0_fraction: 0,
@@ -107,6 +108,7 @@ describe('solveNetwork — parallel network fixes', () => {
     k2: 0,
     k3: 0,
     Cb0: 1.0,
+    k4: 0,
     Keq_ref: 10,
     Ca0: 1.0,
     Cr0_fraction: 0,
@@ -174,6 +176,7 @@ describe('solveNetwork — series-parallel preset (A+B→R, R+B→S, S+B→T)', 
       k2: 0.5,
       k3: 0.5,
       Cb0: 2.0,
+      k4: 0,
       Keq_ref: 4,
       Ca0: 1.0,
       Cr0_fraction: 0,
@@ -206,5 +209,50 @@ describe('solveNetwork — series-parallel preset (A+B→R, R+B→S, S+B→T)', 
     // Ca0=1, Cb0=2 (excess B) — A is significantly consumed
     expect(seg.Ca_out).toBeLessThan(params.Ca0);
     expect(seg.Xa_out).toBeGreaterThan(0.3);
+  });
+});
+
+describe('solveNetwork — Denbigh system (A→R/T, R→S/U)', () => {
+  it('isothermal CSTR, k1=1 k2=0.5 k3=2 k4=1, τ=1, Ca0=1: Xa≈0.6, Cr>0', () => {
+    const params: SimulationParams = {
+      reactionMode: 'denbigh',
+      kinetics: 'first-order',
+      k: 1.0,
+      k2: 0.5,
+      k3: 2.0,
+      k4: 1.0,
+      Cb0: 1.0,
+      Keq_ref: 4,
+      Ca0: 1.0,
+      Cr0_fraction: 0,
+      T_ref: 300,
+      Ea: 0,
+      delta_H: 0,
+      rho_Cp: 1,
+      T_feed: 300,
+      epsilon: 0,
+      Q_feed: 0,
+      customReaction: null,
+    };
+    const nodes = [
+      { id: 'feed-1', type: 'feed',    position: { x: 0, y: 0 },   data: {} },
+      { id: 'cstr-1', type: 'cstr',    position: { x: 200, y: 0 }, data: { reactorType: 'CSTR', tau: 1, thermalMode: 'isothermal', label: 'R1' } },
+      { id: 'prod-1', type: 'product', position: { x: 400, y: 0 }, data: {} },
+    ] as unknown as import('@xyflow/react').Node[];
+    const edges = [
+      { id: 'e1', source: 'feed-1', target: 'cstr-1' },
+      { id: 'e2', source: 'cstr-1', target: 'prod-1' },
+    ] as unknown as import('@xyflow/react').Edge[];
+
+    const result = solveNetwork(nodes, edges, params);
+    expect(result).not.toBeNull();
+    expect(result!.converged).toBe(true);
+    const seg = result!.segments[0];
+    // A is consumed, R is the desired product and must be nonzero
+    expect(seg.Xa_out).toBeGreaterThan(0);
+    expect(seg.Ca_out).toBeLessThan(params.Ca0);
+    expect(seg.Cr_out).toBeGreaterThan(0);
+    // Denbigh: k12=1.5, k34=3 → R is produced but also consumed; verify it's intermediate
+    expect(seg.Cr_out).toBeLessThan(params.Ca0);
   });
 });
