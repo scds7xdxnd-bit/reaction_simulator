@@ -39,6 +39,7 @@ const PURE_FILES = [
   'src/math/equilibrium.ts',
   'src/math/rtdModel.ts',
   'src/math/equationParser.ts',
+  'src/math/units.ts',
 ] as const;
 
 describe('purity invariants — zero store/React runtime imports', () => {
