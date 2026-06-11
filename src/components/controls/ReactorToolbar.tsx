@@ -137,7 +137,7 @@ export default function ReactorToolbar() {
   const [exportOpen, setExportOpen] = useState(false);
 
   return (
-    <div className="w-[72px] h-full bg-[#ffffff] border-r border-[#dde3f0] flex flex-col items-center pt-2 gap-2 pb-2">
+    <div className="w-[72px] h-full bg-[#ffffff] border-r border-[#dde3f0] flex flex-col items-center pt-2 gap-1 pb-2">
       <div
         className="flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing"
         draggable
@@ -149,15 +149,15 @@ export default function ReactorToolbar() {
         <div
           className="flex items-center justify-center rounded-md border"
           style={{
-            width: 44,
-            height: 44,
+            width: 32,
+            height: 32,
             borderColor: '#2563eb',
             background: '#eff6ff',
           }}
         >
           <CstrIcon />
         </div>
-        <span className="text-[10px] font-medium text-[#2563eb] uppercase tracking-wider">
+        <span className="text-[8px] font-medium text-[#2563eb] uppercase tracking-wider">
           CSTR
         </span>
       </div>
@@ -173,15 +173,15 @@ export default function ReactorToolbar() {
         <div
           className="flex items-center justify-center rounded-md border"
           style={{
-            width: 44,
-            height: 44,
+            width: 32,
+            height: 32,
             borderColor: '#d97706',
             background: '#fffbeb',
           }}
         >
           <PfrIcon />
         </div>
-        <span className="text-[10px] font-medium text-[#d97706] uppercase tracking-wider">
+        <span className="text-[8px] font-medium text-[#d97706] uppercase tracking-wider">
           PFR
         </span>
       </div>
@@ -196,11 +196,11 @@ export default function ReactorToolbar() {
       >
         <div
           className="flex items-center justify-center rounded-md border"
-          style={{ width: 44, height: 44, borderColor: '#be123c', background: '#fff1f2' }}
+          style={{ width: 32, height: 32, borderColor: '#be123c', background: '#fff1f2' }}
         >
           <BatchIcon />
         </div>
-        <span className="text-[10px] font-medium uppercase tracking-wider" style={{ color: '#be123c' }}>
+        <span className="text-[8px] font-medium uppercase tracking-wider" style={{ color: '#be123c' }}>
           Batch
         </span>
       </div>
@@ -215,12 +215,12 @@ export default function ReactorToolbar() {
       >
         <div
           className="flex items-center justify-center rounded-md border"
-          style={{ width: 44, height: 44, borderColor: '#0369a1', background: '#e0f2fe' }}
+          style={{ width: 32, height: 32, borderColor: '#0369a1', background: '#e0f2fe' }}
         >
           <SemibatchIcon />
         </div>
-        <span className="text-[10px] font-medium uppercase tracking-wider" style={{ color: '#0369a1' }}>
-          S-Batch
+        <span className="text-[8px] font-medium uppercase tracking-wider" style={{ color: '#0369a1' }}>
+          SB
         </span>
       </div>
 
@@ -234,12 +234,12 @@ export default function ReactorToolbar() {
       >
         <div
           className="flex items-center justify-center rounded-md border"
-          style={{ width: 44, height: 44, borderColor: '#7c2d12', background: '#fef3e2' }}
+          style={{ width: 32, height: 32, borderColor: '#7c2d12', background: '#fef3e2' }}
         >
           <FixedBedIcon />
         </div>
-        <span className="text-[10px] font-medium uppercase tracking-wider" style={{ color: '#7c2d12' }}>
-          F-Bed
+        <span className="text-[8px] font-medium uppercase tracking-wider" style={{ color: '#7c2d12' }}>
+          FB
         </span>
       </div>
 
@@ -254,15 +254,15 @@ export default function ReactorToolbar() {
         <div
           className="flex items-center justify-center rounded-md border"
           style={{
-            width: 44,
-            height: 44,
+            width: 32,
+            height: 32,
             borderColor: '#059669',
             background: '#ecfdf5',
           }}
         >
           <MixerIcon />
         </div>
-        <span className="text-[10px] font-medium text-[#059669] uppercase tracking-wider">
+        <span className="text-[8px] font-medium text-[#059669] uppercase tracking-wider">
           Mixer
         </span>
       </div>
@@ -278,15 +278,15 @@ export default function ReactorToolbar() {
         <div
           className="flex items-center justify-center rounded-md border"
           style={{
-            width: 44,
-            height: 44,
+            width: 32,
+            height: 32,
             borderColor: '#7c3aed',
             background: '#f5f3ff',
           }}
         >
           <SplitterIcon />
         </div>
-        <span className="text-[10px] font-medium text-[#7c3aed] uppercase tracking-wider">
+        <span className="text-[8px] font-medium text-[#7c3aed] uppercase tracking-wider">
           Split
         </span>
       </div>
@@ -301,7 +301,7 @@ export default function ReactorToolbar() {
         style={{ background: paramsOpen ? '#eff6ff' : 'transparent' }}
       >
         <div className="flex items-center justify-center rounded-md border"
-          style={{ width: 44, height: 36, borderColor: paramsOpen ? '#2563eb' : '#dde3f0', background: paramsOpen ? '#eff6ff' : 'var(--surface)' }}>
+          style={{ width: 32, height: 28, borderColor: paramsOpen ? '#2563eb' : '#dde3f0', background: paramsOpen ? '#eff6ff' : 'var(--surface)' }}>
           <Settings size={18} color={paramsOpen ? '#2563eb' : '#374151'} />
         </div>
         <span style={{ fontSize: 9, color: paramsOpen ? '#2563eb' : '#6b7280', fontWeight: 500 }}>Params</span>
@@ -319,11 +319,11 @@ export default function ReactorToolbar() {
       >
         <div
           className="flex items-center justify-center rounded-md border"
-          style={{ width: 44, height: 44, borderColor: '#6b7280', background: '#f9fafb' }}
+          style={{ width: 32, height: 32, borderColor: '#6b7280', background: '#f9fafb' }}
         >
           <FeedIcon />
         </div>
-        <span className="text-[10px] font-medium text-[#6b7280] uppercase tracking-wider">
+        <span className="text-[8px] font-medium text-[#6b7280] uppercase tracking-wider">
           Feed
         </span>
       </div>
@@ -338,48 +338,47 @@ export default function ReactorToolbar() {
       >
         <div
           className="flex items-center justify-center rounded-md border"
-          style={{ width: 44, height: 44, borderColor: '#16a34a', background: '#f0fdf4' }}
+          style={{ width: 32, height: 32, borderColor: '#16a34a', background: '#f0fdf4' }}
         >
           <ProductIcon />
         </div>
-        <span className="text-[10px] font-medium text-[#16a34a] uppercase tracking-wider">
+        <span className="text-[8px] font-medium text-[#16a34a] uppercase tracking-wider">
           Product
         </span>
       </div>
 
-      <div className="mt-auto" />
-      <Divider className="w-12 mb-1" />
+      <Divider className="w-10 mt-auto" />
 
       <button
         onClick={handleSave}
         title="Save flowsheet"
-        className="flex flex-col items-center gap-0.5 w-16 py-1.5 rounded-md
+        className="flex flex-col items-center gap-0.5 w-[52px] py-1.5 rounded-md
                    hover:bg-[#f1f5f9] transition-colors"
       >
-        <Save size={16} color="#374151" />
-        <span style={{ fontSize: 9, color: '#6b7280', fontWeight: 500 }}>Save</span>
+        <Save size={14} color="#374151" />
+        <span style={{ fontSize: 7.5, color: '#6b7280', fontWeight: 500 }}>Save</span>
       </button>
 
       <button
         onClick={handleLoad}
         title="Load flowsheet"
-        className="flex flex-col items-center gap-0.5 w-16 py-1.5 rounded-md
+        className="flex flex-col items-center gap-0.5 w-[52px] py-1.5 rounded-md
                    hover:bg-[#f1f5f9] transition-colors"
       >
-        <FolderOpen size={16} color="#374151" />
-        <span style={{ fontSize: 9, color: '#6b7280', fontWeight: 500 }}>Load</span>
+        <FolderOpen size={14} color="#374151" />
+        <span style={{ fontSize: 7.5, color: '#6b7280', fontWeight: 500 }}>Load</span>
       </button>
 
-      <div style={{ position: 'relative' }} className="mb-4">
+      <div style={{ position: 'relative' }} className="mb-1">
         <button
           onClick={() => setExamplesOpen((v) => !v)}
           title="Load example"
-          className="flex flex-col items-center gap-0.5 w-16 py-1.5 rounded-md
+          className="flex flex-col items-center gap-0.5 w-[52px] py-1.5 rounded-md
                      hover:bg-[#f1f5f9] transition-colors"
           style={examplesOpen ? { background: '#eff6ff' } : {}}
         >
-          <BookOpen size={16} color="#374151" />
-          <span style={{ fontSize: 9, color: '#6b7280', fontWeight: 500 }}>Examples</span>
+          <BookOpen size={14} color="#374151" />
+          <span style={{ fontSize: 7.5, color: '#6b7280', fontWeight: 500 }}>Examples</span>
         </button>
 
         {examplesOpen && (
@@ -412,17 +411,17 @@ export default function ReactorToolbar() {
         )}
       </div>
 
-      <div style={{ position: 'relative' }} className="mb-2">
+      <div style={{ position: 'relative' }} className="mb-1">
         <button
           onClick={() => setExportOpen((v) => !v)}
           title="Export"
           disabled={!hasResult}
-          className="flex flex-col items-center gap-0.5 w-16 py-1.5 rounded-md
+          className="flex flex-col items-center gap-0.5 w-[52px] py-1.5 rounded-md
                      hover:bg-[#f1f5f9] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           style={exportOpen ? { background: '#f0fdf4' } : {}}
         >
-          <Download size={16} color="#374151" />
-          <span style={{ fontSize: 9, color: '#6b7280', fontWeight: 500 }}>Export</span>
+          <Download size={14} color="#374151" />
+          <span style={{ fontSize: 7.5, color: '#6b7280', fontWeight: 500 }}>Export</span>
         </button>
 
         {exportOpen && hasResult && (
