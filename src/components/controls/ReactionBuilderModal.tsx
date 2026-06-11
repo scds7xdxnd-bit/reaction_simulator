@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { CustomSpecies, CustomReaction, RateType } from '../../types/simulation';
 import { useSimulatorStore } from '../../store/simulatorStore';
 import { formatEquation } from '../../math/formatEquation';
@@ -84,6 +84,24 @@ export default function ReactionBuilderModal({ onClose }: { onClose: () => void 
   const [savedPresets, setSavedPresets] = useState<SavedPreset[]>(loadPresets);
   const [presetName, setPresetName] = useState('');
   const [showSaveInput, setShowSaveInput] = useState(false);
+
+  // Sync n_[label] order keys in rateParams when species or rateType changes
+  useEffect(() => {
+    if (rateType !== 'power-law') return;
+    setRateParams((prev) => {
+      const updated = { ...prev };
+      const reactantLabels = new Set(
+        species.filter((s) => s.role === 'reactant').map((s) => s.label)
+      );
+      Object.keys(updated).forEach((key) => {
+        if (key.startsWith('n_') && !reactantLabels.has(key.slice(2))) delete updated[key];
+      });
+      reactantLabels.forEach((label) => {
+        if (!(`n_${label}` in updated)) updated[`n_${label}`] = 1;
+      });
+      return updated;
+    });
+  }, [species, rateType]);
 
   const rateDef = RATE_TYPES.find((r) => r.value === rateType)!;
   const error = validate(species);
@@ -303,6 +321,24 @@ export default function ReactionBuilderModal({ onClose }: { onClose: () => void 
                     onChange={(e) => {
                       const v = parseFloat(e.target.value);
                       if (!isNaN(v)) setRateParams((prev) => ({ ...prev, [p.key]: v }));
+                    }}
+                    style={{
+                      width: 64, fontSize: 11,
+                      background: 'var(--surface-raised)', border: '1px solid var(--border)',
+                      borderRadius: 4, padding: '3px 6px', color: 'var(--text-primary)', outline: 'none',
+                    }}
+                  />
+                </div>
+              ))}
+              {rateType === 'power-law' && species.filter((s) => s.role === 'reactant').map((sp) => (
+                <div key={`n_${sp.label}`} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'monospace' }}>n_{sp.label} (order)</span>
+                  <input
+                    type="number" step={0.1} min={0}
+                    value={rateParams[`n_${sp.label}`] ?? 1}
+                    onChange={(e) => {
+                      const v = parseFloat(e.target.value);
+                      if (!isNaN(v)) setRateParams((prev) => ({ ...prev, [`n_${sp.label}`]: v }));
                     }}
                     style={{
                       width: 64, fontSize: 11,

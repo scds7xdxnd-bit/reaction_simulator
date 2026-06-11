@@ -297,7 +297,7 @@ export function buildCustomPreset(cr: CustomReaction): ReactionPreset {
     // Power law
     rateLawFn = (C, T) => {
       const k_eff = arrhenius(rp['k'] ?? 0.5, rp['Ea'] ?? 0, rp['T_ref'] ?? 300, T);
-      return k_eff * reactants.reduce((acc, sp) => acc * Math.max(C[sp.label] ?? 0, 0) ** sp.stoich, 1);
+      return k_eff * reactants.reduce((acc, sp) => acc * Math.max(C[sp.label] ?? 0, 0) ** (rp[`n_${sp.label}`] ?? sp.stoich), 1);
     };
   }
 
