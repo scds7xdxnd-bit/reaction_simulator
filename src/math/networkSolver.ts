@@ -11,7 +11,7 @@ import { buildLevenspielCurve } from './kinetics';
 import { streamToState, annotateStream } from './streamBridge';
 import { buildChemistry } from './chemistryFactory';
 import { getPreset } from './reactionRegistry';
-import { cstrModel, pfrModel, sideFeedPFR, catalyticPFR, type UnitParams, type SideFeedParams, type CatalyticPFRParams } from './unitModels';
+import { cstrModel, pfrModel, sideFeedPFR, catalyticPFR, hxModel, type UnitParams, type SideFeedParams, type CatalyticPFRParams } from './unitModels';
 import { semibatchSolve } from './semibatchModel';
 import type { ProcessStream, AnnotatedStream } from '../types/stream';
 import { totalMolarFlow } from '../types/stream';
@@ -169,6 +169,17 @@ function forwardPass(
       if (unset[0]) streams.set(unset[0].id, scalePS(inlet, alpha));
       if (unset[1]) streams.set(unset[1].id, scalePS(inlet, 1 - alpha));
       outPS = inlet;
+    } else if (node.type === 'hx') {
+      const inlet  = getInletStream(incomingEdges.get(nodeId) ?? [], streams, params);
+      const hxData = node.data as { T_out?: number; Q_duty?: number };
+      const { outlet } = hxModel(inlet, {
+        mode: 'utility',
+        T_out:   hxData.T_out,
+        Q_duty:  hxData.Q_duty,
+        rho_Cp:  params.rho_Cp,
+        Ca0:     params.Ca0,
+      });
+      outPS = outlet as ProcessStream;
     } else {
       outPS = defaultPS(params);
     }

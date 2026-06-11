@@ -77,6 +77,12 @@ export function deserializeState(json: string): SavedState | null {
         ? { ...n, data: { ...n.data, speciesLabel: 'A' } }
         : n
     );
+    // Back-compat: HX nodes without mode field default to utility with T_out=350K
+    s.nodes = (s.nodes as Node[]).map((n: Node) =>
+      n.type === 'hx' && !(n.data as Record<string, unknown>).mode
+        ? { ...n, data: { ...n.data, mode: 'utility', T_out: (n.data as Record<string, unknown>).T_out ?? 350 } }
+        : n
+    );
     return s;
   } catch {
     return null;

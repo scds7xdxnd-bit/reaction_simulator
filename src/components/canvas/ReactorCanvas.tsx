@@ -31,6 +31,7 @@ import FeedNode from './FeedNode';
 import ProductNode from './ProductNode';
 import MixerNode from './MixerNode';
 import SplitterNode from './SplitterNode';
+import HXNode from './HXNode';
 import ContextMenu from './ContextMenu';
 import CanvasContextMenu from './CanvasContextMenu';
 import CanvasAddMenu from './CanvasAddMenu';
@@ -39,8 +40,8 @@ import { useSimulatorStore } from '../../store/simulatorStore';
 import { useSimulation } from '../../hooks/useSimulation';
 import { useClipboardActions } from '../../hooks/useClipboardActions';
 
-type GhostNodeType = 'CSTR' | 'PFR' | 'Batch' | 'Mixer' | 'Splitter' | 'Product';
-const GHOST_TYPES: GhostNodeType[] = ['CSTR', 'PFR', 'Batch', 'Mixer', 'Splitter', 'Product'];
+type GhostNodeType = 'CSTR' | 'PFR' | 'Batch' | 'Mixer' | 'Splitter' | 'HX' | 'Product';
+const GHOST_TYPES: GhostNodeType[] = ['CSTR', 'PFR', 'Batch', 'Mixer', 'Splitter', 'HX', 'Product'];
 
 const nodeTypes = {
   cstr: CSTRNode,
@@ -52,6 +53,7 @@ const nodeTypes = {
   product: ProductNode,
   mixer: MixerNode,
   splitter: SplitterNode,
+  hx: HXNode,
 };
 
 function MiniMapNode({ x, y, width, height, color }: { x: number; y: number; width: number; height: number; color?: string }) {
@@ -183,7 +185,7 @@ export default function ReactorCanvas() {
       const store = useSimulatorStore.getState();
       const type = cs.ghostType;
       if (type === 'CSTR' || type === 'PFR' || type === 'Batch') store.addReactor(type, pos);
-      else if (type === 'Mixer' || type === 'Splitter') store.addUnit(type as 'Mixer' | 'Splitter', pos);
+      else if (type === 'Mixer' || type === 'Splitter' || type === 'HX') store.addUnit(type as 'Mixer' | 'Splitter' | 'HX', pos);
       else store.addProductNode(pos);
 
       const newNode = useSimulatorStore.getState().nodes.find(n => n.selected);
@@ -266,6 +268,7 @@ export default function ReactorCanvas() {
         | 'Batch'
         | 'Mixer'
         | 'Splitter'
+        | 'HX'
         | 'Feed'
         | 'Product'
         | undefined;
@@ -453,6 +456,7 @@ export default function ReactorCanvas() {
             if (node.type === 'product') return '#16a34a';
             if (node.type === 'mixer') return '#059669';
             if (node.type === 'splitter') return '#7c3aed';
+            if (node.type === 'hx') return '#dc2626';
             return '#6b7280';
           }}
           nodeComponent={MiniMapNode}

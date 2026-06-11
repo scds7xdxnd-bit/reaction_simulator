@@ -95,6 +95,13 @@ export interface SplitterNodeData {
   alpha: number;
 }
 
+export interface HXNodeData {
+  label: string;
+  mode: 'utility';
+  T_out?: number;
+  Q_duty?: number;
+}
+
 export interface SelectivityAnalysis {
   SR: number;
   YR_curve: { Da: number; YR: number }[];

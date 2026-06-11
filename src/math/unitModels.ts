@@ -566,3 +566,44 @@ export const catalyticPFR: (
   const pfrParams: UnitParams = { ...params, tau: V_bed };
   return pfrModel(inlet, pfrParams, chemistry);
 };
+
+// ─── Heat Exchanger (utility mode) ─────────────────────────────────────────
+
+export interface HXParams {
+  mode: 'utility';
+  T_out?: number;    // set outlet temperature [K]  → model computes Q [kJ/s]
+  Q_duty?: number;   // set heat duty [kJ/s > 0 = heat in] → model computes T_out
+  rho_Cp: number;    // stream heat-capacity density [kJ/(L·K)], same as SimulationParams.rho_Cp
+  Ca0: number;       // reference total concentration [mol/L] to convert F→vol-flow
+}
+
+/**
+ * Utility-mode heat exchanger: changes stream temperature to a set-point or
+ * applies a fixed duty.  No reaction; species concentrations pass through unchanged.
+ *
+ * Energy balance (lumped, constant Cp):
+ *   Q [kJ/s] = rho_Cp * V̇ * (T_out − T_in)
+ *   V̇ = Σ F_i / Ca0   [L/s] (dilute-mixture approximation)
+ */
+export function hxModel(
+  inlet: Stream,
+  params: HXParams,
+): { outlet: Stream; Q: number } {
+  const totalF = Math.max(Object.values(inlet.F).reduce((s, v) => s + v, 0), 1e-9);
+  const Vdot   = totalF / Math.max(params.Ca0, 1e-9);   // [L/s]
+  const heatCap = params.rho_Cp * Vdot;                  // [kJ/K]
+
+  let T_out: number;
+  let Q: number;
+  if (params.T_out !== undefined) {
+    T_out = params.T_out;
+    Q     = heatCap * (T_out - inlet.T);
+  } else if (params.Q_duty !== undefined) {
+    Q     = params.Q_duty;
+    T_out = inlet.T + Q / heatCap;
+  } else {
+    T_out = inlet.T;
+    Q     = 0;
+  }
+  return { outlet: { ...inlet, T: T_out }, Q };
+}

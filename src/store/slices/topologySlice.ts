@@ -50,6 +50,7 @@ export interface TopologySlice {
   batchCount: number;
   mixerCount: number;
   splitterCount: number;
+  hxCount: number;
   feedCount: number;
   productCount: number;
   _history: { nodes: Node[]; edges: Edge[] }[];
@@ -81,6 +82,7 @@ export const createTopologySlice: StateCreator<SimulatorStore, [], [], TopologyS
     batchCount: 0,
     mixerCount: 0,
     splitterCount: 0,
+    hxCount: 0,
     feedCount: 1,
     productCount: 1,
     _history: [],
@@ -296,6 +298,15 @@ export const createTopologySlice: StateCreator<SimulatorStore, [], [], TopologyS
           data: { label: `Split-${num}`, alpha: 0.5 },
         };
         set({ nodes: [...state.nodes.map(n => ({ ...n, selected: false })), { ...newNode, selected: true }], splitterCount: Math.max(state.splitterCount, num), _history: trimmed, _historyIndex: trimmed.length - 1 });
+      } else if (unitType === 'HX') {
+        const num = findLowestAvailable(state.nodes, 'HX');
+        const newNode: Node = {
+          id: `hx-${num}`,
+          type: 'hx',
+          position,
+          data: { label: `HX-${num}`, mode: 'utility', T_out: 350 },
+        };
+        set({ nodes: [...state.nodes.map(n => ({ ...n, selected: false })), { ...newNode, selected: true }], hxCount: Math.max(state.hxCount, num), _history: trimmed, _historyIndex: trimmed.length - 1 });
       }
     },
 

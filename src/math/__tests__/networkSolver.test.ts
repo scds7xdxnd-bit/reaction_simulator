@@ -339,3 +339,68 @@ describe('solveNetwork — Wegstein vs Direct convergence (F13.1)', () => {
     expect(Math.abs(rDirect!.finalConversion - rWegstein!.finalConversion)).toBeLessThan(1e-4);
   });
 });
+
+describe('F14.1 — hxModel golden test (hand-calculated Q̇)', () => {
+  it('utility mode T_out: Q = rho_Cp * Vdot * ΔT, outlet T matches set-point', async () => {
+    const { hxModel } = await import('../unitModels');
+    const inlet = { F: { A: 1.0, R: 0.0 }, T: 300, P: 101325 };
+    const rho_Cp = 4.18; // kJ/(L·K)
+    const Ca0    = 1.0;  // mol/L → V̇ = 1.0/1.0 = 1.0 L/s
+    const { outlet, Q } = hxModel(inlet, { mode: 'utility', T_out: 400, rho_Cp, Ca0 });
+    // Q = 4.18 * 1.0 * (400 - 300) = 418 kJ/s
+    expect(outlet.T).toBeCloseTo(400, 8);
+    expect(Q).toBeCloseTo(418, 4);
+  });
+
+  it('utility mode Q_duty: T_out = T_in + Q / (rho_Cp * Vdot)', async () => {
+    const { hxModel } = await import('../unitModels');
+    const inlet = { F: { A: 1.0, R: 0.0 }, T: 300, P: 101325 };
+    const { outlet, Q } = hxModel(inlet, { mode: 'utility', Q_duty: 418, rho_Cp: 4.18, Ca0: 1.0 });
+    expect(outlet.T).toBeCloseTo(400, 4);
+    expect(Q).toBe(418);
+  });
+
+  it('pass-through when neither T_out nor Q_duty specified', async () => {
+    const { hxModel } = await import('../unitModels');
+    const inlet = { F: { A: 2.0 }, T: 350, P: 101325 };
+    const { outlet, Q } = hxModel(inlet, { mode: 'utility', rho_Cp: 4.18, Ca0: 1.0 });
+    expect(outlet.T).toBe(350);
+    expect(Q).toBe(0);
+  });
+
+  it('cooling (Q < 0) when T_out < T_in', async () => {
+    const { hxModel } = await import('../unitModels');
+    const inlet = { F: { A: 1.0 }, T: 400, P: 101325 };
+    const { Q } = hxModel(inlet, { mode: 'utility', T_out: 300, rho_Cp: 4.18, Ca0: 1.0 });
+    expect(Q).toBeLessThan(0);
+    expect(Q).toBeCloseTo(-418, 4);
+  });
+
+  it('solveNetwork routes through hx node and changes stream temperature', () => {
+    const params: SimulationParams = {
+      reactionMode: 'single', kinetics: 'first-order',
+      k: 0.5, k2: 0.3, k3: 0.1, Cb0: 1.0, k4: 0.1,
+      Keq_ref: 4.0, Ca0: 1.0, Cr0_fraction: 0.01,
+      T_ref: 300, Ea: 0, delta_H: 0, rho_Cp: 4.18,
+      T_feed: 300, epsilon: 0, Q_feed: 0,
+      recycleMethod: 'direct', customReaction: null,
+    };
+    const nodes: Node[] = [
+      { id: 'feed',    type: 'feed',    position: { x: 0,  y: 0 }, data: {} },
+      { id: 'hx-1',   type: 'hx',      position: { x: 200,y: 0 }, data: { label: 'HX-1', mode: 'utility', T_out: 400 } },
+      { id: 'cstr-1', type: 'cstr',     position: { x: 400,y: 0 }, data: { tau: 2, thermalMode: 'isothermal', Tc: 300, kappa_v: 0.5 } },
+      { id: 'product', type: 'product', position: { x: 600,y: 0 }, data: {} },
+    ];
+    const edges: Edge[] = [
+      { id: 'e1', source: 'feed',   target: 'hx-1',   sourceHandle: 'out', targetHandle: 'in' },
+      { id: 'e2', source: 'hx-1',   target: 'cstr-1', sourceHandle: 'out', targetHandle: 'in' },
+      { id: 'e3', source: 'cstr-1', target: 'product', sourceHandle: 'out', targetHandle: 'in' },
+    ];
+    const result = solveNetwork(nodes, edges, params);
+    expect(result).not.toBeNull();
+    // The HX should heat feed to 400K; CSTR runs isothermally at T_ref=300 (isothermal overrides inlet T)
+    // The stream entering CSTR should be 400K
+    const hxOutStream = result!.streams['e2'];
+    expect(hxOutStream?.T).toBeCloseTo(400, 4);
+  });
+});

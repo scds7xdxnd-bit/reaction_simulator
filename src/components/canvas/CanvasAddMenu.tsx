@@ -21,6 +21,7 @@ const REACTORS = [
   { label: 'FB',   color: '#7c2d12', bg: '#fef3e2', kind: 'reactor' as const, type: 'FixedBed' },
   { label: 'Mixer',color: '#059669', bg: '#ecfdf5', kind: 'unit'    as const },
   { label: 'Split',color: '#7c3aed', bg: '#f5f3ff', kind: 'unit'    as const, type: 'Splitter' },
+  { label: 'HX',   color: '#dc2626', bg: '#fff1f2', kind: 'unit'    as const },
 ];
 
 export default function CanvasAddMenu({

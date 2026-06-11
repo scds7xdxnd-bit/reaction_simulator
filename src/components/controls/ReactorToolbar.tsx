@@ -248,6 +248,33 @@ export default function ReactorToolbar() {
       </div>
       </Tooltip>
 
+      <Tooltip content="HX · Heat Exchanger / Heater-Cooler · sets T_out or Q̇">
+      <div
+        className="flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing"
+        draggable
+        onDragStart={(e) => onDragStart(e, 'HX')}
+        onClick={() => addUnit('HX', getClickPosition('hx'))}
+        style={{ width: 48 }}
+      >
+        <div
+          className="flex items-center justify-center rounded-md border"
+          style={{ width: 32, height: 32, borderColor: '#dc2626', background: '#fff1f2' }}
+        >
+          <svg width="26" height="20" viewBox="0 0 26 20" fill="none">
+            <rect x="1" y="5" width="24" height="10" rx="3" stroke="#dc2626" strokeWidth="1.5" fill="#fff1f2" />
+            <path d="M7 0 L7 5 M7 15 L7 20" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round" />
+            <path d="M13 0 L13 5 M13 15 L13 20" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round" />
+            <path d="M19 0 L19 5 M19 15 L19 20" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round" />
+            <path d="M3 10 L8 10" stroke="#dc2626" strokeWidth="1.3" strokeLinecap="round" />
+            <path d="M18 10 L23 10" stroke="#dc2626" strokeWidth="1.3" strokeLinecap="round" />
+          </svg>
+        </div>
+        <span className="text-[8px] font-medium uppercase tracking-wider" style={{ color: '#dc2626' }}>
+          HX
+        </span>
+      </div>
+      </Tooltip>
+
       <Tooltip content="Mixer · Flow combiner · merges 2+ streams">
       <div
         className="flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing"
