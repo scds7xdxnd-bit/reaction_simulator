@@ -1,8 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import type { CustomSpecies, CustomReaction, RateType } from '../../types/simulation';
 import { useSimulatorStore } from '../../store/simulatorStore';
 import { formatEquation } from '../../math/formatEquation';
 import { parseEquations, type ParsedReaction } from '../../math/equationParser';
+import { allSpeciesIds, getSpecies, deltaHrxn, keqFromThermo } from '../../math/thermoLibrary';
+import type { SpeciesLibraryEntry } from '../../types/chemistry';
 
 const RATE_TYPES: { value: RateType; label: string; params: { key: string; label: string; default: number }[] }[] = [
   {
@@ -133,6 +135,12 @@ export default function ReactionBuilderModal({ onClose, initialEqText }: { onClo
   const [presetName, setPresetName] = useState('');
   const [showSaveInput, setShowSaveInput] = useState(false);
 
+  // species library bindings: CustomSpecies.id → speciesLibrary entry id
+  const [bindings, setBindings] = useState<Record<string, string>>({});
+  const [searchQuery, setSearchQuery] = useState<Record<string, string>>({});
+  const [openSearch, setOpenSearch] = useState<string | null>(null);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+
   // Debounced textarea → parse → species
   useEffect(() => {
     if (!eqText.trim()) { setEqError(null); return; }
@@ -181,6 +189,22 @@ export default function ReactionBuilderModal({ onClose, initialEqText }: { onClo
     });
   }, [species, stepRateLaws[0]?.rateType]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Clean up stale bindings when species are removed
+  useEffect(() => {
+    const ids = new Set(species.map((s) => s.id));
+    setBindings((prev) => {
+      const next: Record<string, string> = {};
+      for (const [k, v] of Object.entries(prev)) if (ids.has(k)) next[k] = v;
+      return Object.keys(next).length === Object.keys(prev).length ? prev : next;
+    });
+    setSearchQuery((prev) => {
+      const next: Record<string, string> = {};
+      for (const [k, v] of Object.entries(prev)) if (ids.has(k)) next[k] = v;
+      return Object.keys(next).length === Object.keys(prev).length ? prev : next;
+    });
+    setBannerDismissed(false);
+  }, [species]);
+
   const updateStepRateLaw = (i: number, patch: Partial<StepRateLaw>) => {
     setStepRateLaws((prev) => {
       const next = [...prev];
@@ -194,6 +218,55 @@ export default function ReactionBuilderModal({ onClose, initialEqText }: { onClo
       return next;
     });
   };
+
+  // Derived: species library search and thermo
+  const allLibIds = useMemo(() => allSpeciesIds(), []);
+
+  const filterLib = useMemo(
+    () =>
+      (query: string): SpeciesLibraryEntry[] => {
+        const q = query.toLowerCase().trim();
+        if (q.length < 1) return [];
+        const out: SpeciesLibraryEntry[] = [];
+        for (const id of allLibIds) {
+          const s = getSpecies(id)!;
+          if (
+            s.id.toLowerCase().includes(q) ||
+            s.name.toLowerCase().includes(q) ||
+            s.formula.toLowerCase().includes(q)
+          ) {
+            out.push(s);
+            if (out.length >= 6) break;
+          }
+        }
+        return out;
+      },
+    [allLibIds],
+  );
+
+  const stoichForLib = useMemo((): Record<string, number> | null => {
+    if (species.length === 0) return null;
+    const result: Record<string, number> = {};
+    for (const sp of species) {
+      const libId = bindings[sp.id];
+      if (!libId) return null;
+      const nu = sp.role === 'reactant' ? -sp.stoich : sp.stoich;
+      result[libId] = (result[libId] ?? 0) + nu;
+    }
+    return result;
+  }, [species, bindings]);
+
+  const thermoBanner = useMemo((): { dH: number; Keq: number; T: number } | null => {
+    if (!stoichForLib) return null;
+    try {
+      const T = storeParams.T_ref ?? 300;
+      return {
+        dH: deltaHrxn(stoichForLib, 298.15) / 1000,
+        Keq: keqFromThermo(stoichForLib, T),
+        T,
+      };
+    } catch { return null; }
+  }, [stoichForLib]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const rateLaw0 = stepRateLaws[0] ?? defaultRateLaw();
   const error = validate(species);
@@ -370,26 +443,68 @@ export default function ReactionBuilderModal({ onClose, initialEqText }: { onClo
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {species.map((sp) => (
-                <div key={sp.id} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <input value={sp.label} maxLength={3}
-                    onChange={(e) => updateSpecies(sp.id, { label: e.target.value.toUpperCase() })}
-                    style={{ width: 44, fontSize: 12, fontWeight: 600, textAlign: 'center', background: 'var(--surface-raised)', border: '1px solid var(--border)', borderRadius: 4, padding: '3px 6px', color: 'var(--text-primary)', outline: 'none', fontFamily: 'monospace' }}
-                  />
-                  <select value={sp.role} onChange={(e) => updateSpecies(sp.id, { role: e.target.value as 'reactant' | 'product' })}
-                    style={{ fontSize: 11, background: 'var(--surface-raised)', border: '1px solid var(--border)', borderRadius: 4, padding: '3px 6px', color: 'var(--text-primary)', outline: 'none' }}>
-                    <option value="reactant">Reactant</option>
-                    <option value="product">Product</option>
-                  </select>
-                  <span style={{ fontSize: 10, color: 'var(--text-muted)', flexShrink: 0 }}>stoich</span>
-                  <input type="number" min={0.01} step={0.5} value={sp.stoich}
-                    onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v) && v > 0) updateSpecies(sp.id, { stoich: v }); }}
-                    style={{ width: 52, fontSize: 11, textAlign: 'right', background: 'var(--surface-raised)', border: '1px solid var(--border)', borderRadius: 4, padding: '3px 6px', color: 'var(--text-primary)', outline: 'none' }}
-                  />
-                  <button onClick={() => removeSpecies(sp.id)} disabled={species.length <= 2}
-                    style={{ fontSize: 13, color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', opacity: species.length <= 2 ? 0.3 : 1 }}>✕</button>
-                </div>
-              ))}
+              {species.map((sp) => {
+                const boundEntry = bindings[sp.id] ? getSpecies(bindings[sp.id]) : undefined;
+                const query = searchQuery[sp.id] ?? '';
+                const hits = openSearch === sp.id ? filterLib(query) : [];
+                return (
+                  <div key={sp.id}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <input value={sp.label} maxLength={3}
+                        onChange={(e) => updateSpecies(sp.id, { label: e.target.value.toUpperCase() })}
+                        style={{ width: 40, fontSize: 12, fontWeight: 600, textAlign: 'center', background: 'var(--surface-raised)', border: '1px solid var(--border)', borderRadius: 4, padding: '3px 5px', color: 'var(--text-primary)', outline: 'none', fontFamily: 'monospace', flexShrink: 0 }}
+                      />
+                      {/* Type-ahead library binding */}
+                      <div style={{ position: 'relative', flexShrink: 0 }}>
+                        {boundEntry ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 3, background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 4, padding: '2px 5px' }}>
+                            <span style={{ fontSize: 9, fontWeight: 700, fontFamily: 'monospace', color: '#15803d' }}>{boundEntry.id}</span>
+                            <span style={{ fontSize: 9, color: '#6b7280' }}>·{boundEntry.mw}g</span>
+                            <span style={{ fontSize: 9, color: '#6b7280' }}>·{boundEntry.dHf298}kJ</span>
+                            <button
+                              onClick={() => { setBindings((p) => { const n = { ...p }; delete n[sp.id]; return n; }); setBannerDismissed(false); }}
+                              style={{ fontSize: 10, color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', padding: '0 1px', lineHeight: 1 }}>×</button>
+                          </div>
+                        ) : (
+                          <input
+                            value={query}
+                            onChange={(e) => { setSearchQuery((p) => ({ ...p, [sp.id]: e.target.value })); setOpenSearch(sp.id); }}
+                            onFocus={() => setOpenSearch(sp.id)}
+                            onBlur={() => setTimeout(() => setOpenSearch(null), 160)}
+                            placeholder="bind…"
+                            style={{ width: 64, fontSize: 10, padding: '3px 5px', borderRadius: 4, background: 'var(--surface-raised)', border: '1px solid var(--border)', color: 'var(--text-muted)', outline: 'none' }}
+                          />
+                        )}
+                        {hits.length > 0 && (
+                          <div style={{ position: 'absolute', left: 0, top: '100%', marginTop: 2, zIndex: 500, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 6, boxShadow: '0 4px 16px rgba(0,0,0,0.14)', minWidth: 210 }}>
+                            {hits.map((h, hi) => (
+                              <button key={h.id}
+                                onMouseDown={() => { setBindings((p) => ({ ...p, [sp.id]: h.id })); setSearchQuery((p) => ({ ...p, [sp.id]: '' })); setOpenSearch(null); setBannerDismissed(false); }}
+                                style={{ display: 'block', width: '100%', textAlign: 'left', padding: '5px 10px', border: 'none', borderBottom: hi < hits.length - 1 ? '1px solid var(--border-subtle)' : 'none', background: 'none', cursor: 'pointer' }}>
+                                <span style={{ fontSize: 10, fontWeight: 700, fontFamily: 'monospace', color: '#2563eb' }}>{h.id}</span>
+                                <span style={{ fontSize: 10, color: 'var(--text-muted)', marginLeft: 5 }}>{h.name}</span>
+                                <span style={{ fontSize: 9, color: 'var(--text-muted)', marginLeft: 4 }}>({h.formula})</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <select value={sp.role} onChange={(e) => updateSpecies(sp.id, { role: e.target.value as 'reactant' | 'product' })}
+                        style={{ fontSize: 11, background: 'var(--surface-raised)', border: '1px solid var(--border)', borderRadius: 4, padding: '3px 5px', color: 'var(--text-primary)', outline: 'none' }}>
+                        <option value="reactant">Reactant</option>
+                        <option value="product">Product</option>
+                      </select>
+                      <span style={{ fontSize: 10, color: 'var(--text-muted)', flexShrink: 0 }}>stoich</span>
+                      <input type="number" min={0.01} step={0.5} value={sp.stoich}
+                        onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v) && v > 0) updateSpecies(sp.id, { stoich: v }); }}
+                        style={{ width: 50, fontSize: 11, textAlign: 'right', background: 'var(--surface-raised)', border: '1px solid var(--border)', borderRadius: 4, padding: '3px 5px', color: 'var(--text-primary)', outline: 'none' }}
+                      />
+                      <button onClick={() => removeSpecies(sp.id)} disabled={species.length <= 2}
+                        style={{ fontSize: 13, color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', opacity: species.length <= 2 ? 0.3 : 1 }}>✕</button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
             <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
               <button onClick={() => addSpecies('reactant')} style={{ fontSize: 10, padding: '3px 10px', borderRadius: 4, border: '1px solid var(--border)', background: 'var(--surface-raised)', color: 'var(--text-muted)', cursor: 'pointer' }}>+ Reactant</button>
@@ -413,6 +528,36 @@ export default function ReactionBuilderModal({ onClose, initialEqText }: { onClo
               )}
             </div>
           </div>
+
+          {/* Thermo banner — shows when all species are bound to library */}
+          {thermoBanner && !bannerDismissed && (
+            <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 6, padding: '8px 12px' }}>
+              <div style={{ fontSize: 10, color: '#15803d', fontWeight: 700, marginBottom: 4 }}>Library thermodynamics (computed)</div>
+              <div style={{ fontSize: 11, color: '#166534', fontFamily: 'monospace', marginBottom: 6 }}>
+                ΔH_rxn = {thermoBanner.dH >= 0 ? '+' : ''}{thermoBanner.dH.toFixed(1)} kJ/mol
+                {' · '}
+                Keq({Math.round(thermoBanner.T)}K) = {
+                  thermoBanner.Keq >= 1e4
+                    ? thermoBanner.Keq.toExponential(2)
+                    : thermoBanner.Keq >= 0.001
+                      ? thermoBanner.Keq.toFixed(3)
+                      : thermoBanner.Keq.toExponential(2)
+                }
+              </div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button
+                  onClick={() => { updateParams({ delta_H: thermoBanner.dH }); setBannerDismissed(true); }}
+                  style={{ fontSize: 10, padding: '3px 10px', borderRadius: 4, border: 'none', background: '#16a34a', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>
+                  Use computed
+                </button>
+                <button
+                  onClick={() => setBannerDismissed(true)}
+                  style={{ fontSize: 10, padding: '3px 10px', borderRadius: 4, border: '1px solid #86efac', background: 'none', color: '#15803d', cursor: 'pointer' }}>
+                  Keep manual
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Save as preset */}
           {showSaveInput ? (
