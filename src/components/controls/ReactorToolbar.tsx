@@ -3,7 +3,7 @@ import { Save, FolderOpen, BookOpen, Download, Settings } from 'lucide-react';
 import { useSaveFile, useLoadFile, useLoadExample } from '../../hooks/useFileIO';
 import { useExport } from '../../hooks/useExport';
 import { EXAMPLES } from '../../io/examples';
-import { Divider } from '../ui';
+import { Divider, Tooltip } from '../ui';
 import { useSimulatorStore } from '../../store/simulatorStore';
 
 function CstrIcon() {
@@ -138,12 +138,12 @@ export default function ReactorToolbar() {
 
   return (
     <div className="w-[72px] h-full bg-[#ffffff] border-r border-[#dde3f0] flex flex-col items-center pt-2 gap-1 pb-2">
+      <Tooltip content="CSTR · Continuous Stirred Tank Reactor · well-mixed, steady-state">
       <div
         className="flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing"
         draggable
         onDragStart={(e) => onDragStart(e, 'CSTR')}
         onClick={() => addReactor('CSTR', getClickPosition('cstr'))}
-        title="CSTR — click to add, or drag to position"
         style={{ width: 48 }}
       >
         <div
@@ -161,13 +161,14 @@ export default function ReactorToolbar() {
           CSTR
         </span>
       </div>
+      </Tooltip>
 
+      <Tooltip content="PFR · Plug Flow Reactor · tubular, no axial mixing">
       <div
         className="flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing"
         draggable
         onDragStart={(e) => onDragStart(e, 'PFR')}
         onClick={() => addReactor('PFR', getClickPosition('pfr'))}
-        title="PFR — click to add, or drag to position"
         style={{ width: 48 }}
       >
         <div
@@ -185,13 +186,14 @@ export default function ReactorToolbar() {
           PFR
         </span>
       </div>
+      </Tooltip>
 
+      <Tooltip content="Batch · Batch Reactor · closed vessel, time-based">
       <div
         className="flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing"
         draggable
         onDragStart={(e) => onDragStart(e, 'Batch')}
         onClick={() => addReactor('Batch', getClickPosition('batch'))}
-        title="Batch — click to add, or drag to position"
         style={{ width: 48 }}
       >
         <div
@@ -204,13 +206,14 @@ export default function ReactorToolbar() {
           Batch
         </span>
       </div>
+      </Tooltip>
 
+      <Tooltip content="SB · Semi-batch · continuous B feed into batch vessel">
       <div
         className="flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing"
         draggable
         onDragStart={(e) => onDragStart(e, 'Semibatch')}
         onClick={() => addReactor('Semibatch', getClickPosition('semibatch'))}
-        title="Semi-batch — click to add, or drag to position"
         style={{ width: 48 }}
       >
         <div
@@ -223,13 +226,14 @@ export default function ReactorToolbar() {
           SB
         </span>
       </div>
+      </Tooltip>
 
+      <Tooltip content="FB · Fixed-Bed Catalytic · W_cat basis, Ergun ΔP">
       <div
         className="flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing"
         draggable
         onDragStart={(e) => onDragStart(e, 'FixedBed')}
         onClick={() => addReactor('FixedBed', getClickPosition('fixedbed'))}
-        title="Fixed-bed — click to add, or drag to position"
         style={{ width: 48 }}
       >
         <div
@@ -242,13 +246,14 @@ export default function ReactorToolbar() {
           FB
         </span>
       </div>
+      </Tooltip>
 
+      <Tooltip content="Mixer · Flow combiner · merges 2+ streams">
       <div
         className="flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing"
         draggable
         onDragStart={(e) => onDragStart(e, 'Mixer')}
         onClick={() => addUnit('Mixer', getClickPosition('mixer'))}
-        title="Mixer — click to add, or drag to position"
         style={{ width: 48 }}
       >
         <div
@@ -266,13 +271,14 @@ export default function ReactorToolbar() {
           Mixer
         </span>
       </div>
+      </Tooltip>
 
+      <Tooltip content="Split · Flow splitter · splits by fraction α">
       <div
         className="flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing"
         draggable
         onDragStart={(e) => onDragStart(e, 'Splitter')}
         onClick={() => addUnit('Splitter', getClickPosition('splitter'))}
-        title="Splitter — click to add, or drag to position"
         style={{ width: 48 }}
       >
         <div
@@ -290,13 +296,14 @@ export default function ReactorToolbar() {
           Split
         </span>
       </div>
+      </Tooltip>
 
       <Divider className="w-12" />
 
+      <Tooltip content="Params · Global parameters panel">
       <button
         data-params-trigger
         onClick={() => setParamsOpen(!paramsOpen)}
-        title="Parameters"
         className="flex flex-col items-center gap-0.5 w-12 py-1 rounded-md transition-colors"
         style={{ background: paramsOpen ? '#eff6ff' : 'transparent' }}
       >
@@ -306,15 +313,16 @@ export default function ReactorToolbar() {
         </div>
         <span style={{ fontSize: 9, color: paramsOpen ? '#2563eb' : '#6b7280', fontWeight: 500 }}>Params</span>
       </button>
+      </Tooltip>
 
       <Divider className="w-12" />
 
+      <Tooltip content="Feed · Feed node · additional inlet stream">
       <div
         className="flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing"
         draggable
         onDragStart={(e) => onDragStart(e, 'Feed')}
         onClick={() => addFeedNode(getClickPosition('feed'))}
-        title="Feed — click to add, or drag to position"
         style={{ width: 48 }}
       >
         <div
@@ -327,13 +335,14 @@ export default function ReactorToolbar() {
           Feed
         </span>
       </div>
+      </Tooltip>
 
+      <Tooltip content="Product · Product node · additional outlet stream">
       <div
         className="flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing"
         draggable
         onDragStart={(e) => onDragStart(e, 'Product')}
         onClick={() => addProductNode(getClickPosition('product'))}
-        title="Product — click to add, or drag to position"
         style={{ width: 48 }}
       >
         <div
@@ -346,6 +355,7 @@ export default function ReactorToolbar() {
           Product
         </span>
       </div>
+      </Tooltip>
 
       <Divider className="w-10 mt-auto" />
 
