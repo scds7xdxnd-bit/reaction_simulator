@@ -85,15 +85,22 @@ function parsedToSpecies(step: ParsedReaction): CustomSpecies[] {
   ];
 }
 
-export default function ReactionBuilderModal({ onClose }: { onClose: () => void }) {
+export default function ReactionBuilderModal({ onClose, initialEqText }: { onClose: () => void; initialEqText?: string }) {
   const existing = useSimulatorStore((s) => s.params.customReaction);
+  const storeParams = useSimulatorStore((s) => s.params);
   const updateParams = useSimulatorStore((s) => s.updateParams);
 
   const initSpecies = existing?.species ?? DEFAULT_SPECIES;
   const initReversible = existing?.reversible ?? false;
-  const initText = formatEqText(initSpecies, initReversible);
+  const initText = initialEqText ?? formatEqText(initSpecies, initReversible);
 
-  const [species, setSpecies] = useState<CustomSpecies[]>(initSpecies);
+  const [species, setSpecies] = useState<CustomSpecies[]>(() => {
+    if (initialEqText) {
+      const steps = parseEquations(initialEqText);
+      return steps.length > 0 ? parsedToSpecies(steps[0]) : DEFAULT_SPECIES;
+    }
+    return initSpecies;
+  });
   const [reversible, setReversible] = useState(initReversible);
   const [Keq_custom, setKeq_custom] = useState(existing?.Keq_custom ?? 4.0);
 
@@ -101,10 +108,22 @@ export default function ReactionBuilderModal({ onClose }: { onClose: () => void 
   const [eqError, setEqError] = useState<string | null>(null);
   const [parsedSteps, setParsedSteps] = useState<ParsedReaction[]>(() => parseEquations(initText));
   const [stepRateLaws, setStepRateLaws] = useState<StepRateLaw[]>(() => {
+    const initSteps = parseEquations(initText);
+    if (initialEqText) {
+      const kValues = [storeParams.k, storeParams.k2, storeParams.k3, storeParams.k4];
+      return initSteps.map((step, i) => ({
+        rateType: 'power-law' as RateType,
+        rateParams: {
+          k: kValues[i] ?? storeParams.k,
+          Ea: storeParams.Ea,
+          T_ref: storeParams.T_ref,
+          ...Object.fromEntries(step.reactants.map((t) => [`n_${t.species}`, 1])),
+        },
+      }));
+    }
     const step0 = existing
       ? { rateType: existing.rateType, rateParams: existing.rateParams }
       : defaultRateLaw();
-    const initSteps = parseEquations(initText);
     return [step0, ...initSteps.slice(1).map(() => defaultRateLaw())];
   });
   const [openSteps, setOpenSteps] = useState<Record<number, boolean>>({ 0: true });
@@ -193,7 +212,8 @@ export default function ReactionBuilderModal({ onClose }: { onClose: () => void 
 
   const handleSave = () => {
     if (error) return;
-    const cr: CustomReaction = { species, rateType: rateLaw0.rateType, rateParams: rateLaw0.rateParams, reversible, Keq_custom: reversible ? Keq_custom : undefined };
+    const label = initialEqText ? `Based on ${parsedSteps.length} reaction${parsedSteps.length > 1 ? 's' : ''}` : undefined;
+    const cr: CustomReaction = { species, rateType: rateLaw0.rateType, rateParams: rateLaw0.rateParams, reversible, Keq_custom: reversible ? Keq_custom : undefined, label };
     updateParams({ customReaction: cr, reactionMode: 'custom' });
     onClose();
   };

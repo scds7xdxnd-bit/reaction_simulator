@@ -1,6 +1,7 @@
 import { lazy, Suspense, useState } from 'react';
 import { useSimulatorStore } from '../../store/simulatorStore';
 import type { ReactionMode, KineticsType } from '../../types/simulation';
+import { presetToText } from '../../math/reactionRegistry';
 
 const ReactionBuilderModal = lazy(() => import('./ReactionBuilderModal'));
 
@@ -138,13 +139,22 @@ export default function ReactionModeCards() {
   const params       = useSimulatorStore((s) => s.params);
   const updateParams = useSimulatorStore((s) => s.updateParams);
   const [showBuilder, setShowBuilder] = useState(false);
+  const [builderInitText, setBuilderInitText] = useState<string | undefined>(undefined);
+  const [hoveredMode, setHoveredMode] = useState<ReactionMode | null>(null);
 
   const handleSelect = (mode: ReactionMode) => {
     if (mode === 'custom') {
+      setBuilderInitText(undefined);
       setShowBuilder(true);
       return;
     }
     updateParams({ reactionMode: mode });
+  };
+
+  const handlePencil = (e: React.MouseEvent, mode: ReactionMode) => {
+    e.stopPropagation();
+    setBuilderInitText(presetToText(mode));
+    setShowBuilder(true);
   };
 
   return (
@@ -157,36 +167,53 @@ export default function ReactionModeCards() {
       }}>
         {MODES.map(({ mode, label }) => {
           const isSelected = params.reactionMode === mode;
+          const isHovered = hoveredMode === mode;
           return (
-            <button
+            <div
               key={mode}
-              onClick={() => handleSelect(mode)}
-              style={{
-                height: 76,
-                padding: '4px 6px 5px',
-                borderRadius: 6,
-                border: `1.5px solid ${isSelected ? '#2563eb' : '#dde3f0'}`,
-                background: isSelected ? '#eff6ff' : 'var(--surface)',
-                cursor: 'pointer',
-                textAlign: 'center',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                transition: 'border-color 0.12s, background 0.12s',
-              }}
+              style={{ position: 'relative' }}
+              onMouseEnter={() => setHoveredMode(mode)}
+              onMouseLeave={() => setHoveredMode(null)}
             >
-              <ModeSvg mode={mode} />
-              <span style={{
-                fontSize: 9,
-                fontWeight: 600,
-                color: isSelected ? '#2563eb' : '#374151',
-                lineHeight: 1.2,
-                marginTop: 2,
-              }}>
-                {label}
-              </span>
-            </button>
+              <button
+                onClick={() => handleSelect(mode)}
+                style={{
+                  width: '100%',
+                  height: 76,
+                  padding: '4px 6px 5px',
+                  borderRadius: 6,
+                  border: `1.5px solid ${isSelected ? '#2563eb' : '#dde3f0'}`,
+                  background: isSelected ? '#eff6ff' : 'var(--surface)',
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  transition: 'border-color 0.12s, background 0.12s',
+                }}
+              >
+                <ModeSvg mode={mode} />
+                <span style={{ fontSize: 9, fontWeight: 600, color: isSelected ? '#2563eb' : '#374151', lineHeight: 1.2, marginTop: 2 }}>
+                  {label}
+                </span>
+              </button>
+              {isHovered && mode !== 'custom' && (
+                <button
+                  onClick={(e) => handlePencil(e, mode)}
+                  title="Edit as custom reaction"
+                  style={{
+                    position: 'absolute', top: 3, right: 3,
+                    fontSize: 9, padding: '1px 4px', lineHeight: 1.4,
+                    background: '#7c3aed', color: '#fff',
+                    border: 'none', borderRadius: 3, cursor: 'pointer',
+                    zIndex: 1,
+                  }}
+                >
+                  ✎
+                </button>
+              )}
+            </div>
           );
         })}
       </div>
@@ -225,7 +252,7 @@ export default function ReactionModeCards() {
 
       {showBuilder && (
         <Suspense fallback={null}>
-          <ReactionBuilderModal onClose={() => setShowBuilder(false)} />
+          <ReactionBuilderModal onClose={() => setShowBuilder(false)} initialEqText={builderInitText} />
         </Suspense>
       )}
     </div>

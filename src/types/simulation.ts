@@ -18,4 +18,5 @@ export interface CustomReaction {
   rateParams: Record<string, number>;
   reversible?: boolean;
   Keq_custom?: number;
+  label?: string;
 }

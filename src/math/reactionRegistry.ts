@@ -485,3 +485,15 @@ export function getPreset(
     case 'gas-phase-1st-order':  return gasPhaseFirstOrderPreset;
   }
 }
+
+export function presetToText(mode: ReactionMode): string {
+  switch (mode) {
+    case 'single':          return 'A -> R';
+    case 'series':          return 'A -> R -> S';
+    case 'series3':         return 'A -> R -> S -> T';
+    case 'series-parallel': return 'A + B -> R\nR + B -> S';
+    case 'parallel':        return 'A -> R\nA -> S';
+    case 'denbigh':         return 'A -> R\nA -> T\nR -> S\nR -> U';
+    default:                return '';
+  }
+}
