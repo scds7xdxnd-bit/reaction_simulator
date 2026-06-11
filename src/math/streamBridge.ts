@@ -1,4 +1,4 @@
-import type { Stream, AnnotatedStream } from '../types/stream';
+import type { Stream, ProcessStream, AnnotatedStream } from '../types/stream';
 
 export interface StreamState {
   Xa: number;
@@ -53,6 +53,11 @@ export function annotateStream(
   desc?: string
 ): AnnotatedStream {
   return { ...s, streamLabel: label, streamDesc: desc };
+}
+
+// Adapter: ProcessStream → StreamState (Ca/Cr/Cs are plot-layer concerns only)
+export function toStreamState(ps: ProcessStream, Ca0: number): StreamState {
+  return streamToState(ps, Ca0);
 }
 
 export function _debugRoundTrip(s: Stream, Ca0: number): boolean {

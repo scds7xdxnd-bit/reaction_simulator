@@ -6,6 +6,11 @@ export interface Stream {
   P: number;
 }
 
+// Primary currency for all solver internals — extends Stream with optional phase info
+export interface ProcessStream extends Stream {
+  vaporFraction?: number;
+}
+
 export interface AnnotatedStream extends Stream {
   streamLabel?: string;
   streamDesc?: string;
