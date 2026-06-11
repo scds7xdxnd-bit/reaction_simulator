@@ -75,7 +75,12 @@ function evaluateRates(
   T: number,
   reactions: Reaction[]
 ): number[] {
-  return reactions.map((rxn) => rxn.rateLaw(C, T, rxn.kineticParams));
+  return reactions.map((rxn) => {
+    const missingReactant = Object.entries(rxn.stoichiometry)
+      .some(([id, s]) => s < 0 && (C[id] ?? 0) < 1e-9);
+    if (missingReactant) return 0;
+    return rxn.rateLaw(C, T, rxn.kineticParams);
+  });
 }
 
 function netProductionRate(

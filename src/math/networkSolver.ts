@@ -110,7 +110,7 @@ function forwardPass(
       outState = getInletStream(inEdges, streams, params);
     } else if (node.type === 'fixedbed') {
       const inEdges = incomingEdges.get(nodeId) ?? [];
-      const inlet = getInletStream(inEdges, streams, params);
+      const inlet = mixStreams(inEdges, streams, params);
       const fbData = node.data as { W_cat?: number; rho_bulk?: number; epsilon_bed?: number; thermalMode?: ThermalMode; Tc?: number; kappa_v?: number };
       const tauEff = 1.0 / Math.max(inlet.flow, 0.001);
       const catParams: CatalyticPFRParams = {
@@ -139,7 +139,7 @@ function forwardPass(
       const inEdges = incomingEdges.get(nodeId) ?? [];
       const inlet = node.type === 'batch'
         ? { Xa: 0, Ca: params.Ca0, Cr: 0, Cs: 0, flow: 1, T: params.T_feed ?? 300 }
-        : getInletStream(inEdges, streams, params);
+        : mixStreams(inEdges, streams, params);
       const data = node.data as {
         tau: number;
         reactorType: 'CSTR' | 'PFR' | 'Batch';
@@ -210,8 +210,10 @@ function forwardPass(
     nodeOutputs.set(nodeId, outState);
 
     if (node.type !== 'splitter') {
-      for (const e of outgoingEdges.get(nodeId) ?? []) {
-        streams.set(e.id, outState);
+      const outEdges = outgoingEdges.get(nodeId) ?? [];
+      const N = outEdges.length;
+      for (const e of outEdges) {
+        streams.set(e.id, N > 1 ? { ...outState, flow: outState.flow / N } : outState);
       }
     }
   }

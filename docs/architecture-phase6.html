@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reaction Simulator — Phase 6 Roadmap</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #f1f5f9; color: #1e293b; padding: 32px; min-height: 100vh;
+}
+h1 { font-size: 22px; font-weight: 800; color: #0f172a; margin-bottom: 4px; letter-spacing: -0.3px; }
+.subtitle { font-size: 13px; color: #64748b; margin-bottom: 24px; }
+
+.legend { display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap;
+  background: white; padding: 10px 16px; border-radius: 8px; border: 1px solid #e2e8f0; }
+.legend-item { display: flex; align-items: center; gap: 7px; font-size: 11px; color: #475569; font-weight: 500; }
+.legend-swatch { width: 14px; height: 14px; border-radius: 3px; border: 2px solid; flex-shrink: 0; }
+
+.layer { background: white; border-radius: 12px; border: 1px solid #e2e8f0;
+  margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); overflow: hidden; }
+.layer-header { padding: 12px 18px; font-size: 12px; font-weight: 800; letter-spacing: 0.06em;
+  text-transform: uppercase; color: #334155; border-bottom: 1px solid #e2e8f0; }
+.layer-body { display: grid; gap: 10px; padding: 14px; }
+.cols-2 { grid-template-columns: repeat(2, 1fr); }
+.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+.layer.trackA .layer-header { background: #dcfce7; border-bottom-color: #86efac; }
+.layer.trackB .layer-header { background: #dbeafe; border-bottom-color: #93c5fd; }
+.layer.trackC .layer-header { background: #ede9fe; border-bottom-color: #c4b5fd; }
+.layer.trackD .layer-header { background: #fef9c3; border-bottom-color: #fde047; }
+.layer.trackE .layer-header { background: #fee2e2; border-bottom-color: #fca5a5; }
+.layer.trackF .layer-header { background: #f0f9ff; border-bottom-color: #7dd3fc; }
+
+.card {
+  background: #f8faff; border: 1px solid #dde3f0; border-radius: 8px;
+  padding: 12px 14px; font-size: 12px; color: #334155; transition: box-shadow 0.15s;
+}
+.card.done { background: #f0fdf4; border-color: #86efac; opacity: 0.75; }
+.card-top { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+.card-num { width: 22px; height: 22px; border-radius: 50%; background: #0f1730;
+  color: white; font-size: 10px; font-weight: 800; display: flex; align-items: center;
+  justify-content: center; flex-shrink: 0; }
+.card-name { font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.3; }
+.card-job { font-size: 11.5px; color: #475569; line-height: 1.6; margin-bottom: 8px; }
+.card-job code { background: #e8edff; padding: 1px 4px; border-radius: 3px; font-size: 10.5px;
+  font-family: monospace; color: #3730a3; }
+
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px;
+  font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+.badge-done  { background: #0369a1; color: white; }
+.badge-next  { background: #c2410c; color: white; box-shadow: 0 0 0 2px #fed7aa; }
+.badge-key   { background: #7c3aed; color: white; }
+.badge-note  { background: #d97706; color: white; }
+
+.depth-axis { background: #f0f4ff; border: 1px solid #dde3f0; border-radius: 6px;
+  padding: 6px 10px; margin-top: 8px; }
+.depth-label { font-size: 9px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.08em; color: #94a3b8; margin-bottom: 4px; }
+.depth-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.depth-from { font-size: 10px; color: #64748b; font-style: italic; }
+.depth-arrow { font-size: 12px; color: #0369a1; font-weight: 900; flex-shrink: 0; }
+.depth-to   { font-size: 10px; color: #0f1730; font-weight: 600; }
+
+.build-order { background: white; border: 1px solid #e2e8f0; border-radius: 10px;
+  padding: 14px 18px; margin-bottom: 16px; }
+.build-order h3 { font-size: 12px; font-weight: 800; color: #374151;
+  text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+.order-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.order-step { background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 6px;
+  padding: 5px 10px; font-size: 10.5px; font-weight: 700; color: #1e3a8a;
+  white-space: nowrap; }
+.order-step small { display: block; font-weight: 400; color: #64748b; font-size: 9px; }
+.order-arrow { color: #94a3b8; font-size: 14px; }
+
+.order-step.ac { background:#dcfce7; border-color:#86efac; color:#14532d; }
+.order-step.bc { background:#dbeafe; border-color:#93c5fd; color:#1e3a8a; }
+.order-step.cc { background:#ede9fe; border-color:#c4b5fd; color:#4c1d95; }
+.order-step.dc { background:#fef9c3; border-color:#fde047; color:#713f12; }
+.order-step.ec { background:#fee2e2; border-color:#fca5a5; color:#7f1d1d; }
+.order-step.fc { background:#f0f9ff; border-color:#7dd3fc; color:#075985; }
+
+.invariant-box { background: #fef9c3; border: 1.5px solid #fde047; border-radius: 10px;
+  padding: 14px 18px; margin-bottom: 16px; font-size: 11.5px; color: #713f12; line-height: 1.7; }
+.invariant-box h3 { font-size: 12px; font-weight: 800; color: #713f12;
+  text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<h1>Reaction Simulator — Phase 6 Roadmap</h1>
+<p class="subtitle">20 items · UX authoring · parameter consolidation · reaction builder v2 · species-aware feeds · Phase II foundations</p>
+
+<div class="invariant-box">
+  <h3>Invariants — must hold after every commit</h3>
+  <strong>PURE_FILES:</strong> <code>src/math/*</code> and <code>src/io/serializer.ts</code> must never import from <code>zustand</code> or <code>react</code> at runtime — enforced by <code>purity.test.ts</code>.<br>
+  <strong>Single branching point:</strong> <code>getPreset()</code> in <code>src/math/reactionRegistry.ts</code> is the SOLE kinetics branching point. New reaction types go there, nowhere else.<br>
+  <strong>New SimulationParams fields:</strong> (a) default in <code>deserializeState()</code>, (b) default in <code>paramsSlice.ts</code>, (c) update <code>examples.ts</code>, (d) update test <code>baseParams</code>.<br>
+  <strong>New <code>src/math/</code> files:</strong> add to PURE_FILES array in <code>purity.test.ts</code>.<br>
+  <strong>Zero import cycles:</strong> run <code>npx madge --circular src/</code> to verify.<br>
+  <strong>Units boundary (new):</strong> all unit conversion lives in <code>src/math/units.ts</code>; store and math layer are SI-only; no numeric literals performing unit conversion anywhere else.<br>
+  <strong>Data files are inert (new):</strong> <code>src/data/*.json</code> contains data only — no thermo data hard-coded in TypeScript source.
+</div>
+
+<div class="build-order">
+  <h3>Build Order — left-to-right, each track mostly independent</h3>
+  <div class="order-row">
+    <div class="order-step ac">A2.1 <small>mixStreams ✓</small></div>
+    <span class="order-arrow">→</span>
+    <div class="order-step ac">A3.1 <small>N-way split ✓</small></div>
+    <span class="order-arrow">→</span>
+    <div class="order-step ac">A7.1 <small>Rate suppress ✓</small></div>
+    <span class="order-arrow">→</span>
+    <div class="order-step bc">B4.1 <small>Popover only</small></div>
+    <span class="order-arrow">→</span>
+    <div class="order-step bc">B5.1 <small>Mode cards</small></div>
+    <span class="order-arrow">→</span>
+    <div class="order-step cc">C6.1 <small>Parser (pure)</small></div>
+    <span class="order-arrow">→</span>
+    <div class="order-step cc">C6.2 <small>Builder UI</small></div>
+    <span class="order-arrow">→</span>
+    <div class="order-step cc">C8.1 <small>Preset edit</small></div>
+    <span class="order-arrow">→</span>
+    <div class="order-step dc">D1.1 <small>FeedData</small></div>
+    <span class="order-arrow">→</span>
+    <div class="order-step dc">D1.2 <small>Feed visual</small></div>
+    <span class="order-arrow">→</span>
+    <div class="order-step ec">E9.1 <small>Ctrl+drag</small></div>
+    <span class="order-arrow">→</span>
+    <div class="order-step fc">F10.1 <small>Units layer</small></div>
+    <span class="order-arrow">→</span>
+    <div class="order-step fc">F12.1 <small>ProcessStream</small></div>
+    <span class="order-arrow">→</span>
+    <div class="order-step fc">F13.1 <small>Wegstein</small></div>
+    <span class="order-arrow">→</span>
+    <div class="order-step fc">F13.2 <small>RK45 ODE</small></div>
+    <span class="order-arrow">→</span>
+    <div class="order-step fc">F11.1 <small>Species DB</small></div>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="legend-item">
+    <div class="legend-swatch" style="background:#f0fdf4;border-color:#86efac"></div> Done
+  </div>
+  <div class="legend-item">
+    <div class="legend-swatch" style="background:#fff7ed;border-color:#fed7aa"></div> Next (badge-next)
+  </div>
+  <div class="legend-item">
+    <div class="legend-swatch" style="background:#f8faff;border-color:#dde3f0"></div> Pending
+  </div>
+</div>
+
+<!-- ═══ TRACK A — Solver Fixes ═══ -->
+<div class="layer trackA">
+  <div class="layer-header">Track A — Solver Fixes (high value, low risk) · all 3 done</div>
+  <div class="layer-body cols-3">
+
+    <div class="card done">
+      <div class="card-top">
+        <div class="card-num">1</div>
+        <div>
+          <div class="card-name">A2.1 — mixStreams for Reactors</div>
+          <span class="badge badge-done">done</span>
+        </div>
+      </div>
+      <div class="card-job">
+        Replace every <code>getInletStream</code> call on reactor nodes (<code>cstr</code>, <code>pfr</code>, <code>fixedbed</code>) with <code>mixStreams</code> inside <code>forwardPass</code>. Reactors receiving two feed pipes now correctly flow-weight-average concentrations and temperatures.
+      </div>
+      <div class="depth-axis">
+        <div class="depth-label">Files changed</div>
+        <div class="depth-row">
+          <span class="depth-to">src/math/networkSolver.ts</span>
+          <span class="depth-arrow">·</span>
+          <span class="depth-from">2 one-line fixes in forwardPass</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card done">
+      <div class="card-top">
+        <div class="card-num">2</div>
+        <div>
+          <div class="card-name">A3.1 — Automatic N-Way Flow Split</div>
+          <span class="badge badge-done">done</span>
+        </div>
+      </div>
+      <div class="card-job">
+        When a non-splitter node has N&gt;1 outgoing edges, each carries <code>flow/N</code> automatically. Equal-split is implicit; unequal splits still require the explicit Splitter node with α slider. No mass-balance breakage from duplicate full flows.
+      </div>
+      <div class="depth-axis">
+        <div class="depth-label">Files changed</div>
+        <div class="depth-row">
+          <span class="depth-to">src/math/networkSolver.ts</span>
+          <span class="depth-arrow">·</span>
+          <span class="depth-from">edge-write loop in forwardPass</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card done">
+      <div class="card-top">
+        <div class="card-num">3</div>
+        <div>
+          <div class="card-name">A7.1 — Missing-Species Rate Suppression</div>
+          <span class="badge badge-done">done</span>
+        </div>
+      </div>
+      <div class="card-job">
+        In <code>evaluateRates()</code>, if any reactant required by a reaction step has concentration &lt; 1e-9, that step's rate returns 0. A CSTR receiving only Feed-A for A+B→R produces zero conversion — correctly starved of B. Prerequisite for species-aware Feed nodes.
+      </div>
+      <div class="depth-axis">
+        <div class="depth-label">Files changed</div>
+        <div class="depth-row">
+          <span class="depth-to">src/math/unitModels.ts</span>
+          <span class="depth-arrow">·</span>
+          <span class="depth-from">evaluateRates() guard</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ TRACK B — Parameter UI Consolidation ═══ -->
+<div class="layer trackB">
+  <div class="layer-header">Track B — Parameter UI Consolidation</div>
+  <div class="layer-body cols-2">
+
+    <div class="card">
+      <div class="card-top">
+        <div class="card-num">4</div>
+        <div>
+          <div class="card-name">B4.1 — Remove ParameterPanel Body, Expand Popover</div>
+          <span class="badge badge-next">next</span>
+        </div>
+      </div>
+      <div class="card-job">
+        Delete the expandable numeric params body from <code>ParameterPanel.tsx</code> (the inline drop-down that pushes the canvas down). Keep only the toolbar row (MODE dropdown + KINETICS dropdown + equation display + Edit Reaction button).<br><br>
+        Expand <code>ParameterPopover.tsx</code> to contain ALL parameters: FEED CONDITIONS (Ca₀, C_B₀ conditional, T_feed, ε, Cr₀/Ca₀), KINETICS (k₁–k₄ conditional, Keq_ref, Ea), THERMODYNAMICS (ΔH, ρCp, T_ref). Width → 340 px, max-height calc(100vh−120px) with overflow-y:auto. Remove <code>paramsOpen</code> state from store since the body is gone.
+      </div>
+      <div class="depth-axis">
+        <div class="depth-label">Files changed</div>
+        <div class="depth-row">
+          <span class="depth-to">src/components/controls/ParameterPanel.tsx</span>
+          <span class="depth-arrow">·</span>
+          <span class="depth-to">src/components/controls/ParameterPopover.tsx</span>
+          <span class="depth-arrow">·</span>
+          <span class="depth-from">remove paramsOpen from store if unused</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-top">
+        <div class="card-num">5</div>
+        <div>
+          <div class="card-name">B5.1 — Visual Reaction Mode Selector (Icon Cards)</div>
+          <span class="badge badge-key">key</span>
+        </div>
+      </div>
+      <div class="card-job">
+        Create <code>src/components/controls/ReactionModeCards.tsx</code>. A 2-column grid of radio-button cards inside the REACTION accordion of the popover. Each card: 148×76 px, mini SVG diagram (120×44 viewBox with lines + arrowhead markers + species text), reaction name below.<br><br>
+        Selected: blue border + blue tint. Kinetics sub-row of chips (1st order / 2nd order / Autocatalytic / Reversible / Gas-Phase) appears when Single is selected. "Custom +" card opens the builder modal. Import into ParameterPopover in the REACTION section.
+      </div>
+      <div class="depth-axis">
+        <div class="depth-label">Files changed</div>
+        <div class="depth-row">
+          <span class="depth-to">src/components/controls/ReactionModeCards.tsx</span>
+          <span class="depth-arrow">·</span>
+          <span class="depth-to">src/components/controls/ParameterPopover.tsx</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ TRACK C — Reaction Builder v2 ═══ -->
+<div class="layer trackC">
+  <div class="layer-header">Track C — Reaction Builder v2 (text-first)</div>
+  <div class="layer-body cols-3">
+
+    <div class="card">
+      <div class="card-top">
+        <div class="card-num">6</div>
+        <div>
+          <div class="card-name">C6.1 — Equation Parser (pure function)</div>
+          <span class="badge badge-key">key</span>
+        </div>
+      </div>
+      <div class="card-job">
+        Create <code>src/math/equationParser.ts</code> (pure, add to PURE_FILES in purity.test.ts). Accepts multi-line text; returns <code>ParsedReaction[]</code>.<br><br>
+        Syntax: <code>A -&gt; R</code>, <code>A + B -&gt; R</code>, <code>2A -&gt; R</code>, <code>A &lt;-&gt; R</code> (reversible), chain shorthand <code>A -&gt; R -&gt; S</code>, comma separation. Returns <code>{reactants, products, reversible, raw}</code> per step. Golden test: parse <code>"A -&gt; R -&gt; S"</code> → 2 reactions; parse <code>"A + B -&gt; R, A -&gt; S"</code> → 2 reactions; parse <code>"A &lt;-&gt; R"</code> → reversible flag.
+      </div>
+      <div class="depth-axis">
+        <div class="depth-label">Files changed</div>
+        <div class="depth-row">
+          <span class="depth-to">src/math/equationParser.ts</span>
+          <span class="depth-arrow">·</span>
+          <span class="depth-to">src/math/__tests__/purity.test.ts</span>
+          <span class="depth-arrow">·</span>
+          <span class="depth-to">src/math/__tests__/equationParser.test.ts</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-top">
+        <div class="card-num">7</div>
+        <div>
+          <div class="card-name">C6.2 — Multi-Step Accordion UI in Builder</div>
+          <span class="badge badge-key">key</span>
+        </div>
+      </div>
+      <div class="card-job">
+        Upgrade <code>ReactionBuilderModal.tsx</code> to add an EQUATION INPUT textarea at the top. Debounced (200 ms) parse on keystroke using the C6.1 parser. Green status banner on success; red inline error on failure.<br><br>
+        Below the text box: one accordion per parsed reaction step. Each accordion shows RATE LAW radio buttons + k, Ea, T_ref, n_X order fields. Existing species-table rows (+ Reactant / + Product buttons) stay as secondary input method, kept in sync with the text box.
+      </div>
+      <div class="depth-axis">
+        <div class="depth-label">Files changed</div>
+        <div class="depth-row">
+          <span class="depth-to">src/components/controls/ReactionBuilderModal.tsx</span>
+          <span class="depth-arrow">·</span>
+          <span class="depth-from">imports equationParser</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-top">
+        <div class="card-num">8</div>
+        <div>
+          <div class="card-name">C8.1 — Preset Reactions Are Editable</div>
+          <span class="badge badge-note">note</span>
+        </div>
+      </div>
+      <div class="card-job">
+        Every mode card (B5.1) shows a pencil icon (✎) on hover. Clicking opens the Builder modal pre-populated with the preset's equation in typed form:<br>
+        • Series A→R→S → pre-fills <code>"A -&gt; R -&gt; S"</code><br>
+        • Denbigh → 4 lines: <code>"A -&gt; R"</code> etc.<br>
+        Pre-fills kinetic params from current store values. On Save, result becomes a custom reaction with tooltip "Based on Series — N reactions".
+      </div>
+      <div class="depth-axis">
+        <div class="depth-label">Files changed</div>
+        <div class="depth-row">
+          <span class="depth-to">src/components/controls/ReactionModeCards.tsx</span>
+          <span class="depth-arrow">·</span>
+          <span class="depth-to">src/math/reactionRegistry.ts</span>
+          <span class="depth-arrow">·</span>
+          <span class="depth-from">presetToText() helper</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ TRACK D — Species-Aware Feed Nodes ═══ -->
+<div class="layer trackD">
+  <div class="layer-header">Track D — Species-Aware Feed Nodes (Feature 1)</div>
+  <div class="layer-body cols-2">
+
+    <div class="card">
+      <div class="card-top">
+        <div class="card-num">9</div>
+        <div>
+          <div class="card-name">D1.1 — FeedData.speciesLabel + Serializer Migration</div>
+          <span class="badge badge-note">note</span>
+        </div>
+      </div>
+      <div class="card-job">
+        Add <code>speciesLabel?: string</code> to the Feed node's <code>data</code> type. First Feed placed auto-assigns "A", second "B", etc. <code>deserializeState()</code> back-compat: any Feed node missing <code>speciesLabel</code> gets <code>"A"</code>.<br><br>
+        The <code>forwardPass</code> feed branch reads <code>fData.speciesLabel</code> and passes it into the stream so the A7.1 missing-species check can match against it. Update <code>stateToStream</code> / <code>streamToState</code> to carry the species identity.
+      </div>
+      <div class="depth-axis">
+        <div class="depth-label">Files changed</div>
+        <div class="depth-row">
+          <span class="depth-to">src/types/simulation.ts</span>
+          <span class="depth-arrow">·</span>
+          <span class="depth-to">src/io/serializer.ts</span>
+          <span class="depth-arrow">·</span>
+          <span class="depth-to">src/math/networkSolver.ts</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-top">
+        <div class="card-num">10</div>
+        <div>
+          <div class="card-name">D1.2 — Feed Node Visual Update</div>
+          <span class="badge badge-note">note</span>
+        </div>
+      </div>
+      <div class="card-job">
+        Update the FeedNode canvas component to display the species label as the primary element — large bold text in the species accent colour (A=blue, B=green, R=amber, S=red, T=purple, U=orange). Show concentration (mol/L) and temperature (K) as secondary lines. Inline click-to-rename for the species label symbol.
+      </div>
+      <div class="depth-axis">
+        <div class="depth-label">Files changed</div>
+        <div class="depth-row">
+          <span class="depth-to">src/components/canvas/FeedNode.tsx</span>
+          <span class="depth-arrow">·</span>
+          <span class="depth-from">species accent colour map</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ TRACK E — Canvas Interaction ═══ -->
+<div class="layer trackE">
+  <div class="layer-header">Track E — Canvas Interaction (Feature 9) · large effort</div>
+  <div class="layer-body cols-2">
+
+    <div class="card">
+      <div class="card-top">
+        <div class="card-num">11</div>
+        <div>
+          <div class="card-name">E9.1 — Ctrl+Drag Chain-Connect (ghost overlay)</div>
+          <span class="badge badge-note">note</span>
+        </div>
+      </div>
+      <div class="card-job">
+        Add state to <code>ReactorCanvas.tsx</code>: <code>isChaining</code>, <code>chainSourceId</code>, <code>ghostPosition</code>, <code>ghostType</code>. On <code>onMouseDown</code> with <code>e.ctrlKey</code> on a source handle, suppress ReactFlow connection drag and enter chaining mode.<br><br>
+        Ghost node: plain positioned <code>&lt;div&gt;</code> with class <code>chain-ghost</code> (opacity 0.45, dashed border, blue drop-shadow) — NOT a real ReactFlow node. On mouse release: place real node + create edge. Tab / mouse wheel cycles ghost type. Escape cancels. Ctrl+Shift+drag from empty canvas = instant Feed→chain.
+      </div>
+      <div class="depth-axis">
+        <div class="depth-label">Files changed</div>
+        <div class="depth-row">
+          <span class="depth-to">src/components/canvas/ReactorCanvas.tsx</span>
+          <span class="depth-arrow">·</span>
+          <span class="depth-from">new chain-ghost CSS in index.css</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-top">
+        <div class="card-num">12</div>
+        <div>
+          <div class="card-name">E9.2 — N-Way Auto-Split Edge Labels</div>
+          <span class="badge badge-note">note</span>
+        </div>
+      </div>
+      <div class="card-job">
+        Companion to A3.1. When a non-splitter node has N&gt;1 outgoing edges, render a small fraction chip on each edge near the source: "½" for 2 edges, "⅓" for 3, "1/N" for N. Uses ReactFlow edge label feature. No label when N=1 (current behaviour unchanged).
+      </div>
+      <div class="depth-axis">
+        <div class="depth-label">Files changed</div>
+        <div class="depth-row">
+          <span class="depth-to">src/components/canvas/ReactorCanvas.tsx</span>
+          <span class="depth-arrow">·</span>
+          <span class="depth-from">custom edge component or edge labels</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ TRACK F — Phase II Foundations ═══ -->
+<div class="layer trackF">
+  <div class="layer-header">Track F — Phase II Engineering Foundations (must land in order: F10 → F12 → F13 → F11)</div>
+  <div class="layer-body cols-2">
+
+    <div class="card">
+      <div class="card-top">
+        <div class="card-num">13</div>
+        <div>
+          <div class="card-name">F10.1 — Units System (Quantity Layer)</div>
+          <span class="badge badge-key">key</span>
+        </div>
+      </div>
+      <div class="card-job">
+        Create <code>src/math/units.ts</code> (pure, add to PURE_FILES). Internal canonical: mol, m³, s, K, Pa, J, kg, W. Exports: <code>convert(value, fromUnit, toUnit)</code>, <code>formatQty(valueSI, dim, profile)</code>. Temperature uses affine closures (°C/°F need offset). Create <code>src/store/slices/unitsSlice.ts</code> for selected profile + per-field overrides.<br><br>
+        Profiles: <code>Teaching</code> (current units — default, all existing tests stay green), <code>SI</code>, <code>Metric-Engineering</code> (kmol/h, bar, °C). Invariant: no conversion factors outside units.ts.
+      </div>
+      <div class="depth-axis">
+        <div class="depth-label">Files changed</div>
+        <div class="depth-row">
+          <span class="depth-to">src/math/units.ts</span>
+          <span class="depth-arrow">·</span>
+          <span class="depth-to">src/store/slices/unitsSlice.ts</span>
+          <span class="depth-arrow">·</span>
+          <span class="depth-to">src/math/__tests__/purity.test.ts</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-top">
+        <div class="card-num">14</div>
+        <div>
+          <div class="card-name">F12.1 — Stream as Primary Currency (ProcessStream)</div>
+          <span class="badge badge-key">key</span>
+        </div>
+      </div>
+      <div class="card-job">
+        Introduce <code>interface ProcessStream { F: Record&lt;SpeciesId, number&gt;; T: number; P: number; vaporFraction?: number; }</code> in <code>src/types/stream.ts</code>. Keep <code>StreamState</code> as a computed view (<code>toStreamState(ps, basis)</code> in <code>streamBridge.ts</code>) so all 43 tests stay green.<br><br>
+        Port <code>forwardPass</code> node-by-node (feed → mixer → splitter → product first, reactors last). Golden tests pin numeric outputs at each step. Definition of done: <code>networkSolver.ts</code> contains no <code>Ca/Cr/Cs</code> identifiers in solver signatures — only inside streamBridge.ts for plot adapters.
+      </div>
+      <div class="depth-axis">
+        <div class="depth-label">Files changed</div>
+        <div class="depth-row">
+          <span class="depth-to">src/types/stream.ts</span>
+          <span class="depth-arrow">·</span>
+          <span class="depth-to">src/math/streamBridge.ts</span>
+          <span class="depth-arrow">·</span>
+          <span class="depth-to">src/math/networkSolver.ts</span>
+          <span class="depth-arrow">·</span>
+          <span class="depth-from">node-by-node, tests pinned throughout</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-top">
+        <div class="card-num">15</div>
+        <div>
+          <div class="card-name">F13.1 — Wegstein Acceleration for Tear Streams</div>
+          <span class="badge badge-note">note</span>
+        </div>
+      </div>
+      <div class="card-job">
+        Add Wegstein update in <code>src/math/numerics.ts</code>: <code>s = (g(xₙ)−g(xₙ₋₁))/(xₙ−xₙ₋₁)</code>, <code>q = s/(s−1)</code> clamped to [−5,0], <code>xₙ₊₁ = q·xₙ + (1−q)·g(xₙ)</code>. Applied per-component every iteration after a 3-iteration direct warm-up. Falls back to 50% damping when secant is degenerate.<br><br>
+        Add convergence method selector to RecyclePanel: Direct | Wegstein | Newton. Golden test: tight recycle loop converges in ≤6 iterations with Wegstein vs ≤15 direct.
+      </div>
+      <div class="depth-axis">
+        <div class="depth-label">Files changed</div>
+        <div class="depth-row">
+          <span class="depth-to">src/math/numerics.ts</span>
+          <span class="depth-arrow">·</span>
+          <span class="depth-to">src/math/networkSolver.ts</span>
+          <span class="depth-arrow">·</span>
+          <span class="depth-to">src/components/panels/RecyclePanel.tsx</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-top">
+        <div class="card-num">16</div>
+        <div>
+          <div class="card-name">F13.2 — RK45 Adaptive ODE (Dormand–Prince)</div>
+          <span class="badge badge-note">note</span>
+        </div>
+      </div>
+      <div class="card-job">
+        Replace fixed-step RK4 in <code>pfrModel</code>, <code>semibatchModel</code>, and <code>dynamicEngine</code> with RK45 (Dormand–Prince embedded 4(5) pair) with PI step control: <code>h_next = h·clamp(0.9·(tol/err)^0.2, 0.2, 5)</code>. Default rtol=1e-6, atol=1e-9.<br><br>
+        Stiffness guard: if h collapses below τ/10⁵ for 3 consecutive steps, set <code>diagnostics.stiff=true</code> and surface a UI hint. Profile outputs resampled onto 200-point grid — no chart component changes. Golden test: PFR with stiff series3 kinetics matches analytical to rtol.
+      </div>
+      <div class="depth-axis">
+        <div class="depth-label">Files changed</div>
+        <div class="depth-row">
+          <span class="depth-to">src/math/numerics.ts</span>
+          <span class="depth-arrow">·</span>
+          <span class="depth-to">src/math/unitModels.ts</span>
+          <span class="depth-arrow">·</span>
+          <span class="depth-to">src/math/semibatchModel.ts</span>
+          <span class="depth-arrow">·</span>
+          <span class="depth-to">src/math/dynamicEngine.ts</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-top">
+        <div class="card-num">17</div>
+        <div>
+          <div class="card-name">F11.1 — Species Library (JSON) + thermoLibrary.ts</div>
+          <span class="badge badge-note">note</span>
+        </div>
+      </div>
+      <div class="card-job">
+        Create <code>src/data/speciesLibrary.json</code> (~60 species: H₂, O₂, N₂, CO, CO₂, H₂O, CH₄→C₄, MeOH, EtOH, ethylene oxide, styrene, ammonia, SO₂/SO₃, BTX, acetic acid). Per-entry: formula, mw, phase, dHf298, S298, Cp Shomate coefficients, Antoine constants, rhoLiq, Tc, Pc.<br><br>
+        Create <code>src/math/thermoLibrary.ts</code> (pure, add to PURE_FILES). Exports: <code>cpIntegral(id, T1, T2)</code>, <code>deltaHrxn(rxn, T)</code>, <code>keqFromThermo(rxn, T)</code>, <code>elementMatrix(rxn)</code>, <code>balanceStoich(rxn)</code>. Builder modal gets type-ahead species binding and atom-balance check.
+      </div>
+      <div class="depth-axis">
+        <div class="depth-label">Files changed</div>
+        <div class="depth-row">
+          <span class="depth-to">src/data/speciesLibrary.json</span>
+          <span class="depth-arrow">·</span>
+          <span class="depth-to">src/math/thermoLibrary.ts</span>
+          <span class="depth-arrow">·</span>
+          <span class="depth-to">src/math/thermoModel.ts</span>
+          <span class="depth-arrow">·</span>
+          <span class="depth-to">src/types/chemistry.ts</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-top">
+        <div class="card-num">18</div>
+        <div>
+          <div class="card-name">F11.2 — Species Binding UI in Builder</div>
+          <span class="badge badge-note">note</span>
+        </div>
+      </div>
+      <div class="card-job">
+        In <code>ReactionBuilderModal.tsx</code>, add a type-ahead search field next to each species label that searches <code>speciesLibrary.json</code>. When a match is found and the user selects it: MW, ΔHf°, Cp data fill in automatically. Show a thermo banner: "ΔH_rxn = −92.2 kJ/mol (computed from library) · Keq(300K) = 6.1×10⁵ — [Use computed] [Keep manual]". Manual override always wins.
+      </div>
+      <div class="depth-axis">
+        <div class="depth-label">Files changed</div>
+        <div class="depth-row">
+          <span class="depth-to">src/components/controls/ReactionBuilderModal.tsx</span>
+          <span class="depth-arrow">·</span>
+          <span class="depth-from">imports thermoLibrary, speciesLibrary</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-top">
+        <div class="card-num">19</div>
+        <div>
+          <div class="card-name">F15.1 — Design Specs Panel (Brent solve)</div>
+          <span class="badge badge-note">note</span>
+        </div>
+      </div>
+      <div class="card-job">
+        Add <code>brent(f, lo, hi, tol)</code> to <code>src/math/numerics.ts</code> (~40 lines, reuses bisect fallback). Create <code>interface DesignSpec</code> in <code>src/types/simulation.ts</code>: vary (nodeId?, param, lo, hi), target (metric, nodeId?, speciesId?, value), active. Add Design Specs panel UI listing active specs with status chips: "✓ met · knob=4.47 s" or "✗ no solution in [lo,hi]". Right-click shortcut on any result readout: "Make this a target…".
+      </div>
+      <div class="depth-axis">
+        <div class="depth-label">Files changed</div>
+        <div class="depth-row">
+          <span class="depth-to">src/math/numerics.ts</span>
+          <span class="depth-arrow">·</span>
+          <span class="depth-to">src/types/simulation.ts</span>
+          <span class="depth-arrow">·</span>
+          <span class="depth-to">src/components/panels/DesignSpecsPanel.tsx</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-top">
+        <div class="card-num">20</div>
+        <div>
+          <div class="card-name">F14.1 — Heat Exchanger / Heater-Cooler Node</div>
+          <span class="badge badge-note">note</span>
+        </div>
+      </div>
+      <div class="card-job">
+        Add <code>hx</code> node type. Two modes: (a) Utility mode — one process stream, specify T_out or duty Q̇ = Σ Fᵢ·∫Cpᵢ dT; (b) Process-process mode (Feature 17 UA model). New <code>hxModel()</code> pure function in <code>src/math/unitModels.ts</code>. Register in <code>forwardPass</code>, add <code>HXNode.tsx</code> canvas component, serializer migration entry, golden test with hand-calculated Q̇.
+      </div>
+      <div class="depth-axis">
+        <div class="depth-label">Files changed</div>
+        <div class="depth-row">
+          <span class="depth-to">src/math/unitModels.ts</span>
+          <span class="depth-arrow">·</span>
+          <span class="depth-to">src/math/networkSolver.ts</span>
+          <span class="depth-arrow">·</span>
+          <span class="depth-to">src/components/canvas/HXNode.tsx</span>
+          <span class="depth-arrow">·</span>
+          <span class="depth-to">src/io/serializer.ts</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>
