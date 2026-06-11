@@ -120,3 +120,23 @@ input[type="number"] {
   background: var(--surface) !important;
   color: var(--text-muted) !important;
 }
+
+/* Chain-connect ghost overlay */
+.chain-ghost {
+  position: fixed;
+  width: 80px;
+  height: 50px;
+  border: 2px dashed #2563eb;
+  border-radius: 8px;
+  background: rgba(219, 234, 254, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #2563eb;
+  filter: drop-shadow(0 0 8px rgba(37, 99, 235, 0.5));
+  pointer-events: none;
+  user-select: none;
+  z-index: 9999;
+}

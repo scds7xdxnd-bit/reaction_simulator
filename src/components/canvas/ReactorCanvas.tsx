@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ReactFlow,
   Background,
@@ -38,6 +38,9 @@ import { ValidationProvider } from '../../context/ValidationContext';
 import { useSimulatorStore } from '../../store/simulatorStore';
 import { useSimulation } from '../../hooks/useSimulation';
 import { useClipboardActions } from '../../hooks/useClipboardActions';
+
+type GhostNodeType = 'CSTR' | 'PFR' | 'Batch' | 'Mixer' | 'Splitter' | 'Product';
+const GHOST_TYPES: GhostNodeType[] = ['CSTR', 'PFR', 'Batch', 'Mixer', 'Splitter', 'Product'];
 
 const nodeTypes = {
   cstr: CSTRNode,
@@ -95,10 +98,133 @@ export default function ReactorCanvas() {
   const viewportRef  = useRef<Viewport>({ x: 0, y: 0, zoom: 1 });
   const [addMenu, setAddMenu] = useState<{ screenX: number; screenY: number; flowPos: { x: number; y: number } } | null>(null);
 
+  // Chain-connect state
+  const [isChaining, setIsChaining] = useState(false);
+  const chainRef    = useRef<{ sourceId: string; ghostType: GhostNodeType } | null>(null);
+  const [ghostPos,  setGhostPos]  = useState({ x: 0, y: 0 });
+  const [ghostType, setGhostType] = useState<GhostNodeType>('CSTR');
+  const chainTypeIdx = useRef(0);
+
   const clipboard = useSimulatorStore((s) => s.clipboard);
   const { pasteAt } = useClipboardActions();
 
   useSimulation();
+
+  // Capture-phase mousedown: intercept Ctrl+handle to start chain-connect
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const handleMouseDown = (e: MouseEvent) => {
+      if (e.button !== 0) return;
+      const target = e.target as Element;
+      const handle = target.closest('.react-flow__handle');
+
+      // Ctrl+Shift on pane: place Feed then chain
+      if (e.ctrlKey && e.shiftKey && !handle) {
+        if (!target.closest('.react-flow__pane')) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const rect = el.getBoundingClientRect();
+        const { x: vx, y: vy, zoom } = viewportRef.current;
+        const pos = {
+          x: (e.clientX - rect.left - vx) / zoom - 35,
+          y: (e.clientY - rect.top  - vy) / zoom - 35,
+        };
+        useSimulatorStore.getState().addFeedNode(pos);
+        const added = useSimulatorStore.getState().nodes.find(n => n.selected && n.type === 'feed');
+        if (!added) return;
+        chainTypeIdx.current = 0;
+        chainRef.current = { sourceId: added.id, ghostType: GHOST_TYPES[0] };
+        setGhostPos({ x: e.clientX, y: e.clientY });
+        setGhostType(GHOST_TYPES[0]);
+        setIsChaining(true);
+        return;
+      }
+
+      if (!e.ctrlKey || !handle) return;
+      const nodeEl = handle.closest('[data-id]');
+      if (!nodeEl) return;
+      const nodeId = nodeEl.getAttribute('data-id');
+      if (!nodeId) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+      chainTypeIdx.current = 0;
+      chainRef.current = { sourceId: nodeId, ghostType: GHOST_TYPES[0] };
+      setGhostPos({ x: e.clientX, y: e.clientY });
+      setGhostType(GHOST_TYPES[0]);
+      setIsChaining(true);
+    };
+
+    el.addEventListener('mousedown', handleMouseDown, true);
+    return () => el.removeEventListener('mousedown', handleMouseDown, true);
+  }, []); // refs only; no reactive deps needed
+
+  // Chain mode: track mouse and handle commit/cancel
+  useEffect(() => {
+    if (!isChaining) return;
+
+    const onMove = (e: MouseEvent) => setGhostPos({ x: e.clientX, y: e.clientY });
+
+    const onUp = (e: MouseEvent) => {
+      const cs = chainRef.current;
+      setIsChaining(false);
+      chainRef.current = null;
+      if (!cs || !containerRef.current) return;
+
+      const rect = containerRef.current.getBoundingClientRect();
+      const { x: vx, y: vy, zoom } = viewportRef.current;
+      const pos = {
+        x: (e.clientX - rect.left - vx) / zoom - 40,
+        y: (e.clientY - rect.top  - vy) / zoom - 25,
+      };
+
+      const store = useSimulatorStore.getState();
+      const type = cs.ghostType;
+      if (type === 'CSTR' || type === 'PFR' || type === 'Batch') store.addReactor(type, pos);
+      else if (type === 'Mixer' || type === 'Splitter') store.addUnit(type as 'Mixer' | 'Splitter', pos);
+      else store.addProductNode(pos);
+
+      const newNode = useSimulatorStore.getState().nodes.find(n => n.selected);
+      if (newNode) {
+        const currEdges = useSimulatorStore.getState().edges;
+        store.setEdges(addEdge({ source: cs.sourceId, target: newNode.id } as Connection, currEdges) as Edge[]);
+      }
+    };
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsChaining(false);
+        chainRef.current = null;
+      } else if (e.key === 'Tab') {
+        e.preventDefault();
+        chainTypeIdx.current = (chainTypeIdx.current + 1) % GHOST_TYPES.length;
+        const nt = GHOST_TYPES[chainTypeIdx.current];
+        if (chainRef.current) chainRef.current = { ...chainRef.current, ghostType: nt };
+        setGhostType(nt);
+      }
+    };
+
+    const onWheel = (e: WheelEvent) => {
+      const dir = e.deltaY > 0 ? 1 : -1;
+      chainTypeIdx.current = ((chainTypeIdx.current + dir) % GHOST_TYPES.length + GHOST_TYPES.length) % GHOST_TYPES.length;
+      const nt = GHOST_TYPES[chainTypeIdx.current];
+      if (chainRef.current) chainRef.current = { ...chainRef.current, ghostType: nt };
+      setGhostType(nt);
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup',   onUp);
+    document.addEventListener('keydown',   onKey, true);
+    document.addEventListener('wheel',     onWheel);
+    return () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup',   onUp);
+      document.removeEventListener('keydown',   onKey, true);
+      document.removeEventListener('wheel',     onWheel);
+    };
+  }, [isChaining]);
 
   const onNodesChange = useCallback((changes: NodeChange[]) => {
     const latest = useSimulatorStore.getState().nodes as FlowNode[];
@@ -329,6 +455,14 @@ export default function ReactorCanvas() {
       </ReactFlow>
       <ContextMenu />
       <CanvasContextMenu />
+      {isChaining && (
+        <div
+          className="chain-ghost"
+          style={{ left: ghostPos.x - 40, top: ghostPos.y - 25 }}
+        >
+          {ghostType}
+        </div>
+      )}
       {addMenu && (
         <CanvasAddMenu
           screenX={addMenu.screenX}
