@@ -34,7 +34,8 @@ export default function LevenspielPlot() {
   const cfg = useSimulatorStore((s) => s.plotConfig['levenspiel']);
   const { isDark } = useTheme();
   const curveStroke = isDark ? '#e2e8f0' : '#0f1730';
-  const pfrFill = isDark ? 'rgba(251, 191, 36, 0.28)' : 'rgba(217, 119, 6, 0.22)';
+  const pfrFill = '#f59e0b';
+  const pfrOpacity = isDark ? 0.35 : 0.45;
 
   const yDomain = useMemo<[number, number]>(() => {
     if (!result?.levenspielCurve?.length) return [0, 10];
@@ -187,13 +188,13 @@ export default function LevenspielPlot() {
                     y1={0}
                     y2={strip.height}
                     fill={pfrFill}
-                    fillOpacity={1}
+                    fillOpacity={pfrOpacity}
                     stroke="none"
                   />
                 ))}
                 <ReferenceLine
                   x={pfr.x1}
-                  stroke="#d9770699"
+                  stroke="#d97706"
                   strokeWidth={1.5}
                 />
                 <ReferenceLine
