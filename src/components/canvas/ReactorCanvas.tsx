@@ -361,35 +361,40 @@ export default function ReactorCanvas() {
   const recycleIdsKey = result?.recycleEdgeIds.join(',') ?? '';
   const displayEdges = useMemo(() => {
     const recycleIds = new Set(result?.recycleEdgeIds ?? []);
+
+    // Count outgoing edges per non-splitter source for fraction chips (E9.2)
+    const outCount = new Map<string, number>();
+    for (const e of edges) {
+      if (nodes.find(n => n.id === e.source)?.type !== 'splitter') {
+        outCount.set(e.source, (outCount.get(e.source) ?? 0) + 1);
+      }
+    }
+    const fracLabel = (n: number) => n === 2 ? '½' : n === 3 ? '⅓' : `1/${n}`;
+
     return edges.map((e) => {
       const isRecycle = recycleIds.has(e.id);
+      const n = outCount.get(e.source) ?? 1;
+      const showFrac = !isRecycle && n > 1;
       return {
         ...e,
-        style: {
-          stroke: isRecycle ? '#7c3aed' : '#94a3b8',
-          strokeWidth: 2,
-        },
+        style: { stroke: isRecycle ? '#7c3aed' : '#94a3b8', strokeWidth: 2 },
         animated: true,
-        markerEnd: {
-          type: MarkerType.ArrowClosed,
-          color: isRecycle ? '#7c3aed' : '#94a3b8',
-        },
-        label: isRecycle ? '♻' : undefined,
-        labelStyle: isRecycle ? {
-          fontSize: 12,
-          fill: '#7c3aed',
-          fontWeight: 700,
-          filter: 'drop-shadow(0 0 2px #fff)',
-        } : undefined,
-        labelBgStyle: isRecycle ? {
-          fill: '#ffffff',
-          fillOpacity: 0.85,
-        } : undefined,
+        markerEnd: { type: MarkerType.ArrowClosed, color: isRecycle ? '#7c3aed' : '#94a3b8' },
+        label: isRecycle ? '♻' : (showFrac ? fracLabel(n) : undefined),
+        labelStyle: isRecycle
+          ? { fontSize: 12, fill: '#7c3aed', fontWeight: 700, filter: 'drop-shadow(0 0 2px #fff)' }
+          : showFrac ? { fontSize: 9, fontWeight: 700, fill: '#6b7280' } : undefined,
+        labelBgStyle: isRecycle
+          ? { fill: '#ffffff', fillOpacity: 0.85 }
+          : showFrac ? { fill: '#f1f5f9', fillOpacity: 0.9 } : undefined,
+        labelBgPadding: (showFrac || isRecycle) ? [3, 5] as [number, number] : undefined,
+        labelBgBorderRadius: (showFrac || isRecycle) ? 4 : undefined,
+        labelShowBg: showFrac || isRecycle,
       };
     });
   // recycleIdsKey is a stable string; avoids recompute on every new result object
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [edges, recycleIdsKey]);
+  }, [edges, recycleIdsKey, nodes]);
 
   return (
     <ValidationProvider nodes={nodes} edges={edges}>
