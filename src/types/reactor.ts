@@ -42,6 +42,7 @@ export interface SimulationParams {
   T_feed: number;
   epsilon: number;
   Q_feed: number;
+  recycleMethod: 'direct' | 'wegstein' | 'newton';
   customReaction: CustomReaction | null;
 }
 

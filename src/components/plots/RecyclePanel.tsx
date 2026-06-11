@@ -4,11 +4,20 @@ import {
   ResponsiveContainer, ReferenceLine,
 } from 'recharts';
 import { useSimulatorStore } from '../../store/simulatorStore';
+import type { RecycleMethod } from '../../math/numerics';
 
 const TOL = 1e-6;
 
+const METHODS: { value: RecycleMethod; label: string }[] = [
+  { value: 'direct',   label: 'Direct' },
+  { value: 'wegstein', label: 'Wegstein' },
+  { value: 'newton',   label: 'Newton (soon)' },
+];
+
 export default function RecyclePanel() {
-  const result = useSimulatorStore((s) => s.result);
+  const result        = useSimulatorStore((s) => s.result);
+  const params        = useSimulatorStore((s) => s.params);
+  const updateParams  = useSimulatorStore((s) => s.updateParams);
   const [expanded, setExpanded] = useState(true);
 
   if (!result || result.recycleEdgeIds.length === 0) return null;
@@ -49,6 +58,32 @@ export default function RecyclePanel() {
 
       {expanded && (
         <div className="px-3 pb-3 space-y-2">
+
+          {/* ── Method selector ── */}
+          <div className="flex items-center gap-2 pt-1">
+            <span className="text-[10px] font-semibold text-[#64748b]">Method</span>
+            <div className="flex gap-1">
+              {METHODS.map(({ value, label }) => {
+                const isDisabled = value === 'newton';
+                const isActive   = params.recycleMethod === value;
+                return (
+                  <button
+                    key={value}
+                    disabled={isDisabled}
+                    onClick={() => !isDisabled && updateParams({ recycleMethod: value })}
+                    className="px-2 py-0.5 rounded text-[10px] font-semibold transition-colors"
+                    style={isDisabled
+                      ? { background: '#f1f5f9', color: '#cbd5e1', cursor: 'not-allowed' }
+                      : isActive
+                        ? { background: '#7c3aed', color: 'white' }
+                        : { background: '#f1f5f9', color: '#475569', cursor: 'pointer' }}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
           {/* ── Convergence chart ── */}
           <div style={{ height: 110 }}>

@@ -18,6 +18,7 @@ import { totalMolarFlow } from '../types/stream';
 import type { ChemistryModel } from '../types/chemistry';
 
 import { findTearEdgeIds, topoSort, reachableFrom, reachableTo } from './topology';
+import { wegsteinStep, type WegsteinState } from './numerics';
 import { computeXeq } from './equilibrium';
 import { buildOperatingDiagram, type OperatingDiagramData } from './operatingDiagramModel';
 
@@ -361,15 +362,20 @@ export function solveNetwork(
     tearStreams.set(e.id, { F: { 'A': params.Ca0, 'R': 0, 'S': 0 }, T: params.T_feed ?? 300, P: 101325 });
   }
 
-  const DAMP = 0.5;
-  const TOL  = 1e-6;
+  const TOL      = 1e-6;
   const MAX_ITER = 200;
+  const method   = params.recycleMethod ?? 'direct';
 
   let converged = false;
   let iterations = 0;
   let lastPass: ReturnType<typeof forwardPass> | null = null;
 
   const recycleHistory: RecycleIterationRecord[] = [];
+  // Wegstein per-edge state: stores prevAssumed, prevComputed vectors
+  const wegsteinStates = new Map<string, WegsteinState | null>();
+  for (const e of safeEdges.filter((e) => tearIds.has(e.id))) {
+    wegsteinStates.set(e.id, null);
+  }
 
   for (let iter = 0; iter < MAX_ITER; iter++) {
     iterations = iter + 1;
@@ -397,12 +403,25 @@ export function solveNetwork(
     for (const e of safeEdges.filter((e) => tearIds.has(e.id))) {
       const computed = pass.streams.get(e.id)!;
       const assumed  = tearStreams.get(e.id)!;
-      const allKeys  = new Set([...Object.keys(assumed.F), ...Object.keys(computed.F)]);
-      const dampedF: Record<string, number> = {};
-      for (const k of allKeys) {
-        dampedF[k] = (assumed.F[k] ?? 0) * (1 - DAMP) + (computed.F[k] ?? 0) * DAMP;
+
+      if (method === 'wegstein' || method === 'newton') {
+        const allKeys = [...new Set([...Object.keys(assumed.F), ...Object.keys(computed.F)])].sort();
+        const assumedVec  = [...allKeys.map(k => assumed.F[k]  ?? 0), assumed.T];
+        const computedVec = [...allKeys.map(k => computed.F[k] ?? 0), computed.T];
+        const state = wegsteinStates.get(e.id) ?? null;
+        const { updated, nextState } = wegsteinStep(assumedVec, computedVec, state);
+        wegsteinStates.set(e.id, nextState);
+        const newF: Record<string, number> = {};
+        for (let i = 0; i < allKeys.length; i++) newF[allKeys[i]] = Math.max(0, updated[i]);
+        tearStreams.set(e.id, { F: newF, T: updated[allKeys.length], P: assumed.P });
+      } else {
+        const allKeys = new Set([...Object.keys(assumed.F), ...Object.keys(computed.F)]);
+        const dampedF: Record<string, number> = {};
+        for (const k of allKeys) {
+          dampedF[k] = (assumed.F[k] ?? 0) * 0.5 + (computed.F[k] ?? 0) * 0.5;
+        }
+        tearStreams.set(e.id, { F: dampedF, T: assumed.T * 0.5 + computed.T * 0.5, P: assumed.P });
       }
-      tearStreams.set(e.id, { F: dampedF, T: assumed.T * (1 - DAMP) + computed.T * DAMP, P: assumed.P });
     }
   }
 

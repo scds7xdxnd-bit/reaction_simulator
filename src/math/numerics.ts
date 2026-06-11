@@ -25,6 +25,50 @@ export function bisect(
   return (a + b) / 2;
 }
 
+export type RecycleMethod = 'direct' | 'wegstein' | 'newton';
+
+export interface WegsteinState {
+  prevAssumed: number[];
+  prevComputed: number[];
+  iter: number;
+}
+
+// Wegstein update per component. 3-iteration direct warm-up, then secant acceleration.
+// s = (g(xₙ)-g(xₙ₋₁))/(xₙ-xₙ₋₁), q = s/(s-1) clamped to [-5,0], xₙ₊₁ = q·xₙ+(1-q)·g(xₙ).
+// Falls back to 50% damping when the secant denominator is degenerate.
+export function wegsteinStep(
+  assumed: number[],
+  computed: number[],
+  state: WegsteinState | null,
+  warmupIter = 3
+): { updated: number[]; nextState: WegsteinState } {
+  const iter = state?.iter ?? 0;
+  const nextState: WegsteinState = {
+    prevAssumed: [...assumed],
+    prevComputed: [...computed],
+    iter: iter + 1,
+  };
+
+  if (iter < warmupIter || !state) {
+    return { updated: assumed.map((a, i) => 0.5 * a + 0.5 * computed[i]), nextState };
+  }
+
+  const updated = assumed.map((x_n, i) => {
+    const gx_n   = computed[i];
+    const x_nm1  = state.prevAssumed[i];
+    const gx_nm1 = state.prevComputed[i];
+    const dx = x_n - x_nm1;
+    if (Math.abs(dx) < 1e-12 || Math.abs((gx_n - gx_nm1) / (Math.abs(dx) + 1e-12) - 1) < 1e-12) {
+      return 0.5 * x_n + 0.5 * gx_n;
+    }
+    const s = (gx_n - gx_nm1) / dx;
+    if (Math.abs(s - 1) < 1e-10) return 0.5 * x_n + 0.5 * gx_n;
+    const q = Math.max(-5, Math.min(0, s / (s - 1)));
+    return q * x_n + (1 - q) * gx_n;
+  });
+  return { updated, nextState };
+}
+
 /**
  * Single 4th-order Runge-Kutta step for the ODE y' = fn(t, y).
  * Returns a new array. Does not mutate y.

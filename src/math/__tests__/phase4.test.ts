@@ -27,6 +27,7 @@ const baseParams: SimulationParams = {
   T_feed: 300,
   epsilon: 0,
   Q_feed: 0,
+  recycleMethod: 'direct',
   customReaction: null,
 };
 

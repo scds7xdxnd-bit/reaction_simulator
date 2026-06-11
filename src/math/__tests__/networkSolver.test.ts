@@ -75,6 +75,7 @@ describe('solveNetwork — series3 preset (A→R→S→T)', () => {
       T_feed: 300,
       epsilon: 0,
       Q_feed: 0,
+      recycleMethod: 'direct',
       customReaction: null,
     };
     const nodes = [
@@ -119,6 +120,7 @@ describe('solveNetwork — parallel network fixes', () => {
     T_feed: 300,
     epsilon: 0,
     Q_feed: 0,
+    recycleMethod: 'direct',
     customReaction: null,
   };
 
@@ -187,6 +189,7 @@ describe('solveNetwork — series-parallel preset (A+B→R, R+B→S, S+B→T)', 
       T_feed: 300,
       epsilon: 0,
       Q_feed: 0,
+      recycleMethod: 'direct',
       customReaction: null,
     };
     const nodes = [
@@ -232,6 +235,7 @@ describe('solveNetwork — Denbigh system (A→R/T, R→S/U)', () => {
       T_feed: 300,
       epsilon: 0,
       Q_feed: 0,
+      recycleMethod: 'direct',
       customReaction: null,
     };
     const nodes = [
@@ -254,5 +258,55 @@ describe('solveNetwork — Denbigh system (A→R/T, R→S/U)', () => {
     expect(seg.Cr_out).toBeGreaterThan(0);
     // Denbigh: k12=1.5, k34=3 → R is produced but also consumed; verify it's intermediate
     expect(seg.Cr_out).toBeLessThan(params.Ca0);
+  });
+});
+
+describe('solveNetwork — Wegstein vs Direct convergence (F13.1)', () => {
+  // Tight recycle loop: Feed → Mixer → CSTR(τ=2,k=1) → Splitter(50% recycle) → Product
+  // Direct damping converges at ~0.5^n rate (~29 iters); Wegstein extrapolates to ~5 iters.
+  const recycleNodes = [
+    { id: 'feed-1',  type: 'feed',     position: { x: 0,   y: 0 }, data: {} },
+    { id: 'mix-1',   type: 'mixer',    position: { x: 100, y: 0 }, data: {} },
+    { id: 'cstr-1',  type: 'cstr',     position: { x: 200, y: 0 }, data: { reactorType: 'CSTR', tau: 2, label: 'R1' } },
+    { id: 'split-1', type: 'splitter', position: { x: 300, y: 0 }, data: { alpha: 0.5 } },
+    { id: 'prod-1',  type: 'product',  position: { x: 400, y: 0 }, data: {} },
+  ] as unknown as import('@xyflow/react').Node[];
+
+  const recycleEdges = [
+    { id: 'e1', source: 'feed-1',  target: 'mix-1' },
+    { id: 'e2', source: 'mix-1',   target: 'cstr-1' },
+    { id: 'e3', source: 'cstr-1',  target: 'split-1' },
+    { id: 'e4', source: 'split-1', target: 'prod-1',  sourceHandle: 'out-top' },
+    { id: 'e5', source: 'split-1', target: 'mix-1',   sourceHandle: 'out-bot' },
+  ] as unknown as import('@xyflow/react').Edge[];
+
+  const baseRecycleParams: import('../../types/reactor').SimulationParams = {
+    reactionMode: 'single', kinetics: 'first-order',
+    k: 1, k2: 0, k3: 0, k4: 0, Cb0: 1, Keq_ref: 4,
+    Ca0: 1, Cr0_fraction: 0, T_ref: 300, Ea: 0,
+    delta_H: 0, rho_Cp: 1, T_feed: 300, epsilon: 0, Q_feed: 0,
+    recycleMethod: 'direct', customReaction: null,
+  };
+
+  it('Direct: tight recycle converges (may take many iterations with 50% damping)', () => {
+    const result = solveNetwork(recycleNodes, recycleEdges, { ...baseRecycleParams, recycleMethod: 'direct' });
+    expect(result).not.toBeNull();
+    expect(result!.converged).toBe(true);
+    expect(result!.iterations).toBeLessThanOrEqual(40);
+  });
+
+  it('Wegstein: tight recycle converges in ≤8 iterations (≥4× faster than direct)', () => {
+    const result = solveNetwork(recycleNodes, recycleEdges, { ...baseRecycleParams, recycleMethod: 'wegstein' });
+    expect(result).not.toBeNull();
+    expect(result!.converged).toBe(true);
+    expect(result!.iterations).toBeLessThanOrEqual(8);
+  });
+
+  it('Direct and Wegstein converge to same final Xa (within 1e-4)', () => {
+    const rDirect   = solveNetwork(recycleNodes, recycleEdges, { ...baseRecycleParams, recycleMethod: 'direct' });
+    const rWegstein = solveNetwork(recycleNodes, recycleEdges, { ...baseRecycleParams, recycleMethod: 'wegstein' });
+    expect(rDirect).not.toBeNull();
+    expect(rWegstein).not.toBeNull();
+    expect(Math.abs(rDirect!.finalConversion - rWegstein!.finalConversion)).toBeLessThan(1e-4);
   });
 });
