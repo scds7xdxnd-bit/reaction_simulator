@@ -17,7 +17,7 @@ export function streamToState(s: Stream, Ca0: number): StreamState {
   const FA = s.F[primary] ?? 0;
   const FR = s.F['R'] ?? 0;
   const FS = s.F['S'] ?? 0;
-  const totalF = FA + FR + FS;
+  const totalF = Object.values(s.F).reduce((sum, f) => sum + (Number.isFinite(f) ? f : 0), 0);
   const flow = Ca0 > 1e-12 ? totalF / Ca0 : 1.0;
   const Ca   = flow > 1e-12 ? FA / flow : 0;
   const Cr   = flow > 1e-12 ? FR / flow : 0;

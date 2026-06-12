@@ -338,6 +338,42 @@ describe('solveNetwork — Wegstein vs Direct convergence (F13.1)', () => {
     expect(rWegstein).not.toBeNull();
     expect(Math.abs(rDirect!.finalConversion - rWegstein!.finalConversion)).toBeLessThan(1e-4);
   });
+
+  it('F16 — Convergent recycle: divergenceWarning is undefined', () => {
+    const result = solveNetwork(recycleNodes, recycleEdges, { ...baseRecycleParams, recycleMethod: 'direct' });
+    expect(result).not.toBeNull();
+    expect(result!.divergenceWarning).toBeUndefined();
+  });
+
+  it('F16 — Divergent recycle: inert I species with no exit path triggers divergenceWarning', () => {
+    // Network: FeedA + FeedI(0.05 mol/s) → Mixer → CSTR(k=1,τ=2) → Splitter(α=0 all recycle) → Product
+    // Splitter α=0: 100% to recycle (out-bot), 0% to product (out-top).
+    // Inert 'I' has no exit: it enters via FeedI and recirculates forever.
+    // Direct-method update: F_I_assumed grows by +0.5×0.05=+0.025 per iteration (constant diff).
+    //   iter 0 computed I = 0.050; iter 1 = 0.075; iter 2 = 0.100 … constant Δ=0.025
+    // After DIVERGE_WINDOW=20 iterations with non-decelerating growth, divergenceWarning fires.
+    const nodes = [
+      { id: 'fA',  type: 'feed',     position: { x: 0,   y: 0   }, data: { speciesLabel: 'A', Ca0: 1.0,  flowrate: 1.0 } },
+      { id: 'fI',  type: 'feed',     position: { x: 0,   y: 100 }, data: { speciesLabel: 'I', Ca0: 0.05, flowrate: 1.0 } },
+      { id: 'mx',  type: 'mixer',    position: { x: 100, y: 50  }, data: {} },
+      { id: 'rx',  type: 'cstr',     position: { x: 200, y: 50  }, data: { reactorType: 'CSTR', tau: 2, label: 'Rx' } },
+      { id: 'sp',  type: 'splitter', position: { x: 300, y: 50  }, data: { alpha: 0 } },
+      { id: 'pr',  type: 'product',  position: { x: 400, y: 50  }, data: {} },
+    ] as unknown as import('@xyflow/react').Node[];
+    const edges = [
+      { id: 'e1', source: 'fA', target: 'mx' },
+      { id: 'e2', source: 'fI', target: 'mx' },
+      { id: 'e3', source: 'mx', target: 'rx' },
+      { id: 'e4', source: 'rx', target: 'sp' },
+      { id: 'e5', source: 'sp', target: 'pr', sourceHandle: 'out-top' },
+      { id: 'e6', source: 'sp', target: 'mx', sourceHandle: 'out-bot' },
+    ] as unknown as import('@xyflow/react').Edge[];
+    const result = solveNetwork(nodes, edges, { ...baseRecycleParams, k: 1, recycleMethod: 'direct' });
+    expect(result).not.toBeNull();
+    expect(result!.divergenceWarning).toBeDefined();
+    expect(result!.divergenceWarning).toContain('accumulating');
+    expect(result!.divergenceWarning).toContain('purge');
+  });
 });
 
 describe('F14.1 — hxModel golden test (hand-calculated Q̇)', () => {

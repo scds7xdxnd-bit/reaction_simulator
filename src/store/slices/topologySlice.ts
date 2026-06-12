@@ -51,6 +51,12 @@ export interface TopologySlice {
   mixerCount: number;
   splitterCount: number;
   hxCount: number;
+  csplitCount: number;
+  flashCount: number;
+  purgeCount: number;
+  pumpCount: number;
+  compCount: number;
+  valveCount: number;
   feedCount: number;
   productCount: number;
   _history: { nodes: Node[]; edges: Edge[] }[];
@@ -83,6 +89,12 @@ export const createTopologySlice: StateCreator<SimulatorStore, [], [], TopologyS
     mixerCount: 0,
     splitterCount: 0,
     hxCount: 0,
+    csplitCount: 0,
+    flashCount: 0,
+    purgeCount: 0,
+    pumpCount: 0,
+    compCount: 0,
+    valveCount: 0,
     feedCount: 1,
     productCount: 1,
     _history: [],
@@ -307,6 +319,60 @@ export const createTopologySlice: StateCreator<SimulatorStore, [], [], TopologyS
           data: { label: `HX-${num}`, mode: 'utility', T_out: 350 },
         };
         set({ nodes: [...state.nodes.map(n => ({ ...n, selected: false })), { ...newNode, selected: true }], hxCount: Math.max(state.hxCount, num), _history: trimmed, _historyIndex: trimmed.length - 1 });
+      } else if (unitType === 'CSplit') {
+        const num = findLowestAvailable(state.nodes, 'CSplit');
+        const newNode: Node = {
+          id: `csplit-${num}`,
+          type: 'csplit',
+          position,
+          data: { label: `CSplit-${num}`, splitFractions: {} },
+        };
+        set({ nodes: [...state.nodes.map(n => ({ ...n, selected: false })), { ...newNode, selected: true }], csplitCount: Math.max(state.csplitCount, num), _history: trimmed, _historyIndex: trimmed.length - 1 });
+      } else if (unitType === 'Flash') {
+        const num = findLowestAvailable(state.nodes, 'Flash');
+        const newNode: Node = {
+          id: `flash-${num}`,
+          type: 'flash',
+          position,
+          data: { label: `Flash-${num}`, T_flash: 365, P_flash: 101325 },
+        };
+        set({ nodes: [...state.nodes.map(n => ({ ...n, selected: false })), { ...newNode, selected: true }], flashCount: Math.max(state.flashCount, num), _history: trimmed, _historyIndex: trimmed.length - 1 });
+      } else if (unitType === 'Purge') {
+        const num = findLowestAvailable(state.nodes, 'Purge');
+        const newNode: Node = {
+          id: `purge-${num}`,
+          type: 'purge',
+          position,
+          data: { label: `Purge-${num}`, beta: 0.05 },
+        };
+        set({ nodes: [...state.nodes.map(n => ({ ...n, selected: false })), { ...newNode, selected: true }], purgeCount: Math.max(state.purgeCount, num), _history: trimmed, _historyIndex: trimmed.length - 1 });
+      } else if (unitType === 'Pump') {
+        const num = findLowestAvailable(state.nodes, 'Pump');
+        const newNode: Node = {
+          id: `pump-${num}`,
+          type: 'pump',
+          position,
+          data: { label: `Pump-${num}`, P_out: 5e5, eta: 0.75, Q_vol: 1e-3 },
+        };
+        set({ nodes: [...state.nodes.map(n => ({ ...n, selected: false })), { ...newNode, selected: true }], pumpCount: Math.max(state.pumpCount, num), _history: trimmed, _historyIndex: trimmed.length - 1 });
+      } else if (unitType === 'Comp') {
+        const num = findLowestAvailable(state.nodes, 'Comp');
+        const newNode: Node = {
+          id: `comp-${num}`,
+          type: 'comp',
+          position,
+          data: { label: `Comp-${num}`, P_out: 3e5, eta: 0.8, gamma: 1.4 },
+        };
+        set({ nodes: [...state.nodes.map(n => ({ ...n, selected: false })), { ...newNode, selected: true }], compCount: Math.max(state.compCount, num), _history: trimmed, _historyIndex: trimmed.length - 1 });
+      } else if (unitType === 'Valve') {
+        const num = findLowestAvailable(state.nodes, 'Valve');
+        const newNode: Node = {
+          id: `valve-${num}`,
+          type: 'valve',
+          position,
+          data: { label: `Valve-${num}`, P_out: 101325 },
+        };
+        set({ nodes: [...state.nodes.map(n => ({ ...n, selected: false })), { ...newNode, selected: true }], valveCount: Math.max(state.valveCount, num), _history: trimmed, _historyIndex: trimmed.length - 1 });
       }
     },
 

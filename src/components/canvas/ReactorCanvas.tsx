@@ -32,6 +32,12 @@ import ProductNode from './ProductNode';
 import MixerNode from './MixerNode';
 import SplitterNode from './SplitterNode';
 import HXNode from './HXNode';
+import CSplitNode from './CSplitNode';
+import FlashNode from './FlashNode';
+import PurgeNode from './PurgeNode';
+import PumpNode from './PumpNode';
+import CompNode from './CompNode';
+import ValveNode from './ValveNode';
 import ContextMenu from './ContextMenu';
 import CanvasContextMenu from './CanvasContextMenu';
 import CanvasAddMenu from './CanvasAddMenu';
@@ -54,6 +60,12 @@ const nodeTypes = {
   mixer: MixerNode,
   splitter: SplitterNode,
   hx: HXNode,
+  csplit: CSplitNode,
+  flash: FlashNode,
+  purge: PurgeNode,
+  pump: PumpNode,
+  comp: CompNode,
+  valve: ValveNode,
 };
 
 function MiniMapNode({ x, y, width, height, color }: { x: number; y: number; width: number; height: number; color?: string }) {
@@ -269,6 +281,12 @@ export default function ReactorCanvas() {
         | 'Mixer'
         | 'Splitter'
         | 'HX'
+        | 'CSplit'
+        | 'Flash'
+        | 'Purge'
+        | 'Pump'
+        | 'Comp'
+        | 'Valve'
         | 'Feed'
         | 'Product'
         | undefined;
@@ -457,6 +475,12 @@ export default function ReactorCanvas() {
             if (node.type === 'mixer') return '#059669';
             if (node.type === 'splitter') return '#7c3aed';
             if (node.type === 'hx') return '#dc2626';
+            if (node.type === 'csplit') return '#0891b2';
+            if (node.type === 'flash') return '#0d9488';
+            if (node.type === 'purge') return '#ea580c';
+            if (node.type === 'pump')  return '#1d4ed8';
+            if (node.type === 'comp')  return '#7c3aed';
+            if (node.type === 'valve') return '#b45309';
             return '#6b7280';
           }}
           nodeComponent={MiniMapNode}

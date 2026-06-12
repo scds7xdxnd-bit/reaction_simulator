@@ -2,6 +2,7 @@ import type { KineticsType, ReactorType, ReactionMode, ThermalMode, CustomReacti
 import type { AnnotatedStream } from './stream';
 import type { ChemistryModel } from './chemistry';
 import type { OperatingDiagramData } from '../math/operatingDiagramModel';
+import type { AdiabaticRiseResult, HotSpotResult } from '../math/safetyAnalysis';
 
 export interface ReactorNodeData {
   reactorType: ReactorType;
@@ -17,6 +18,12 @@ export interface ReactorNodeData {
   phi?: number;
   P0?: number;
   u0?: number;
+  // F17: detailed cooling (cooled-detailed mode)
+  UA?: number;           // total UA [kJ/(s·K)] for CSTR
+  Ua?: number;           // volumetric UA [kJ/(L·s·K)] for PFR
+  mdot_c_Cp_c?: number;  // coolant capacity rate ṁ_c·Cp_c [kJ/(s·K)]
+  Tc_in?: number;        // coolant inlet temperature [K]
+  hx_flow?: 'co-current' | 'counter-current';
 }
 
 /**
@@ -102,6 +109,47 @@ export interface HXNodeData {
   Q_duty?: number;
 }
 
+export interface CSplitNodeData {
+  label: string;
+  splitFractions: Record<string, number>; // ξ_i ∈ [0,1] per species; default 0.5
+}
+
+export interface FlashNodeData {
+  label: string;
+  T_flash: number; // K, default 365
+  P_flash: number; // Pa, default 101325
+}
+
+export interface PurgeNodeData {
+  label: string;
+  beta: number; // vent fraction ∈ [0,1], default 0.05
+}
+
+export interface PumpNodeData {
+  label: string;
+  P_out: number; // Pa, default 5e5
+  eta: number;   // hydraulic efficiency 0-1, default 0.75
+  Q_vol: number; // volumetric flow rate m³/s, default 1e-3
+}
+
+export interface CompNodeData {
+  label: string;
+  P_out: number; // Pa, default 3e5
+  eta: number;   // isentropic efficiency 0-1, default 0.80
+  gamma: number; // Cp/Cv ratio, default 1.4
+}
+
+export interface ValveNodeData {
+  label: string;
+  P_out: number; // Pa, default 1e5
+}
+
+// F18: per-reactor safety data
+export interface ReactorSafetyData extends AdiabaticRiseResult {
+  Tmax_ad: number;          // T_feed + deltaTad [K]  — worst-case adiabatic outlet
+  hotSpot?: HotSpotResult;  // PFR only: T_max and its position τ*
+}
+
 export interface SelectivityAnalysis {
   SR: number;
   YR_curve: { Da: number; YR: number }[];
@@ -127,6 +175,8 @@ export interface NetworkResult {
   recycleConvergenceData: Record<string, RecycleConvergenceEntry>;
   selectivityAnalysis?: SelectivityAnalysis;
   Xa_eq?: number;
+  divergenceWarning?: string; // set when a tear-stream species grows without bound
+  reactorSafety: Record<string, ReactorSafetyData>; // F18: keyed by node id
 }
 
 export interface SimulationResult extends NetworkResult {}

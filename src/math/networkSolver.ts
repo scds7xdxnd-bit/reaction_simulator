@@ -11,7 +11,9 @@ import { buildLevenspielCurve } from './kinetics';
 import { streamToState, annotateStream } from './streamBridge';
 import { buildChemistry } from './chemistryFactory';
 import { getPreset } from './reactionRegistry';
-import { cstrModel, pfrModel, sideFeedPFR, catalyticPFR, hxModel, type UnitParams, type SideFeedParams, type CatalyticPFRParams } from './unitModels';
+import { cstrModel, pfrModel, sideFeedPFR, catalyticPFR, hxModel, csplitModel, type UnitParams, type SideFeedParams, type CatalyticPFRParams } from './unitModels';
+import { flashModel, purgeModel } from './flashModel';
+import { pumpModel, compModel, valveModel } from './pressureChangerModels';
 import { semibatchSolve } from './semibatchModel';
 import type { ProcessStream, AnnotatedStream } from '../types/stream';
 import { totalMolarFlow } from '../types/stream';
@@ -21,6 +23,9 @@ import { findTearEdgeIds, topoSort, reachableFrom, reachableTo } from './topolog
 import { wegsteinStep, type WegsteinState } from './numerics';
 import { computeXeq } from './equilibrium';
 import { buildOperatingDiagram, type OperatingDiagramData } from './operatingDiagramModel';
+import { adiabaticTemperatureRise, pfrHotSpot } from './safetyAnalysis';
+import { thieleModulus, effectivenessFactor } from './nonIdealFlowModels';
+import type { ReactorSafetyData } from '../types/reactor';
 
 // Helper: scale all molar flows in a ProcessStream by a factor (splitting/merging)
 function scalePS(ps: ProcessStream, factor: number): ProcessStream {
@@ -107,12 +112,25 @@ function forwardPass(
     } else if (node.type === 'fixedbed') {
       const inEdges = incomingEdges.get(nodeId) ?? [];
       const inlet   = mixStreams(inEdges, streams, params);
-      const fbData  = node.data as { W_cat?: number; rho_bulk?: number; epsilon_bed?: number; thermalMode?: ThermalMode; Tc?: number; kappa_v?: number };
+      const fbData  = node.data as {
+        W_cat?: number; rho_bulk?: number; epsilon_bed?: number;
+        thermalMode?: ThermalMode; Tc?: number; kappa_v?: number;
+        // F19.3 effectiveness factor params
+        R_p?: number; D_e?: number; rho_cat_particle?: number; catalyst_age?: number;
+      };
+      // F19.3: compute effectiveness factor η from Thiele modulus if R_p, D_e, rho_cat are set
+      let eta_eff: number | undefined;
+      if (fbData.R_p && fbData.D_e && fbData.rho_cat_particle) {
+        const k_mass = params.k; // intrinsic rate constant [1/s = m³/(kg·s) for 1st order treated as per-vol here]
+        const phi = thieleModulus(fbData.R_p, k_mass / Math.max(fbData.rho_cat_particle, 1), fbData.rho_cat_particle, fbData.D_e);
+        eta_eff = effectivenessFactor(phi) * (fbData.catalyst_age ?? 1);
+      }
       const catParams: CatalyticPFRParams = {
         tau: 1.0 / Math.max(volFlow(inlet, params.Ca0), 0.001),
         thermalMode: fbData.thermalMode ?? 'isothermal',
         Tc: fbData.Tc ?? 300, kappa_v: fbData.kappa_v ?? 0.5, Ca0: params.Ca0,
         W_cat: fbData.W_cat ?? 5.0, rho_bulk: fbData.rho_bulk, epsilon_bed: fbData.epsilon_bed,
+        eta_eff,
       };
       outPS = catalyticPFR(inlet, catParams, chemistry).outlet;
     } else if (node.type === 'semibatch') {
@@ -134,6 +152,8 @@ function forwardPass(
         tau: number; reactorType: 'CSTR' | 'PFR' | 'Batch';
         thermalMode?: ThermalMode; Tc?: number; kappa_v?: number;
         pressureDrop?: boolean; Dp?: number; phi?: number; P0?: number; u0?: number;
+        UA?: number; Ua?: number; mdot_c_Cp_c?: number; Tc_in?: number;
+        hx_flow?: 'co-current' | 'counter-current';
       };
       const tauEff = data.tau / Math.max(volFlow(inlet, params.Ca0), 0.001);
       const unitParams: UnitParams = {
@@ -144,6 +164,11 @@ function forwardPass(
         P0: data.P0 ?? 101325, u0: data.u0 ?? 0.01,
         gasPhase: params.kinetics === 'gas-phase-1st-order',
         epsilon: params.epsilon ?? 0,
+        // F17: detailed cooling
+        UA: data.UA, Ua: data.Ua,
+        mdot_c_Cp_c: data.mdot_c_Cp_c,
+        Tc_in: data.Tc_in,
+        hx_flow: data.hx_flow,
       };
       const isSideInject = node.type === 'pfr' && !!((node.data as { sideInjection?: boolean }).sideInjection);
       const model = node.type === 'cstr' ? cstrModel : pfrModel;
@@ -180,13 +205,66 @@ function forwardPass(
         Ca0:     params.Ca0,
       });
       outPS = outlet as ProcessStream;
+    } else if (node.type === 'csplit') {
+      const inlet  = getInletStream(incomingEdges.get(nodeId) ?? [], streams, params);
+      const csData = node.data as { splitFractions?: Record<string, number> };
+      const { topOutlet, bottomOutlet } = csplitModel(inlet, { splitFractions: csData.splitFractions ?? {} });
+      const outEdges = outgoingEdges.get(nodeId) ?? [];
+      const topEdge  = outEdges.find((e) => e.sourceHandle === 'out-top');
+      const botEdge  = outEdges.find((e) => e.sourceHandle === 'out-bot');
+      if (topEdge) streams.set(topEdge.id, topOutlet);
+      if (botEdge) streams.set(botEdge.id, bottomOutlet);
+      // fallback: assign by edge order when handles don't match
+      const unset = outEdges.filter(e => !streams.has(e.id));
+      if (unset[0]) streams.set(unset[0].id, topOutlet);
+      if (unset[1]) streams.set(unset[1].id, bottomOutlet);
+      outPS = inlet;
+    } else if (node.type === 'flash') {
+      const rawInlet  = getInletStream(incomingEdges.get(nodeId) ?? [], streams, params);
+      const flashData = node.data as { T_flash?: number; P_flash?: number };
+      const inlet: ProcessStream = { ...rawInlet, T: flashData.T_flash ?? rawInlet.T, P: flashData.P_flash ?? rawInlet.P };
+      const { vapor, liquid } = flashModel(inlet);
+      const outEdges  = outgoingEdges.get(nodeId) ?? [];
+      const vapEdge   = outEdges.find((e) => e.sourceHandle === 'out-vapor');
+      const liqEdge   = outEdges.find((e) => e.sourceHandle === 'out-liquid');
+      if (vapEdge) streams.set(vapEdge.id, vapor);
+      if (liqEdge) streams.set(liqEdge.id, liquid);
+      const unset = outEdges.filter((e) => !streams.has(e.id));
+      if (unset[0]) streams.set(unset[0].id, vapor);
+      if (unset[1]) streams.set(unset[1].id, liquid);
+      outPS = inlet;
+    } else if (node.type === 'purge') {
+      const inlet   = getInletStream(incomingEdges.get(nodeId) ?? [], streams, params);
+      const beta    = (node.data as { beta?: number }).beta ?? 0.05;
+      const { vent, process } = purgeModel(inlet, beta);
+      const outEdges = outgoingEdges.get(nodeId) ?? [];
+      const ventEdge = outEdges.find((e) => e.sourceHandle === 'out-vent');
+      const procEdge = outEdges.find((e) => e.sourceHandle === 'out-process');
+      if (ventEdge) streams.set(ventEdge.id, vent);
+      if (procEdge) streams.set(procEdge.id, process);
+      const unset = outEdges.filter((e) => !streams.has(e.id));
+      if (unset[0]) streams.set(unset[0].id, vent);
+      if (unset[1]) streams.set(unset[1].id, process);
+      outPS = inlet;
+    } else if (node.type === 'pump') {
+      const inlet = getInletStream(incomingEdges.get(nodeId) ?? [], streams, params);
+      const d = node.data as { P_out?: number; eta?: number; Q_vol?: number };
+      outPS = pumpModel(inlet, { P_out: d.P_out ?? 5e5, eta: d.eta ?? 0.75, Q_vol: d.Q_vol ?? 1e-3 }).outlet;
+    } else if (node.type === 'comp') {
+      const inlet = getInletStream(incomingEdges.get(nodeId) ?? [], streams, params);
+      const d = node.data as { P_out?: number; eta?: number; gamma?: number };
+      outPS = compModel(inlet, { P_out: d.P_out ?? 3e5, eta: d.eta ?? 0.8, gamma: d.gamma ?? 1.4 }).outlet;
+    } else if (node.type === 'valve') {
+      const inlet = getInletStream(incomingEdges.get(nodeId) ?? [], streams, params);
+      const d = node.data as { P_out?: number };
+      outPS = valveModel(inlet, { P_out: d.P_out ?? 1e5 }).outlet;
     } else {
       outPS = defaultPS(params);
     }
 
     nodeOutputs.set(nodeId, outPS);
 
-    if (node.type !== 'splitter') {
+    if (node.type !== 'splitter' && node.type !== 'csplit' && node.type !== 'flash' && node.type !== 'purge') {
       const outEdges = outgoingEdges.get(nodeId) ?? [];
       const N = outEdges.length;
       for (const e of outEdges) {
@@ -380,6 +458,11 @@ export function solveNetwork(
   let converged = false;
   let iterations = 0;
   let lastPass: ReturnType<typeof forwardPass> | null = null;
+  let divergenceWarning: string | undefined;
+
+  const DIVERGE_WINDOW = 20;
+  // edgeId → speciesId → computed molar flow per iteration
+  const speciesFlowHistory = new Map<string, Map<string, number[]>>();
 
   const recycleHistory: RecycleIterationRecord[] = [];
   // Wegstein per-edge state: stores prevAssumed, prevComputed vectors
@@ -408,6 +491,34 @@ export function solveNetwork(
     }
 
     recycleHistory.push({ iteration: iter + 1, maxError: error });
+
+    // Divergence detection: abort if any tear-stream species grows monotonically for DIVERGE_WINDOW iterations
+    for (const e of safeEdges.filter((e) => tearIds.has(e.id))) {
+      const computed = pass.streams.get(e.id);
+      if (!computed) continue;
+      if (!speciesFlowHistory.has(e.id)) speciesFlowHistory.set(e.id, new Map());
+      const edgeHistory = speciesFlowHistory.get(e.id)!;
+      for (const [sp, flow] of Object.entries(computed.F)) {
+        if (!edgeHistory.has(sp)) edgeHistory.set(sp, []);
+        const hist = edgeHistory.get(sp)!;
+        hist.push(flow);
+        if (hist.length >= DIVERGE_WINDOW) {
+          const win = hist.slice(-DIVERGE_WINDOW);
+          // Compute per-iteration increments
+          const diffs: number[] = [];
+          for (let w = 1; w < win.length; w++) diffs.push(win[w] - win[w - 1]);
+          // Divergence: all increments positive (monotonic growth) AND not decelerating
+          // (convergence shows geometrically shrinking diffs, e.g. 0.5^n from damping)
+          const allPositive = diffs.every(d => d > 1e-12);
+          const nonDecelerating = diffs.every((d, i) => i === 0 || d >= diffs[i - 1] * 0.9);
+          if (allPositive && nonDecelerating) {
+            divergenceWarning = `Species ${sp} is accumulating in the recycle loop — no steady state exists. Add a purge or a separation that removes it.`;
+          }
+        }
+      }
+      if (divergenceWarning) break;
+    }
+    if (divergenceWarning) break;
 
     if (error < TOL) { converged = true; break; }
 
@@ -565,6 +676,24 @@ export function solveNetwork(
       ? computeXeq(params.customReaction.Keq_custom)
       : undefined;
 
+  // F18: compute safety data for every reactor node
+  const reactorSafety: Record<string, ReactorSafetyData> = {};
+  for (const seg of segments) {
+    const rise = adiabaticTemperatureRise(params.delta_H, params.Ca0, params.rho_Cp);
+    const Tmax_ad = (params.T_feed ?? 300) + rise.deltaTad;
+    const node = nodes.find((n) => n.id === seg.reactorId);
+    let hotSpot: ReactorSafetyData['hotSpot'];
+    if (node && (node.type === 'pfr' || node.type === 'fixedbed')) {
+      // Re-read profile from segment to extract hot-spot
+      const maxPt = seg.profile.reduce(
+        (best, pt) => pt.T > best.T ? pt : best,
+        seg.profile[0] ?? { T: 0, cumTau: 0 }
+      );
+      hotSpot = { Tmax: maxPt.T, tauStar: maxPt.cumTau };
+    }
+    reactorSafety[seg.reactorId] = { ...rise, Tmax_ad, hotSpot };
+  }
+
   return {
     streams: streamsOut,
     nodeOutputs: nodeOutputsOut,
@@ -583,5 +712,7 @@ export function solveNetwork(
     recycleConvergenceData,
     selectivityAnalysis,
     Xa_eq,
+    divergenceWarning,
+    reactorSafety,
   };
 }
