@@ -40,7 +40,7 @@ export default function SpeciesProfile() {
 
   if (!result) {
     return (
-      <div className="flex items-center justify-center h-full text-[#6b7280] text-sm">
+      <div className="flex items-center justify-center h-full text-sm" style={{ color: 'var(--text-secondary)' }}>
         No simulation data
       </div>
     );
@@ -48,7 +48,7 @@ export default function SpeciesProfile() {
 
   if (result.segments.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full text-[#6b7280] text-sm text-center px-4">
+      <div className="flex items-center justify-center h-full text-sm text-center px-4" style={{ color: 'var(--text-secondary)' }}>
         Add reactors to the flowsheet to see the species profile
       </div>
     );
@@ -74,10 +74,9 @@ export default function SpeciesProfile() {
             <text
               x={10}
               y={12}
-              fill="#6b7280"
               fontSize={11}
               fontWeight={600}
-              style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}
+              style={{ fill: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
             >
               SPECIES PROFILE
             </text>

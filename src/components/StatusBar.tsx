@@ -25,11 +25,11 @@ export default function StatusBar() {
   const conversionColor =
     finalXa !== null
       ? finalXa > 0.7
-        ? '#16a34a'
+        ? 'var(--success)'
         : finalXa > 0.4
-          ? '#d97706'
-          : '#dc2626'
-      : '#6b7280';
+          ? 'var(--warn)'
+          : 'var(--danger)'
+      : 'var(--text-muted)';
 
   const reactorCount = nodes.filter((n) => n.type === 'cstr' || n.type === 'pfr' || n.type === 'batch').length;
   const hasMixerOrSplitter = nodes.some((n) => n.type === 'mixer' || n.type === 'splitter');
@@ -42,20 +42,20 @@ export default function StatusBar() {
   const finalSelectivity = result?.finalSelectivity ?? NaN;
 
   const yieldColor = isNaN(finalYield)
-    ? '#6b7280'
+    ? 'var(--text-muted)'
     : finalYield > 0.4
-      ? '#16a34a'
+      ? 'var(--success)'
       : finalYield > 0.2
-        ? '#d97706'
-        : '#dc2626';
+        ? 'var(--warn)'
+        : 'var(--danger)';
 
   const selColor = isNaN(finalSelectivity)
-    ? '#6b7280'
+    ? 'var(--text-muted)'
     : finalSelectivity > 0.6
-      ? '#16a34a'
+      ? 'var(--success)'
       : finalSelectivity > 0.3
-        ? '#d97706'
-        : '#dc2626';
+        ? 'var(--warn)'
+        : 'var(--danger)';
 
   const issues     = useValidation();
   const errorCount = issues.filter((i) => i.level === 'error').length;
@@ -88,7 +88,7 @@ export default function StatusBar() {
             background: 'var(--surface)',
             border: '1px solid var(--border)',
             borderRadius: 6,
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            boxShadow: 'var(--shadow-popover)',
             zIndex: 9999,
             padding: '4px 0',
           }}
@@ -103,7 +103,7 @@ export default function StatusBar() {
       )}
       {result ? (
         <>
-          <span className="text-[#374151]">Final Xₐ:</span>
+          <span style={{ color: 'var(--text-secondary)' }}>Final Xₐ:</span>
           <span
             className="font-mono font-bold"
             style={{ color: conversionColor, cursor: 'context-menu' }}
@@ -115,8 +115,8 @@ export default function StatusBar() {
 
           {!isSingle && !isNaN(finalYield) && (
             <>
-              <span className="text-[#b0bcd4]">|</span>
-              <span className="text-[#374151]">Yield Y_R:</span>
+              <span style={{ color: 'var(--text-muted)' }}>|</span>
+              <span style={{ color: 'var(--text-secondary)' }}>Yield Y_R:</span>
               <span
                 className="font-mono font-bold"
                 style={{ color: yieldColor, cursor: 'context-menu' }}
@@ -125,8 +125,8 @@ export default function StatusBar() {
               >
                 {(finalYield * 100).toFixed(1)}%
               </span>
-              <span className="text-[#b0bcd4]">|</span>
-              <span className="text-[#374151]">Selectivity S_R:</span>
+              <span style={{ color: 'var(--text-muted)' }}>|</span>
+              <span style={{ color: 'var(--text-secondary)' }}>Selectivity S_R:</span>
               <span
                 className="font-mono font-bold"
                 style={{ color: selColor, cursor: 'context-menu' }}
@@ -140,14 +140,14 @@ export default function StatusBar() {
 
           {hasMixerOrSplitter && result && (
             <>
-              <span className="text-[#b0bcd4]">|</span>
+              <span style={{ color: 'var(--text-muted)' }}>|</span>
               {result.converged ? (
-                <span className="flex items-center gap-1" style={{ color: '#16a34a' }}>
+                <span className="flex items-center gap-1" style={{ color: 'var(--success)' }}>
                   <CheckCircle size={12} />
                   <span className="font-mono">Converged ({result.iterations} iter)</span>
                 </span>
               ) : (
-                <span className="flex items-center gap-1" style={{ color: '#d97706' }}>
+                <span className="flex items-center gap-1" style={{ color: 'var(--warn)' }}>
                   <AlertTriangle size={12} />
                   <span className="font-mono">Not converged ({result.iterations} iter)</span>
                 </span>
@@ -156,7 +156,7 @@ export default function StatusBar() {
           )}
         </>
       ) : (
-        <span className="flex items-center gap-1.5" style={{ color: '#d97706' }}>
+        <span className="flex items-center gap-1.5" style={{ color: 'var(--warn)' }}>
           <AlertTriangle size={14} />
           <span>{hasMixerOrSplitter
             ? 'Connect Feed → Units → Product to simulate'
@@ -166,11 +166,11 @@ export default function StatusBar() {
 
       {issues.length > 0 && (
         <>
-          <span className="text-[#b0bcd4]">|</span>
+          <span style={{ color: 'var(--text-muted)' }}>|</span>
           <span
             title={issues.map((i) => i.message).join('\n')}
             className="flex items-center gap-1 cursor-default"
-            style={{ color: errorCount > 0 ? '#dc2626' : '#d97706' }}
+            style={{ color: errorCount > 0 ? 'var(--danger)' : 'var(--warn)' }}
           >
             <AlertTriangle size={12} />
             <span className="font-mono">
@@ -182,40 +182,40 @@ export default function StatusBar() {
         </>
       )}
 
-      <span className="text-[#b0bcd4]">|</span>
-      <span className="text-[#374151]">Kinetics:</span>
-      <span className="text-[#0f1730]">{kineticsLabel}</span>
+      <span style={{ color: 'var(--text-muted)' }}>|</span>
+      <span style={{ color: 'var(--text-secondary)' }}>Kinetics:</span>
+      <span style={{ color: 'var(--text-primary)' }}>{kineticsLabel}</span>
 
-      <span className="text-[#b0bcd4]">|</span>
-      <span className="text-[#374151]">{isSingle ? 'k =' : 'k₁ ='}</span>
-      <span className="font-mono text-[#0f1730]">
+      <span style={{ color: 'var(--text-muted)' }}>|</span>
+      <span style={{ color: 'var(--text-secondary)' }}>{isSingle ? 'k =' : 'k₁ ='}</span>
+      <span className="font-mono" style={{ color: 'var(--text-primary)' }}>
         {params.k.toFixed(2)} {kUnit}
       </span>
 
       {!isSingle && (
         <>
-          <span className="text-[#b0bcd4]">|</span>
-          <span className="text-[#374151]">k₂ =</span>
-          <span className="font-mono text-[#0f1730]">
+          <span style={{ color: 'var(--text-muted)' }}>|</span>
+          <span style={{ color: 'var(--text-secondary)' }}>k₂ =</span>
+          <span className="font-mono" style={{ color: 'var(--text-primary)' }}>
             {params.k2.toFixed(2)} s⁻¹
           </span>
         </>
       )}
 
-      <span className="text-[#b0bcd4]">|</span>
-      <span className="text-[#374151]">Cₐ₀ =</span>
-      <span className="font-mono text-[#0f1730]">{params.Ca0.toFixed(2)} mol/L</span>
+      <span style={{ color: 'var(--text-muted)' }}>|</span>
+      <span style={{ color: 'var(--text-secondary)' }}>Cₐ₀ =</span>
+      <span className="font-mono" style={{ color: 'var(--text-primary)' }}>{params.Ca0.toFixed(2)} mol/L</span>
 
       {preset.id === 'single-autocatalytic' && (
         <>
-          <span className="text-[#b0bcd4]">|</span>
-          <span className="text-[#374151]">Cᵣ₀/Cₐ₀ =</span>
-          <span className="font-mono text-[#0f1730]">{params.Cr0_fraction.toFixed(3)}</span>
+          <span style={{ color: 'var(--text-muted)' }}>|</span>
+          <span style={{ color: 'var(--text-secondary)' }}>Cᵣ₀/Cₐ₀ =</span>
+          <span className="font-mono" style={{ color: 'var(--text-primary)' }}>{params.Cr0_fraction.toFixed(3)}</span>
         </>
       )}
 
-      <span className="text-[#b0bcd4]">|</span>
-      <span className="text-[#374151]">
+      <span style={{ color: 'var(--text-muted)' }}>|</span>
+      <span style={{ color: 'var(--text-secondary)' }}>
         {hasMixerOrSplitter
           ? `${reactorCount} Reactor${reactorCount !== 1 ? 's' : ''} in Network`
           : `${reactorCount} Reactor${reactorCount !== 1 ? 's' : ''} in Series`}
@@ -223,9 +223,9 @@ export default function StatusBar() {
 
       {sizingMode && result && params.Q_feed > 0 && (
         <>
-          <span className="text-[#b0bcd4]">|</span>
-          <span className="text-[#374151]">Total V:</span>
-          <span className="font-mono font-bold text-[#7c3aed]">
+          <span style={{ color: 'var(--text-muted)' }}>|</span>
+          <span style={{ color: 'var(--text-secondary)' }}>Total V:</span>
+          <span className="font-mono font-bold" style={{ color: 'var(--cat-pressure)' }}>
             {result.segments.reduce((acc, s) => acc + (s.V ?? 0), 0).toFixed(2)} L
           </span>
         </>
@@ -248,16 +248,16 @@ export default function StatusBar() {
           onClick={() => setSizingMode(!sizingMode)}
           className="text-[10px] px-2 py-0.5 rounded border font-medium transition-colors"
           style={{
-            background: sizingMode ? '#7c3aed' : '#f8faff',
-            color: sizingMode ? '#ffffff' : '#6b7280',
-            borderColor: sizingMode ? '#7c3aed' : '#dde3f0',
+            background: sizingMode ? 'var(--cat-pressure)' : 'var(--bg-inset)',
+            color: sizingMode ? '#ffffff' : 'var(--text-secondary)',
+            borderColor: sizingMode ? 'var(--cat-pressure)' : 'var(--border)',
           }}
         >
           Sizing
         </button>
         {sizingMode && (
           <div className="flex items-center gap-1">
-            <span className="text-[10px] text-[#6b7280]">Q =</span>
+            <span className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>Q =</span>
             <input
               type="number"
               min="0.001"
@@ -270,18 +270,18 @@ export default function StatusBar() {
                 if (!isNaN(v) && v > 0) updateParams({ Q_feed: v });
               }}
               className="w-16 text-[10px] font-mono border rounded px-1 py-0.5 outline-none"
-              style={{ borderColor: '#7c3aed', background: '#faf5ff', color: '#0f1730' }}
+              style={{ borderColor: 'var(--cat-pressure)', background: 'var(--bg-surface)', color: 'var(--text-primary)' }}
             />
-            <span className="text-[10px] text-[#6b7280]">L/s</span>
+            <span className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>L/s</span>
           </div>
         )}
         <button
           onClick={() => setSimulationMode('steady-state')}
           className="text-[10px] px-2 py-0.5 rounded border font-medium transition-colors"
           style={{
-            background: simulationMode === 'steady-state' ? '#2563eb' : '#f8faff',
-            color: simulationMode === 'steady-state' ? '#ffffff' : '#6b7280',
-            borderColor: simulationMode === 'steady-state' ? '#2563eb' : '#dde3f0',
+            background: simulationMode === 'steady-state' ? 'var(--accent)' : 'var(--bg-inset)',
+            color: simulationMode === 'steady-state' ? '#ffffff' : 'var(--text-secondary)',
+            borderColor: simulationMode === 'steady-state' ? 'var(--accent)' : 'var(--border)',
           }}
         >
           Steady State
@@ -290,9 +290,9 @@ export default function StatusBar() {
           onClick={() => setSimulationMode('dynamic')}
           className="text-[10px] px-2 py-0.5 rounded border font-medium transition-colors"
           style={{
-            background: simulationMode === 'dynamic' ? '#2563eb' : '#f8faff',
-            color: simulationMode === 'dynamic' ? '#ffffff' : '#6b7280',
-            borderColor: simulationMode === 'dynamic' ? '#2563eb' : '#dde3f0',
+            background: simulationMode === 'dynamic' ? 'var(--accent)' : 'var(--bg-inset)',
+            color: simulationMode === 'dynamic' ? '#ffffff' : 'var(--text-secondary)',
+            borderColor: simulationMode === 'dynamic' ? 'var(--accent)' : 'var(--border)',
           }}
         >
           Dynamic

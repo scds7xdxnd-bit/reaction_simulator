@@ -33,7 +33,7 @@ export default function LevenspielPlot() {
   const result = useSimulatorStore((s) => s.result);
   const cfg = useSimulatorStore((s) => s.plotConfig['levenspiel']);
   const { isDark } = useTheme();
-  const curveStroke = isDark ? '#e2e8f0' : '#0f1730';
+  const curveStroke = isDark ? '#e2e8f0' : '#1a2233';
   const pfrFill = '#f59e0b';
   const pfrOpacity = isDark ? 0.35 : 0.45;
 
@@ -110,7 +110,7 @@ export default function LevenspielPlot() {
 
   if (!result) {
     return (
-      <div className="flex items-center justify-center h-full text-[#6b7280] text-sm">
+      <div className="flex items-center justify-center h-full text-sm" style={{ color: 'var(--text-secondary)' }}>
         Connect Feed → Reactors → Product
       </div>
     );
@@ -128,18 +128,17 @@ export default function LevenspielPlot() {
             <text
               x={10}
               y={12}
-              fill="#6b7280"
               fontSize={11}
               fontWeight={600}
-              style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}
+              style={{ textTransform: 'uppercase', letterSpacing: '0.05em', fill: 'var(--text-secondary)' }}
             >
               LEVENSPIEL PLOT
             </text>
             <text
               x={10}
               y={28}
-              fill="#9ca3af"
               fontSize={9}
+              style={{ fill: 'var(--text-muted)' }}
             >
               Rectangle area = τ_CSTR   |   Shaded area = τ_PFR
             </text>

@@ -16,10 +16,10 @@ import PlotAxisBar from './PlotAxisBar';
 function KV({ label, value }: { label: string; value: string }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-      <span style={{ fontSize: 8, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+      <span style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
         {label}
       </span>
-      <span style={{ fontSize: 11, color: '#0f1730', fontWeight: 600, fontFamily: 'monospace' }}>
+      <span style={{ fontSize: 11, color: 'var(--text-primary)', fontWeight: 600, fontFamily: 'monospace' }}>
         {value}
       </span>
     </div>
@@ -82,7 +82,7 @@ export default function TemperatureProfile() {
 
   if (!result) {
     return (
-      <div className="flex items-center justify-center h-full text-[#6b7280] text-sm">
+      <div className="flex items-center justify-center h-full text-sm" style={{ color: 'var(--text-secondary)' }}>
         No simulation data
       </div>
     );
@@ -90,7 +90,7 @@ export default function TemperatureProfile() {
 
   if (result.segments.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full text-[#6b7280] text-sm text-center px-4">
+      <div className="flex items-center justify-center h-full text-sm text-center px-4" style={{ color: 'var(--text-secondary)' }}>
         Add reactors to the flowsheet to see the temperature profile
       </div>
     );
@@ -114,22 +114,22 @@ export default function TemperatureProfile() {
               dataKey="cumTau"
               type="number"
               domain={xDomainFinal}
-              tick={{ fontSize: 11, fill: '#6b7280' }}
+              tick={{ fontSize: 11, fill: 'var(--text-secondary)' }}
               tickLine={false}
-              axisLine={{ stroke: '#dde3f0' }}
-              label={{ value: 'cumulative τ (s)', position: 'bottom', offset: 0, fontSize: 10, fill: '#6b7280' }}
+              axisLine={{ stroke: 'var(--border)' }}
+              label={{ value: 'cumulative τ (s)', position: 'bottom', offset: 0, fontSize: 10, fill: 'var(--text-secondary)' }}
             />
             <YAxis
-              tick={{ fontSize: 11, fill: '#6b7280' }}
+              tick={{ fontSize: 11, fill: 'var(--text-secondary)' }}
               tickLine={false}
-              axisLine={{ stroke: '#dde3f0' }}
+              axisLine={{ stroke: 'var(--border)' }}
               domain={yDomainFinal}
               allowDataOverflow
-              label={{ value: 'T (K)', angle: -90, position: 'left', offset: 0, fontSize: 10, fill: '#6b7280' }}
+              label={{ value: 'T (K)', angle: -90, position: 'left', offset: 0, fontSize: 10, fill: 'var(--text-secondary)' }}
             />
             <Tooltip
-              contentStyle={{ background: '#ffffff', border: '1px solid #dde3f0', borderRadius: 4, fontSize: 11 }}
-              cursor={{ stroke: '#94a3b8', strokeWidth: 1, strokeDasharray: '3 3' }}
+              contentStyle={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 4, fontSize: 11, color: 'var(--text-primary)' }}
+              cursor={{ stroke: 'var(--text-muted)', strokeWidth: 1, strokeDasharray: '3 3' }}
               formatter={(value: number, name: string) => {
                 if (name === 'T') return [`${value.toFixed(1)} K`, 'Temperature'];
                 return [`${(value * 100).toFixed(1)}%`, 'Xa'];
@@ -181,11 +181,11 @@ export default function TemperatureProfile() {
         const seg = profileData.segs[selectedIdx];
         return (
           <div style={{
-            flexShrink: 0, height: 52, borderTop: '1px solid #dde3f0',
-            background: '#f8faff', display: 'flex', alignItems: 'center',
+            flexShrink: 0, height: 52, borderTop: '1px solid var(--border)',
+            background: 'var(--bg-inset)', display: 'flex', alignItems: 'center',
             gap: 20, paddingLeft: 16, paddingRight: 12, overflow: 'hidden',
           }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#0f1730', minWidth: 60 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)', minWidth: 60 }}>
               {seg.label}
             </span>
             <KV label="Xₐ" value={`${(seg.Xa_in * 100).toFixed(1)}% → ${(seg.Xa_out * 100).toFixed(1)}%`} />
@@ -193,7 +193,7 @@ export default function TemperatureProfile() {
             <KV label="Da" value={seg.Da.toFixed(2)} />
             <KV label="τ" value={`${seg.tau.toFixed(2)} s`} />
             <button onClick={() => setSelectedIdx(null)}
-              style={{ marginLeft: 'auto', fontSize: 10, color: '#94a3b8', background: 'none',
+              style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--text-muted)', background: 'none',
                        border: 'none', cursor: 'pointer' }}>✕</button>
           </div>
         );

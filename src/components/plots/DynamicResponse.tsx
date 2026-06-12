@@ -40,7 +40,7 @@ export default function DynamicResponse({ history, tCurrent, disturbanceLog }: P
 
   if (history.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full text-[#6b7280] text-sm">
+      <div className="flex items-center justify-center h-full text-sm" style={{ color: 'var(--text-secondary)' }}>
         Press Play to start dynamic simulation
       </div>
     );
@@ -56,7 +56,7 @@ export default function DynamicResponse({ history, tCurrent, disturbanceLog }: P
         data={history}
         margin={{ top: 40, right: 20, left: 10, bottom: 30 }}
       >
-        <text x={10} y={12} fill="#6b7280" fontSize={11} fontWeight={600} style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <text x={10} y={12} fontSize={11} fontWeight={600} style={{ fill: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           DYNAMIC RESPONSE
         </text>
 
@@ -67,7 +67,7 @@ export default function DynamicResponse({ history, tCurrent, disturbanceLog }: P
         )}
 
         <Tooltip
-          contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #dde3f0', borderRadius: 4, fontSize: 12 }}
+          contentStyle={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 4, fontSize: 12, color: 'var(--text-primary)' }}
           labelFormatter={(val) => `t = ${Number(val).toFixed(2)} s`}
         />
 
@@ -143,20 +143,20 @@ export default function DynamicResponse({ history, tCurrent, disturbanceLog }: P
           type="number"
           domain={xDomain}
           tickFormatter={(v) => Number(v).toFixed(1)}
-          stroke="#374151"
+          stroke="var(--text-secondary)"
           fontSize={11}
-          label={{ value: 'Time (s)', position: 'insideBottom', offset: -5, fill: '#374151', fontSize: 11 }}
-          tick={{ fill: '#374151' }}
+          label={{ value: 'Time (s)', position: 'insideBottom', offset: -5, fill: 'var(--text-secondary)', fontSize: 11 }}
+          tick={{ fill: 'var(--text-secondary)' }}
         />
         <YAxis
           yAxisId="left"
           type="number"
           domain={[0, 'auto']}
           tickFormatter={(v) => Number(v).toFixed(1)}
-          stroke="#374151"
+          stroke="var(--text-secondary)"
           fontSize={11}
-          label={{ value: 'Xₐ / C (mol/L)', angle: -90, position: 'insideLeft', fill: '#374151', fontSize: 11 }}
-          tick={{ fill: '#374151' }}
+          label={{ value: 'Xₐ / C (mol/L)', angle: -90, position: 'insideLeft', fill: 'var(--text-secondary)', fontSize: 11 }}
+          tick={{ fill: 'var(--text-secondary)' }}
         />
         {hasNonIsothermal && (
           <YAxis

@@ -31,10 +31,26 @@ import Toaster from './components/Toaster';
 
 const LS_KEY = 'reaction-simulator-v1';
 
-type RightTab = 'levenspiel' | 'profiles' | 'thermal' | 'dynamic' | 'analysis' | 'scenarios' | 'design';
+// 4 primary tabs (collapsed from 7)
+type RightTab = 'results' | 'dynamic' | 'analysis' | 'design';
+type ResultsView = 'levenspiel' | 'profiles' | 'thermal';
+type DesignView  = 'specs' | 'scenarios';
+
+function normalizeRightTab(s: string): RightTab {
+  if (s === 'dynamic' || s === 'analysis') return s as RightTab;
+  if (s === 'results' || s === 'levenspiel' || s === 'profiles' || s === 'thermal') return 'results';
+  if (s === 'design' || s === 'scenarios') return 'design';
+  return 'results';
+}
+
+function initialResultsView(stored: string): ResultsView {
+  if (stored === 'profiles') return 'profiles';
+  if (stored === 'thermal')  return 'thermal';
+  return 'levenspiel';
+}
 
 export default function App() {
-  useTheme(); // initialize dark class on <html> from system/localStorage
+  useTheme();
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showTour, setShowTour] = useState(() => shouldShowTour());
   const reactionMode = useSimulatorStore((s) => s.params.reactionMode);
@@ -55,24 +71,25 @@ export default function App() {
   const setParamsOpen        = useSimulatorStore((s) => s.setParamsOpen);
   const propertiesNodeId     = useSimulatorStore((s) => s.propertiesNodeId);
   const setPropertiesNodeId  = useSimulatorStore((s) => s.setPropertiesNodeId);
-  const storeRightTab        = useSimulatorStore((s) => s.rightTab) as RightTab;
+  const storeRightTab        = useSimulatorStore((s) => s.rightTab);
   const setStoreRightTab     = useSimulatorStore((s) => s.setRightTab);
   const { copySelected, paste, cut, duplicate } = useClipboardActions();
   const dynamic = useDynamicSimulation();
 
-  const rightTab = storeRightTab;
+  const rightTab    = normalizeRightTab(storeRightTab);
   const setRightTab = (t: RightTab) => setStoreRightTab(t);
+
+  // Sub-view state within tabs
+  const [resultsView, setResultsView] = useState<ResultsView>(() => initialResultsView(storeRightTab));
+  const [designView,  setDesignView]  = useState<DesignView>('specs');
 
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const tabs: { id: RightTab; label: string }[] = [
-    { id: 'levenspiel', label: 'Levenspiel' },
-    { id: 'profiles', label: 'Profiles' },
-    { id: 'thermal', label: 'Thermal' },
-    { id: 'dynamic', label: 'Dynamic' },
+  const mainTabs: { id: RightTab; label: string }[] = [
+    { id: 'results',  label: 'Results'  },
+    { id: 'dynamic',  label: 'Dynamic'  },
     { id: 'analysis', label: 'Analysis' },
-    { id: 'scenarios', label: 'Scenarios' },
-    { id: 'design', label: 'Design' },
+    { id: 'design',   label: 'Design'   },
   ];
 
   useEffect(() => {
@@ -139,7 +156,7 @@ export default function App() {
       setSimulationMode(state.mode);
       addToast('info', 'Session restored from last save.');
     } catch {
-      // localStorage unavailable (private mode, storage errors)
+      // localStorage unavailable
     }
   }, [setNodes, setEdges, updateParams, setSimulationMode, addToast]);
 
@@ -148,17 +165,31 @@ export default function App() {
     saveTimerRef.current = setTimeout(() => {
       try {
         localStorage.setItem(LS_KEY, serializeState(nodes, edges, params, simulationMode));
-      } catch {
-        // storage quota exceeded or unavailable
-      }
+      } catch { /* quota exceeded */ }
     }, 300);
-    return () => {
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    };
+    return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
   }, [nodes, edges, params, simulationMode]);
 
+  // ── Tab bar shared style ──────────────────────────────────────────────────────
+  const tabStyle = (id: RightTab): React.CSSProperties => ({
+    flex: 1,
+    padding: '7px 4px',
+    fontSize: 11,
+    fontWeight: 500,
+    color: rightTab === id ? 'var(--text-primary)' : 'var(--text-secondary)',
+    borderBottom: rightTab === id ? '2px solid var(--accent)' : '2px solid transparent',
+    background: 'none',
+    border: 'none',
+    borderBottomStyle: 'solid',
+    borderBottomWidth: 2,
+    borderBottomColor: rightTab === id ? 'var(--accent)' : 'transparent',
+    cursor: 'pointer',
+    transition: 'color .12s',
+    whiteSpace: 'nowrap',
+  });
+
   return (
-    <div className="h-full min-w-[1280px] flex flex-col" style={{ background: 'var(--bg)' }}>
+    <div className="h-full min-w-[1280px] flex flex-col" style={{ background: 'var(--bg-app)' }}>
       <div className="flex flex-1 min-h-0">
         <ReactorToolbar />
 
@@ -169,65 +200,82 @@ export default function App() {
           </div>
         </div>
 
-        <div className="w-[420px] flex flex-col shrink-0 overflow-hidden" style={{ borderLeft: '1px solid var(--border)', background: 'var(--bg)' }}>
+        {/* ── Right panel ───────────────────────────────────────────────────── */}
+        <div
+          className="w-[420px] flex flex-col shrink-0 overflow-hidden"
+          style={{ borderLeft: '1px solid var(--border)', background: 'var(--bg-surface)' }}
+        >
+          {/* Tab bar — 4 primary tabs (hidden when node inspector is open) */}
           {!propertiesNodeId && (
-            <div className="flex gap-0 shrink-0 rsi-tab-bar" style={{ borderBottom: '1px solid var(--border)', background: 'var(--surface)' }}>
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setRightTab(tab.id)}
-                  className="flex-1 text-[11px] font-medium py-2 transition-colors"
-                  style={{
-                    color: rightTab === tab.id ? '#2563eb' : 'var(--text-muted)',
-                    borderBottom: rightTab === tab.id ? '2px solid #2563eb' : '2px solid transparent',
-                    background: rightTab === tab.id ? 'var(--surface-raised)' : 'var(--surface)',
-                  }}
-                >
+            <div
+              className="flex shrink-0 rsi-tab-bar"
+              style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)' }}
+            >
+              {mainTabs.map((tab) => (
+                <button key={tab.id} onClick={() => setRightTab(tab.id)} style={tabStyle(tab.id)}>
                   {tab.label}
                 </button>
               ))}
             </div>
           )}
 
+          {/* ── Tab content area ─────────────────────────────────────────────── */}
           <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+
+            {/* Node inspector (takes over the panel) */}
             {propertiesNodeId && (
               <div className="flex-1 min-h-0 overflow-y-auto">
                 <PropertiesPanel onClose={() => setPropertiesNodeId(null)} />
               </div>
             )}
-            {!propertiesNodeId && rightTab === 'levenspiel' && (
-              <div className="h-[55%] border-b border-[#dde3f0] shrink-0">
-                <div className="h-full">
-                  <LevenspielPlot />
+
+            {/* ── Results tab ──────────────────────────────────────────────── */}
+            {!propertiesNodeId && rightTab === 'results' && (
+              <div className="flex flex-col flex-1 min-h-0">
+                {/* Sub-view segmented control */}
+                <div
+                  className="flex items-center px-3 py-2 shrink-0"
+                  style={{ borderBottom: '1px solid var(--border)' }}
+                >
+                  <div className="seg-ctrl">
+                    {(['levenspiel', 'profiles', 'thermal'] as ResultsView[]).map((v) => (
+                      <button
+                        key={v}
+                        className={resultsView === v ? 'active' : ''}
+                        onClick={() => setResultsView(v)}
+                      >
+                        {v === 'levenspiel' ? 'Levenspiel' : v === 'profiles' ? 'Profiles' : 'Thermal'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Plot area */}
+                <div className="flex-1 min-h-0">
+                  {resultsView === 'levenspiel' && <LevenspielPlot />}
+                  {resultsView === 'thermal'    && <OperatingDiagram />}
+                  {resultsView === 'profiles' && (
+                    reactionMode === 'single' ? (
+                      <div className="flex flex-col h-full">
+                        <div className="h-1/2 border-b" style={{ borderColor: 'var(--border)' }}>
+                          <ConversionProfile />
+                        </div>
+                        <div className="h-1/2">
+                          <TemperatureProfile />
+                        </div>
+                      </div>
+                    ) : (
+                      <SpeciesProfile />
+                    )
+                  )}
                 </div>
               </div>
             )}
-            {!propertiesNodeId && rightTab === 'profiles' && (
-              <>
-                {reactionMode === 'single' ? (
-                  <>
-                    <div className="h-[47%] border-b border-[#dde3f0] shrink-0">
-                      <ConversionProfile />
-                    </div>
-                    <div className="h-[47%] shrink-0">
-                      <TemperatureProfile />
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex-1">
-                    <SpeciesProfile />
-                  </div>
-                )}
-              </>
-            )}
-            {!propertiesNodeId && rightTab === 'thermal' && (
-              <div className="flex-1">
-                <OperatingDiagram />
-              </div>
-            )}
+
+            {/* ── Dynamic tab ──────────────────────────────────────────────── */}
             {!propertiesNodeId && rightTab === 'dynamic' && (
-              <>
-                <div className="h-[55%] border-b border-[#dde3f0] shrink-0">
+              <div className="flex flex-col flex-1 min-h-0">
+                <div className="h-[55%] border-b shrink-0" style={{ borderColor: 'var(--border)' }}>
                   <DynamicResponse
                     history={dynamic.history}
                     tCurrent={dynamic.t}
@@ -235,13 +283,12 @@ export default function App() {
                   />
                 </div>
                 <div className="flex-1">
-                  <PhasePortrait
-                    selectedNodeId={selectedNodeId}
-                    cstrHistory={dynamic.cstrHistory}
-                  />
+                  <PhasePortrait selectedNodeId={selectedNodeId} cstrHistory={dynamic.cstrHistory} />
                 </div>
-              </>
+              </div>
             )}
+
+            {/* ── Analysis tab ─────────────────────────────────────────────── */}
             {!propertiesNodeId && rightTab === 'analysis' && (
               <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
                 <RecyclePanel />
@@ -252,22 +299,41 @@ export default function App() {
                 </div>
               </div>
             )}
-            {!propertiesNodeId && rightTab === 'scenarios' && (
-              <div className="flex-1 min-h-0 overflow-hidden">
-                <ScenariosPanel />
-              </div>
-            )}
+
+            {/* ── Design tab — Specs / Scenarios sub-tabs ───────────────────── */}
             {!propertiesNodeId && rightTab === 'design' && (
-              <div className="flex-1 min-h-0 overflow-hidden">
-                <DesignSpecsPanel />
-              </div>
-            )}
-            {!propertiesNodeId && rightTab !== 'dynamic' && rightTab !== 'analysis' && rightTab !== 'scenarios' && rightTab !== 'design' && (
-              <div className="shrink-0">
-                <StreamTablePanel />
+              <div className="flex flex-col flex-1 min-h-0">
+                {/* Sub-view segmented control */}
+                <div
+                  className="flex items-center px-3 py-2 shrink-0"
+                  style={{ borderBottom: '1px solid var(--border)' }}
+                >
+                  <div className="seg-ctrl">
+                    {(['specs', 'scenarios'] as DesignView[]).map((v) => (
+                      <button
+                        key={v}
+                        className={designView === v ? 'active' : ''}
+                        onClick={() => setDesignView(v)}
+                      >
+                        {v === 'specs' ? 'Design Specs' : 'Scenarios'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex-1 min-h-0 overflow-hidden">
+                  {designView === 'specs'      && <DesignSpecsPanel />}
+                  {designView === 'scenarios'  && <ScenariosPanel />}
+                </div>
               </div>
             )}
           </div>
+
+          {/* ── Stream table — always docked at panel bottom ─────────────────── */}
+          {!propertiesNodeId && rightTab !== 'dynamic' && (
+            <div className="shrink-0" style={{ borderTop: '1px solid var(--border)' }}>
+              <StreamTablePanel />
+            </div>
+          )}
         </div>
       </div>
 

@@ -82,7 +82,7 @@ export default function StreamTablePanel() {
   if (!result || Object.keys(result.streams).length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
-        <span style={{ fontSize: 12, color: '#94a3b8' }}>
+        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
           Run the simulation to see stream data
         </span>
       </div>
@@ -123,17 +123,17 @@ export default function StreamTablePanel() {
   const converged = result.converged;
 
   return (
-    <div className="border-t border-[#dde3f0] bg-[#ffffff] flex flex-col" style={{ maxHeight: 220 }}>
+    <div className="flex flex-col" style={{ maxHeight: 220, borderTop: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
       <div className="flex items-center justify-between px-3 py-1.5 shrink-0">
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-medium text-[#374151] uppercase tracking-wider">
+          <span className="text-[11px] font-medium uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>
             Stream Table
           </span>
           <span style={{
             fontSize: 9,
             fontWeight: 600,
-            color: converged ? '#16a34a' : '#d97706',
-            background: converged ? '#dcfce7' : '#fef9c3',
+            color: converged ? 'var(--success)' : 'var(--warn)',
+            background: converged ? 'var(--success-soft)' : 'var(--warn-soft)',
             borderRadius: 8,
             padding: '1px 6px',
           }}>
@@ -146,8 +146,8 @@ export default function StreamTablePanel() {
           onClick={handleCopyCSV}
           style={{
             fontSize: 10, padding: '2px 8px', borderRadius: 4,
-            border: '1px solid #dde3f0', background: '#f8faff',
-            color: '#374151', cursor: 'pointer',
+            border: '1px solid var(--border)', background: 'var(--bg-inset)',
+            color: 'var(--text-primary)', cursor: 'pointer',
           }}
         >
           {copied ? '✓ Copied' : '⬇ CSV'}
@@ -156,41 +156,41 @@ export default function StreamTablePanel() {
 
       <div className="overflow-y-auto flex-1 min-h-0">
         <table className="w-full text-[10px]">
-          <thead className="bg-[#f8faff] sticky top-0">
+          <thead className="sticky top-0" style={{ background: 'var(--bg-inset)' }}>
             <tr>
-              <th className="text-left px-2 py-0.5 text-[#374151] font-medium">Stream</th>
-              <th className="text-left px-2 py-0.5 text-[#374151] font-medium">Route</th>
+              <th className="text-left px-2 py-0.5 font-medium" style={{ color: 'var(--text-primary)' }}>Stream</th>
+              <th className="text-left px-2 py-0.5 font-medium" style={{ color: 'var(--text-primary)' }}>Route</th>
               <SortableHeader label="Flow"       sortKey={sortKey} sortDir={sortDir} onToggle={handleSortKey} />
               <SortableHeader label="T (K)"      sortKey={sortKey} sortDir={sortDir} onToggle={handleSortKey} />
               <SortableHeader label="Xₐ"         sortKey={sortKey} sortDir={sortDir} onToggle={handleSortKey} />
               <SortableHeader label="Cₐ"         sortKey={sortKey} sortDir={sortDir} onToggle={handleSortKey} />
-              <th className="text-right px-2 py-0.5 text-[#374151] font-medium">Cᵣ</th>
-              <th className="text-right px-2 py-0.5 text-[#374151] font-medium">Cₛ</th>
+              <th className="text-right px-2 py-0.5 font-medium" style={{ color: 'var(--text-primary)' }}>Cᵣ</th>
+              <th className="text-right px-2 py-0.5 font-medium" style={{ color: 'var(--text-primary)' }}>Cₛ</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((row) => (
               <tr
                 key={row.edgeId}
-                style={{ background: row.isRecycle ? '#f5f3ff' : undefined }}
+                style={{ background: row.isRecycle ? 'var(--accent-soft)' : undefined }}
               >
                 <td className="px-2 py-0.5">
-                  <span style={{ fontSize: 11, fontFamily: 'monospace', fontWeight: 600, color: '#0f1730' }}>
+                  <span style={{ fontSize: 11, fontFamily: 'monospace', fontWeight: 600, color: 'var(--text-primary)' }}>
                     {row.label}
                   </span>
                 </td>
                 <td className="px-2 py-0.5">
-                  <span style={{ fontSize: 10, color: '#94a3b8' }}>
+                  <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
                     {row.route}
                   </span>
                 </td>
                 <td className="text-right px-2 py-0.5">
-                  <span style={{ fontSize: 10, fontFamily: 'monospace', color: '#0f1730' }}>
+                  <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'var(--text-primary)' }}>
                     {row.flow.toFixed(2)}
                   </span>
                 </td>
                 <td className="text-right px-2 py-0.5">
-                  <span style={{ fontSize: 10, fontFamily: 'monospace', color: '#0f1730' }}>
+                  <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'var(--text-primary)' }}>
                     {row.T.toFixed(0)}
                   </span>
                 </td>
@@ -201,24 +201,24 @@ export default function StreamTablePanel() {
                     padding: '1px 6px',
                     fontSize: 10,
                     fontWeight: 600,
-                    background: row.Xa >= 0.8 ? '#dcfce7' : row.Xa >= 0.5 ? '#fef9c3' : '#fee2e2',
-                    color: row.Xa >= 0.8 ? '#16a34a' : row.Xa >= 0.5 ? '#92400e' : '#991b1b',
+                    background: row.Xa >= 0.8 ? 'var(--success-soft)' : row.Xa >= 0.5 ? 'var(--warn-soft)' : 'var(--danger-soft)',
+                    color: row.Xa >= 0.8 ? 'var(--success)' : row.Xa >= 0.5 ? 'var(--warn)' : 'var(--danger)',
                   }}>
                     {(row.Xa * 100).toFixed(1)}%
                   </span>
                 </td>
                 <td className="text-right px-2 py-0.5">
-                  <span style={{ fontSize: 10, fontFamily: 'monospace', color: '#0f1730' }}>
+                  <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'var(--text-primary)' }}>
                     {row.Ca.toFixed(3)}
                   </span>
                 </td>
                 <td className="text-right px-2 py-0.5">
-                  <span style={{ fontSize: 10, fontFamily: 'monospace', color: '#0f1730' }}>
+                  <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'var(--text-primary)' }}>
                     {row.Cr !== null ? row.Cr.toFixed(3) : '—'}
                   </span>
                 </td>
                 <td className="text-right px-2 py-0.5">
-                  <span style={{ fontSize: 10, fontFamily: 'monospace', color: '#0f1730' }}>
+                  <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'var(--text-primary)' }}>
                     {row.Cs !== null ? row.Cs.toFixed(3) : '—'}
                   </span>
                 </td>
@@ -247,11 +247,12 @@ function SortableHeader({
   const arrow = !active ? '' : sortDir === 'asc' ? ' ▲' : ' ▼';
   return (
     <th
-      className="text-right px-2 py-0.5 text-[#374151] font-medium cursor-pointer select-none hover:bg-[#eef2ff]"
+      className="text-right px-2 py-0.5 font-medium cursor-pointer select-none stream-th-sort"
+      style={{ color: 'var(--text-primary)' }}
       onClick={() => onToggle(label)}
     >
       <span style={{ fontSize: 10 }}>{label}</span>
-      <span style={{ fontSize: 8 }}>{arrow}</span>
+      <span style={{ fontSize: 9 }}>{arrow}</span>
     </th>
   );
 }

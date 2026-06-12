@@ -16,9 +16,9 @@ export default function SelectivityPanel() {
   const isParallel = reactionMode === 'parallel';
 
   return (
-    <div className="border-b border-[#dde3f0] shrink-0" style={{ background: 'var(--surface)' }}>
+    <div className="shrink-0" style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
       <button
-        className="w-full flex items-center justify-between px-3 py-2 text-[11px] font-semibold hover:bg-[#f8faff] transition-colors"
+        className="w-full flex items-center justify-between px-3 py-2 text-[11px] font-semibold transition-colors rsi-hover-surface"
         style={{ color: 'var(--text-primary)' }}
         onClick={() => setExpanded((v) => !v)}
       >

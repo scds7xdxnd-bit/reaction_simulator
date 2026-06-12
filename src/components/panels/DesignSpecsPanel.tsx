@@ -105,19 +105,19 @@ function SpecRow({ spec, result, nodes, onRemove }: SpecRowProps) {
   let chip: React.ReactNode;
   if (!result) {
     chip = (
-      <span style={{ background: '#f3f4f6', color: '#6b7280', fontSize: 10, padding: '2px 6px', borderRadius: 4 }}>
+      <span style={{ background: 'var(--bg-inset)', color: 'var(--text-secondary)', fontSize: 10, padding: '2px 6px', borderRadius: 4 }}>
         computing…
       </span>
     );
   } else if (result.converged && Math.abs(result.achieved - spec.target.value) < 1e-4 * Math.max(1, Math.abs(spec.target.value))) {
     chip = (
-      <span style={{ background: '#dcfce7', color: '#166534', fontSize: 10, padding: '2px 6px', borderRadius: 4 }}>
+      <span style={{ background: 'var(--success-soft)', color: 'var(--success)', fontSize: 10, padding: '2px 6px', borderRadius: 4 }}>
         ✓ met · {pl.split('—')[0].trim()} = {fmtKnob(spec, result.root)}
       </span>
     );
   } else {
     chip = (
-      <span style={{ background: '#fee2e2', color: '#991b1b', fontSize: 10, padding: '2px 6px', borderRadius: 4 }}>
+      <span style={{ background: 'var(--danger-soft)', color: 'var(--danger)', fontSize: 10, padding: '2px 6px', borderRadius: 4 }}>
         ✗ no solution in [{spec.vary.lo}, {spec.vary.hi}]
       </span>
     );
@@ -141,7 +141,7 @@ function SpecRow({ spec, result, nodes, onRemove }: SpecRowProps) {
         </div>
         <button
           onClick={onRemove}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 14, lineHeight: 1, padding: '0 2px' }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 14, lineHeight: 1, padding: '0 2px' }}
           title="Remove"
         >×</button>
       </div>
@@ -249,7 +249,7 @@ export default function DesignSpecsPanel() {
         <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', letterSpacing: '0.04em' }}>DESIGN SPECS</span>
         <button
           onClick={() => setAdding((v) => !v)}
-          style={{ fontSize: 11, padding: '2px 8px', borderRadius: 4, border: '1px solid #2563eb', background: adding ? '#2563eb' : 'transparent', color: adding ? '#fff' : '#2563eb', cursor: 'pointer' }}
+          style={{ fontSize: 11, padding: '2px 8px', borderRadius: 4, border: '1px solid var(--accent)', background: adding ? 'var(--accent)' : 'transparent', color: adding ? '#fff' : 'var(--accent)', cursor: 'pointer' }}
         >
           {adding ? 'Cancel' : '+ Add'}
         </button>
@@ -257,7 +257,7 @@ export default function DesignSpecsPanel() {
 
       {adding && (
         <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--border)', background: 'var(--surface-raised)', flexShrink: 0 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Vary</div>
+          <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>Vary</div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginBottom: 6 }}>
             <select value={formParam} onChange={(e) => handleParamChange(e.target.value)} style={{ ...inputStyle, flex: '1 1 120px' }}>
               {PARAM_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -277,7 +277,7 @@ export default function DesignSpecsPanel() {
             <input type="number" step="any" value={formHi} onChange={(e) => setFormHi(Number(e.target.value))} placeholder="hi" style={{ ...inputStyle, width: 56 }} />
           </div>
 
-          <div style={{ fontSize: 11, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Target</div>
+          <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>Target</div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginBottom: 8 }}>
             <select value={formMetric} onChange={(e) => setFormMetric(e.target.value as DesignMetric)} style={{ ...inputStyle, flex: '1 1 140px' }}>
               {METRIC_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -299,7 +299,7 @@ export default function DesignSpecsPanel() {
           <button
             onClick={handleAdd}
             disabled={formLo >= formHi}
-            style={{ fontSize: 11, padding: '3px 12px', borderRadius: 4, border: 'none', background: formLo < formHi ? '#2563eb' : '#d1d5db', color: '#fff', cursor: formLo < formHi ? 'pointer' : 'not-allowed' }}
+            style={{ fontSize: 11, padding: '3px 12px', borderRadius: 4, border: 'none', background: formLo < formHi ? 'var(--accent)' : 'var(--text-disabled)', color: '#fff', cursor: formLo < formHi ? 'pointer' : 'not-allowed' }}
           >
             Solve &amp; Add
           </button>
@@ -308,7 +308,7 @@ export default function DesignSpecsPanel() {
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 8 }}>
         {designSpecs.length === 0 ? (
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: 12, textAlign: 'center', padding: '20px 0' }}>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: 12, textAlign: 'center', padding: '20px 0' }}>
             No specs yet.<br />Click + Add to define a target and find the required knob value.
           </div>
         ) : (

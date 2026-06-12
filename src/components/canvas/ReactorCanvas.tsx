@@ -262,8 +262,20 @@ export default function ReactorCanvas() {
   }, [pushHistory, storeSetEdges]);
 
   const onReconnect = useCallback((oldEdge: Edge, newConnection: Connection) => {
+    const { nodes: n, edges: e } = useSimulatorStore.getState();
+    const newTarget = n.find((nd) => nd.id === newConnection.target);
+    const newSource = n.find((nd) => nd.id === newConnection.source);
+    // Respect mixer max-2 and splitter max-2 limits, ignoring the old edge being replaced
+    if (newTarget?.type === 'mixer') {
+      const currentInputs = e.filter((ed) => ed.target === newTarget.id && ed.id !== oldEdge.id).length;
+      if (currentInputs >= 2) return;
+    }
+    if (newSource?.type === 'splitter') {
+      const currentOutputs = e.filter((ed) => ed.source === newSource.id && ed.id !== oldEdge.id).length;
+      if (currentOutputs >= 2) return;
+    }
     pushHistory();
-    storeSetEdges(reconnectEdge(oldEdge, newConnection, useSimulatorStore.getState().edges) as Edge[]);
+    storeSetEdges(reconnectEdge(oldEdge, newConnection, e) as Edge[]);
   }, [pushHistory, storeSetEdges]);
 
   const onDragOver = useCallback((event: React.DragEvent) => {
@@ -428,7 +440,7 @@ export default function ReactorCanvas() {
         onConnect={onConnect}
         onReconnect={onReconnect}
         edgesFocusable={true}
-        edgesReconnectable={false}
+        edgesReconnectable={true}
         onDragOver={onDragOver}
         onDrop={onDrop}
         onNodesDelete={onDelete}

@@ -43,7 +43,7 @@ export default function OperatingDiagram() {
 
   if (!diagramData) {
     return (
-      <div className="flex items-center justify-center h-full text-[#6b7280] text-sm">
+      <div className="flex items-center justify-center h-full text-sm" style={{ color: 'var(--text-secondary)' }}>
         Select a cooled CSTR in single-reaction mode
       </div>
     );
@@ -54,12 +54,13 @@ export default function OperatingDiagram() {
   return (
     <div className="w-full h-full flex flex-col">
       {cooledCstrs.length > 1 && (
-        <div className="flex items-center gap-2 px-3 py-1.5 border-b border-[#dde3f0] bg-[#ffffff]">
-          <span className="text-[10px] text-[#6b7280]">CSTR:</span>
+        <div className="flex items-center gap-2 px-3 py-1.5" style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
+          <span className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>CSTR:</span>
           <select
             value={activeId ?? ''}
             onChange={(e) => setSelectedId(e.target.value)}
-            className="text-[10px] bg-[#f8faff] border border-[#dde3f0] rounded px-1 py-0.5 text-[#0f1730] outline-none"
+            className="text-[10px] rounded px-1 py-0.5 outline-none"
+            style={{ background: 'var(--bg-inset)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
           >
             {cooledCstrs.map((n) => (
               <option key={n.id} value={n.id}>
@@ -70,8 +71,8 @@ export default function OperatingDiagram() {
         </div>
       )}
       {multiplicity.hasMultiplicity && (
-        <div className="px-3 py-1.5 bg-[#fffbeb] border-b border-[#fde68a]">
-          <div className="text-[10px] font-bold text-[#92400e] mb-1">
+        <div className="px-3 py-1.5" style={{ background: 'var(--warn-soft)', borderBottom: '1px solid var(--border-mid)' }}>
+          <div className="text-[10px] font-bold mb-1" style={{ color: 'var(--warn)' }}>
             ⚡ Multiple Steady States — ignition / unstable / extinction
           </div>
           <div className="flex gap-2">
@@ -82,9 +83,9 @@ export default function OperatingDiagram() {
                 style={{ background: steadyStateColor(ss.label) + '18', border: `1px solid ${steadyStateColor(ss.label)}44` }}
               >
                 <div className="font-bold capitalize" style={{ color: steadyStateColor(ss.label) }}>{ss.label}</div>
-                <div className="text-[#374151]">T = {ss.T.toFixed(1)} K</div>
-                <div className="text-[#374151]">Xₐ = {ss.Xa.toFixed(3)}</div>
-                <div style={{ color: ss.stable ? '#16a34a' : '#dc2626' }}>{ss.stable ? '● stable' : '○ unstable'}</div>
+                <div style={{ color: 'var(--text-primary)' }}>T = {ss.T.toFixed(1)} K</div>
+                <div style={{ color: 'var(--text-primary)' }}>Xₐ = {ss.Xa.toFixed(3)}</div>
+                <div style={{ color: ss.stable ? 'var(--success)' : 'var(--danger)' }}>{ss.stable ? '● stable' : '○ unstable'}</div>
               </div>
             ))}
           </div>

@@ -31,21 +31,22 @@ export default function ScenariosPanel() {
   const pct = (v: number) => `${(v * 100).toFixed(1)}%`;
 
   return (
-    <div className="flex flex-col h-full overflow-hidden bg-[#f8faff]">
-      <div className="px-3 py-2 border-b border-[#dde3f0] bg-[#ffffff] flex items-center gap-2 shrink-0">
+    <div className="flex flex-col h-full overflow-hidden" style={{ background: 'var(--bg-inset)' }}>
+      <div className="px-3 py-2 flex items-center gap-2 shrink-0" style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); }}
           placeholder="Scenario name…"
-          className="flex-1 text-[11px] border border-[#dde3f0] rounded px-2 py-1 outline-none bg-[#f8faff] text-[#0f1730]"
+          className="flex-1 text-[11px] rounded px-2 py-1 outline-none"
+          style={{ border: '1px solid var(--border)', background: 'var(--bg-inset)', color: 'var(--text-primary)' }}
         />
         <button
           onClick={handleSave}
           disabled={!canSave}
           className="text-[10px] px-2 py-1 rounded font-medium transition-colors disabled:opacity-40"
-          style={{ background: '#2563eb', color: '#ffffff' }}
+          style={{ background: 'var(--accent)', color: '#ffffff' }}
           title={!canSave ? 'Maximum 10 scenarios reached' : 'Save current state as scenario'}
         >
           Save
@@ -53,20 +54,20 @@ export default function ScenariosPanel() {
       </div>
 
       {scenarios.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center text-[11px] text-[#94a3b8] text-center px-4">
+        <div className="flex-1 flex items-center justify-center text-[11px] text-center px-4" style={{ color: 'var(--text-muted)' }}>
           No saved scenarios yet.<br />
           Run a simulation and click Save to snapshot it.
         </div>
       ) : (
         <div className="flex-1 min-h-0 overflow-y-auto">
           <table className="w-full text-[10px]">
-            <thead className="bg-[#eff6ff] sticky top-0">
+            <thead className="sticky top-0" style={{ background: 'var(--accent-soft)' }}>
               <tr>
-                <th className="text-left px-2 py-1.5 text-[#374151] font-medium">Name</th>
-                <th className="text-right px-2 py-1.5 text-[#374151] font-medium">Kinetics</th>
-                <th className="text-right px-2 py-1.5 text-[#374151] font-medium">Xₐ</th>
-                <th className="text-right px-2 py-1.5 text-[#374151] font-medium">Yield</th>
-                <th className="text-right px-2 py-1.5 text-[#374151] font-medium">Sel.</th>
+                <th className="text-left px-2 py-1.5 font-medium" style={{ color: 'var(--text-primary)' }}>Name</th>
+                <th className="text-right px-2 py-1.5 font-medium" style={{ color: 'var(--text-primary)' }}>Kinetics</th>
+                <th className="text-right px-2 py-1.5 font-medium" style={{ color: 'var(--text-primary)' }}>Xₐ</th>
+                <th className="text-right px-2 py-1.5 font-medium" style={{ color: 'var(--text-primary)' }}>Yield</th>
+                <th className="text-right px-2 py-1.5 font-medium" style={{ color: 'var(--text-primary)' }}>Sel.</th>
                 <th className="px-1 py-1.5" />
               </tr>
             </thead>
@@ -75,10 +76,11 @@ export default function ScenariosPanel() {
                 <tr
                   key={sc.id}
                   onClick={() => handleRestore(sc)}
-                  className="border-b border-[#f0f4ff] cursor-pointer hover:bg-[#eff6ff] transition-colors"
+                  className="cursor-pointer scenario-row transition-colors"
+                  style={{ borderBottom: '1px solid var(--border-subtle)' }}
                   title={`Saved: ${sc.savedAt} — click to restore`}
                 >
-                  <td className="px-2 py-1.5 font-medium text-[#0f1730] max-w-[100px]">
+                  <td className="px-2 py-1.5 font-medium max-w-[100px]" style={{ color: 'var(--text-primary)' }}>
                     {editingId === sc.id ? (
                       <input
                         autoFocus
@@ -98,8 +100,8 @@ export default function ScenariosPanel() {
                           e.stopPropagation();
                         }}
                         onClick={(e) => e.stopPropagation()}
-                        className="w-full text-[10px] bg-transparent border-b border-[#2563eb] outline-none font-medium"
-                        style={{ color: '#0f1730' }}
+                        className="w-full text-[10px] bg-transparent outline-none font-medium"
+                        style={{ borderBottom: '1px solid var(--accent)', color: 'var(--text-primary)' }}
                       />
                     ) : (
                       <span
@@ -115,33 +117,33 @@ export default function ScenariosPanel() {
                       </span>
                     )}
                   </td>
-                  <td className="px-2 py-1.5 text-right font-mono text-[#6b7280] max-w-[80px] truncate">
+                  <td className="px-2 py-1.5 text-right font-mono max-w-[80px] truncate" style={{ color: 'var(--text-secondary)' }}>
                     {sc.kinetics}
                   </td>
                   <td className="px-2 py-1.5 text-right font-mono font-bold"
-                      style={{ color: sc.Xa > 0.7 ? '#16a34a' : sc.Xa > 0.4 ? '#d97706' : '#dc2626' }}>
+                      style={{ color: sc.Xa > 0.7 ? 'var(--success)' : sc.Xa > 0.4 ? 'var(--warn)' : 'var(--danger)' }}>
                     {pct(sc.Xa)}
                   </td>
-                  <td className="px-2 py-1.5 text-right font-mono text-[#374151]">
+                  <td className="px-2 py-1.5 text-right font-mono" style={{ color: 'var(--text-primary)' }}>
                     {sc.yieldR > 0 ? pct(sc.yieldR) : '—'}
                   </td>
-                  <td className="px-2 py-1.5 text-right font-mono text-[#374151]">
+                  <td className="px-2 py-1.5 text-right font-mono" style={{ color: 'var(--text-primary)' }}>
                     {sc.selectivity > 0 ? pct(sc.selectivity) : '—'}
                   </td>
                   <td className="px-1 py-1.5">
                     <button
                       onClick={(e) => { e.stopPropagation(); handleRemove(sc.id); }}
-                      className="p-0.5 rounded hover:bg-[#fee2e2] transition-colors"
+                      className="p-0.5 rounded btn-danger-hover transition-colors"
                       title="Delete scenario"
                     >
-                      <Trash2 size={10} color="#dc2626" />
+                      <Trash2 size={10} color="var(--danger)" />
                     </button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <p className="text-[9px] text-[#b0bcd4] px-3 py-2 text-center">
+          <p className="text-[9px] px-3 py-2 text-center" style={{ color: 'var(--text-muted)' }}>
             {scenarios.length}/{10} scenarios · click a row to restore
           </p>
         </div>

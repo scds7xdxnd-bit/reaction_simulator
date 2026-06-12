@@ -46,7 +46,7 @@ export default function PhasePortrait({ selectedNodeId, cstrHistory }: Props) {
 
   if (!selectedNodeId) {
     return (
-      <div className="flex items-center justify-center h-full text-[#6b7280] text-sm">
+      <div className="flex items-center justify-center h-full text-sm" style={{ color: 'var(--text-secondary)' }}>
         Click a CSTR node to view its phase portrait
       </div>
     );
@@ -54,7 +54,7 @@ export default function PhasePortrait({ selectedNodeId, cstrHistory }: Props) {
 
   if (!history || history.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full text-[#6b7280] text-sm">
+      <div className="flex items-center justify-center h-full text-sm" style={{ color: 'var(--text-secondary)' }}>
         Waiting for simulation data...
       </div>
     );
@@ -74,15 +74,15 @@ export default function PhasePortrait({ selectedNodeId, cstrHistory }: Props) {
       <ScatterChart
         margin={{ top: 40, right: 10, left: 10, bottom: 30 }}
       >
-        <text x={10} y={12} fill="#6b7280" fontSize={11} fontWeight={600} style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <text x={10} y={12} fontSize={11} fontWeight={600} style={{ fill: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           PHASE PORTRAIT
         </text>
-        <text x={10} y={26} fill="#9ca3af" fontSize={9}>
+        <text x={10} y={26} fontSize={9} style={{ fill: 'var(--text-muted)' }}>
           {String((node?.data as any)?.label ?? selectedNodeId)}
         </text>
 
         <Tooltip
-          contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #dde3f0', borderRadius: 4, fontSize: 12 }}
+          contentStyle={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 4, fontSize: 12, color: 'var(--text-primary)' }}
           labelFormatter={() => ''}
           formatter={(value: unknown, name: string) => {
             const v = Number(value);
@@ -144,10 +144,10 @@ export default function PhasePortrait({ selectedNodeId, cstrHistory }: Props) {
           type="number"
           domain={[0, params.Ca0 * 1.1]}
           tickFormatter={(v) => Number(v).toFixed(2)}
-          stroke="#374151"
+          stroke="var(--text-secondary)"
           fontSize={11}
-          label={{ value: xLabel, position: 'insideBottom', offset: -5, fill: '#374151', fontSize: 11 }}
-          tick={{ fill: '#374151' }}
+          label={{ value: xLabel, position: 'insideBottom', offset: -5, fill: 'var(--text-secondary)', fontSize: 11 }}
+          tick={{ fill: 'var(--text-secondary)' }}
           name="x"
         />
         <YAxis
@@ -155,10 +155,10 @@ export default function PhasePortrait({ selectedNodeId, cstrHistory }: Props) {
           type="number"
           domain={isothermal ? [0, 'auto'] : ['auto', 'auto']}
           tickFormatter={(v) => Number(v).toFixed(isothermal ? 2 : 0)}
-          stroke="#374151"
+          stroke="var(--text-secondary)"
           fontSize={11}
-          label={{ value: yLabel, angle: -90, position: 'insideLeft', fill: '#374151', fontSize: 11 }}
-          tick={{ fill: '#374151' }}
+          label={{ value: yLabel, angle: -90, position: 'insideLeft', fill: 'var(--text-secondary)', fontSize: 11 }}
+          tick={{ fill: 'var(--text-secondary)' }}
           name="y"
         />
       </ScatterChart>

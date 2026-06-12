@@ -11,11 +11,11 @@ const INPUT_STYLE: React.CSSProperties = {
   width: 46,
   fontSize: 10,
   fontFamily: 'monospace',
-  border: '1px solid #dde3f0',
+  border: '1px solid var(--border)',
   borderRadius: 3,
   padding: '1px 4px',
-  background: '#ffffff',
-  color: '#374151',
+  background: 'var(--bg-surface)',
+  color: 'var(--text-primary)',
   MozAppearance: 'textfield',
   appearance: 'textfield',
 } as React.CSSProperties;
@@ -55,11 +55,11 @@ export default function PlotAxisBar({ plotId, showYLog = false }: PlotAxisBarPro
       style={{
         display: 'flex', alignItems: 'center', gap: 5,
         padding: '3px 8px', flexShrink: 0,
-        background: '#f8faff', borderBottom: '1px solid #dde3f0',
+        background: 'var(--bg-inset)', borderBottom: '1px solid var(--border)',
         minHeight: 28,
       }}
     >
-      <span style={{ fontSize: 9, color: '#6b7280', fontWeight: 700, letterSpacing: '0.05em' }}>X</span>
+      <span style={{ fontSize: 9, color: 'var(--text-secondary)', fontWeight: 700, letterSpacing: '0.05em' }}>X</span>
       <input
         type="number" style={INPUT_STYLE}
         value={xMinStr} placeholder="min"
@@ -67,7 +67,7 @@ export default function PlotAxisBar({ plotId, showYLog = false }: PlotAxisBarPro
         onBlur={() => commit('xMin', xMinStr)}
         onKeyDown={kd}
       />
-      <span style={{ fontSize: 9, color: '#94a3b8' }}>–</span>
+      <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>–</span>
       <input
         type="number" style={INPUT_STYLE}
         value={xMaxStr} placeholder="max"
@@ -76,9 +76,9 @@ export default function PlotAxisBar({ plotId, showYLog = false }: PlotAxisBarPro
         onKeyDown={kd}
       />
 
-      <div style={{ width: 1, height: 12, background: '#dde3f0', margin: '0 2px', flexShrink: 0 }} />
+      <div style={{ width: 1, height: 12, background: 'var(--border)', margin: '0 2px', flexShrink: 0 }} />
 
-      <span style={{ fontSize: 9, color: '#6b7280', fontWeight: 700, letterSpacing: '0.05em' }}>Y</span>
+      <span style={{ fontSize: 9, color: 'var(--text-secondary)', fontWeight: 700, letterSpacing: '0.05em' }}>Y</span>
       <input
         type="number" style={INPUT_STYLE}
         value={yMinStr} placeholder="min"
@@ -86,7 +86,7 @@ export default function PlotAxisBar({ plotId, showYLog = false }: PlotAxisBarPro
         onBlur={() => commit('yMin', yMinStr)}
         onKeyDown={kd}
       />
-      <span style={{ fontSize: 9, color: '#94a3b8' }}>–</span>
+      <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>–</span>
       <input
         type="number" style={INPUT_STYLE}
         value={yMaxStr} placeholder="max"
@@ -97,7 +97,7 @@ export default function PlotAxisBar({ plotId, showYLog = false }: PlotAxisBarPro
 
       {showYLog && (
         <>
-          <div style={{ width: 1, height: 12, background: '#dde3f0', margin: '0 2px', flexShrink: 0 }} />
+          <div style={{ width: 1, height: 12, background: 'var(--border)', margin: '0 2px', flexShrink: 0 }} />
           <label
             style={{ display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer', userSelect: 'none' }}
           >
@@ -109,7 +109,7 @@ export default function PlotAxisBar({ plotId, showYLog = false }: PlotAxisBarPro
               }
               style={{ width: 11, height: 11, cursor: 'pointer' }}
             />
-            <span style={{ fontSize: 9, color: '#6b7280' }}>log Y</span>
+            <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>log Y</span>
           </label>
         </>
       )}
@@ -121,7 +121,7 @@ export default function PlotAxisBar({ plotId, showYLog = false }: PlotAxisBarPro
           style={{
             marginLeft: 'auto',
             fontSize: 13, lineHeight: 1,
-            color: '#9ca3af',
+            color: 'var(--text-muted)',
             background: 'none', border: 'none',
             cursor: 'pointer', padding: '0 2px',
           }}

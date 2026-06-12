@@ -12,15 +12,16 @@ import {
   Tooltip,
 } from 'recharts';
 import { useSimulatorStore } from '../../store/simulatorStore';
+import { useTheme } from '../../hooks/useTheme';
 import PlotAxisBar from './PlotAxisBar';
 
 function KV({ label, value }: { label: string; value: string }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-      <span style={{ fontSize: 8, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+      <span style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
         {label}
       </span>
-      <span style={{ fontSize: 11, color: '#0f1730', fontWeight: 600, fontFamily: 'monospace' }}>
+      <span style={{ fontSize: 11, color: 'var(--text-primary)', fontWeight: 600, fontFamily: 'monospace' }}>
         {value}
       </span>
     </div>
@@ -31,6 +32,7 @@ export default function ConversionProfile() {
   const result = useSimulatorStore((s) => s.result);
   const params = useSimulatorStore((s) => s.params);
   const cfg = useSimulatorStore((s) => s.plotConfig['conversion']);
+  const { isDark } = useTheme();
   const [view, setView] = useState<'Xa' | 'Ca'>('Xa');
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
 
@@ -73,7 +75,7 @@ export default function ConversionProfile() {
 
   if (!result) {
     return (
-      <div className="flex items-center justify-center h-full text-[#6b7280] text-sm">
+      <div className="flex items-center justify-center h-full text-sm" style={{ color: 'var(--text-secondary)' }}>
         No simulation data
       </div>
     );
@@ -81,7 +83,7 @@ export default function ConversionProfile() {
 
   if (result.segments.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full text-[#6b7280] text-sm text-center px-4">
+      <div className="flex items-center justify-center h-full text-sm text-center px-4" style={{ color: 'var(--text-secondary)' }}>
         Add reactors to the flowsheet to see the conversion profile
       </div>
     );
@@ -98,7 +100,7 @@ export default function ConversionProfile() {
   const yDomainCa: [number, number] = [cfg.yMin ?? 0, cfg.yMax ?? (params.Ca0 * 1.05)];
 
   const dataKey = view === 'Xa' ? 'Xa' : 'Ca';
-  const strokeColor = view === 'Xa' ? '#0f1730' : '#0d9488';
+  const strokeColor = view === 'Xa' ? (isDark ? '#e2e8f0' : '#0f1730') : '#0d9488';
   const yDomain = view === 'Xa' ? yDomainXa : yDomainCa;
 
   const yTickFormatter = view === 'Xa'
@@ -119,9 +121,9 @@ export default function ConversionProfile() {
           <button key={v} onClick={() => setView(v)}
             style={{
               fontSize: 10, padding: '1px 8px', borderRadius: 4, cursor: 'pointer',
-              border: '1px solid #dde3f0',
-              background: view === v ? '#0f1730' : '#f8faff',
-              color:      view === v ? '#ffffff' : '#6b7280',
+              border: '1px solid var(--border)',
+              background: view === v ? 'var(--text-primary)' : 'var(--bg-inset)',
+              color:      view === v ? 'var(--bg-surface)' : 'var(--text-secondary)',
               fontWeight: view === v ? 600 : 400,
             }}>
             {v === 'Xa' ? 'Xₐ(τ)' : 'C(τ)'}
@@ -137,10 +139,9 @@ export default function ConversionProfile() {
             <text
               x={10}
               y={12}
-              fill="#6b7280"
               fontSize={11}
               fontWeight={600}
-              style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}
+              style={{ fill: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
             >
               {view === 'Xa' ? 'CONVERSION PROFILE' : 'CONCENTRATION PROFILE'}
             </text>
@@ -154,7 +155,7 @@ export default function ConversionProfile() {
                 fontSize: 12,
                 color: 'var(--text-primary)',
               }}
-              cursor={{ stroke: '#94a3b8', strokeWidth: 1, strokeDasharray: '3 3' }}
+              cursor={{ stroke: 'var(--text-muted)', strokeWidth: 1, strokeDasharray: '3 3' }}
               labelFormatter={(val) => `τ = ${Number(val).toFixed(2)} s`}
               formatter={tooltipFormatter}
             />
@@ -252,11 +253,11 @@ export default function ConversionProfile() {
         const seg = profileData.segs[selectedIdx];
         return (
           <div style={{
-            flexShrink: 0, height: 52, borderTop: '1px solid #dde3f0',
-            background: '#f8faff', display: 'flex', alignItems: 'center',
+            flexShrink: 0, height: 52, borderTop: '1px solid var(--border)',
+            background: 'var(--bg-inset)', display: 'flex', alignItems: 'center',
             gap: 20, paddingLeft: 16, paddingRight: 12, overflow: 'hidden',
           }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#0f1730', minWidth: 60 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)', minWidth: 60 }}>
               {seg.label}
             </span>
             <KV label="Xₐ" value={`${(seg.Xa_in * 100).toFixed(1)}% → ${(seg.Xa_out * 100).toFixed(1)}%`} />
@@ -264,7 +265,7 @@ export default function ConversionProfile() {
             <KV label="Da" value={seg.Da.toFixed(2)} />
             <KV label="τ" value={`${seg.tau.toFixed(2)} s`} />
             <button onClick={() => setSelectedIdx(null)}
-              style={{ marginLeft: 'auto', fontSize: 10, color: '#94a3b8', background: 'none',
+              style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--text-muted)', background: 'none',
                        border: 'none', cursor: 'pointer' }}>✕</button>
           </div>
         );
