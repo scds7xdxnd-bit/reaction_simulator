@@ -1382,6 +1382,7 @@ is the knob, not temperature).
 ---
 
 ## 20. Engineering Stream Table & HMB Report
+> **✅ IMPLEMENTED** — Phase 9 (F20): `streamTableMapper.ts` (pure — buildHMBTable: T[°C]/P[bar]/molar flows/mass flows/mol fractions/molar enthalpy per stream, per-element atom balance closure, mass balance closure, CSV+Markdown export), `StreamTablePanel.tsx` (Solver↔HMB toggle, HMB grid rows=properties/cols=streams, balance badge, ⬇CSV/MD export), 14 golden tests / All 175 tests pass.
 
 ### Problem
 

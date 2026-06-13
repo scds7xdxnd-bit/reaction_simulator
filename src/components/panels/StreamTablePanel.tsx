@@ -1,5 +1,6 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useSimulatorStore } from '../../store/simulatorStore';
+import { buildHMBTable, hmbTableToCSV, hmbTableToMarkdown } from '../../math/streamTableMapper';
 
 type SortKey = 'flow' | 'T' | 'Xa' | 'Ca';
 type SortDir = 'asc' | 'desc' | null;
@@ -44,9 +45,36 @@ const SORT_LABEL_MAP: Record<string, SortKey> = {
 export default function StreamTablePanel() {
   const result = useSimulatorStore((s) => s.result);
   const params = useSimulatorStore((s) => s.params);
+  const nodes  = useSimulatorStore((s) => s.nodes);
+  const edges  = useSimulatorStore((s) => s.edges);
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>(null);
   const [copied, setCopied] = useState(false);
+  const [view, setView] = useState<'solver' | 'hmb'>('solver');
+
+  // ── HMB table (F20) ──────────────────────────────────────────────────────
+  const hmbTable = useMemo(() => {
+    if (!result) return null;
+    const feedEdgeIds    = edges.filter(e => nodes.find(n => n.id === e.source)?.type === 'feed').map(e => e.id);
+    // product edges: target node has no outgoing edges
+    const outDegree      = new Map<string, number>();
+    edges.forEach(e => outDegree.set(e.source, (outDegree.get(e.source) ?? 0) + 1));
+    const productEdgeIds = edges.filter(e => !outDegree.has(e.target)).map(e => e.id);
+    return buildHMBTable(
+      result.streams,
+      result.recycleEdgeIds ?? [],
+      feedEdgeIds,
+      productEdgeIds,
+    );
+  }, [result, nodes, edges]);
+
+  const handleCopyHMB = useCallback((fmt: 'csv' | 'md') => {
+    if (!hmbTable) return;
+    const text = fmt === 'csv' ? hmbTableToCSV(hmbTable) : hmbTableToMarkdown(hmbTable);
+    navigator.clipboard.writeText(text).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }, [hmbTable]);
 
   const handleSortKey = (label: string) => {
     const key = SORT_LABEL_MAP[label];
@@ -130,30 +158,57 @@ export default function StreamTablePanel() {
             Stream Table
           </span>
           <span style={{
-            fontSize: 9,
-            fontWeight: 600,
+            fontSize: 9, fontWeight: 600,
             color: converged ? 'var(--success)' : 'var(--warn)',
             background: converged ? 'var(--success-soft)' : 'var(--warn-soft)',
-            borderRadius: 8,
-            padding: '1px 6px',
+            borderRadius: 8, padding: '1px 6px',
           }}>
-            {converged
-              ? `✓ converged (${result.iterations} iter)`
-              : `⚠ not converged (${result.iterations} iter)`}
+            {converged ? `✓ converged (${result.iterations} iter)` : `⚠ not converged (${result.iterations} iter)`}
           </span>
+          {/* F20: HMB tab toggle */}
+          {(['solver', 'hmb'] as const).map(v => (
+            <button key={v} onClick={() => setView(v)} style={{
+              fontSize: 9, padding: '1px 6px', borderRadius: 4, cursor: 'pointer',
+              border: '1px solid var(--border)',
+              background: view === v ? 'var(--accent)' : 'var(--bg-inset)',
+              color: view === v ? '#fff' : 'var(--text-primary)',
+              fontWeight: view === v ? 700 : 400,
+            }}>
+              {v === 'solver' ? 'Solver' : 'HMB'}
+            </button>
+          ))}
         </div>
-        <button
-          onClick={handleCopyCSV}
-          style={{
+        {view === 'solver' ? (
+          <button onClick={handleCopyCSV} style={{
             fontSize: 10, padding: '2px 8px', borderRadius: 4,
             border: '1px solid var(--border)', background: 'var(--bg-inset)',
             color: 'var(--text-primary)', cursor: 'pointer',
-          }}
-        >
-          {copied ? '✓ Copied' : '⬇ CSV'}
-        </button>
+          }}>
+            {copied ? '✓ Copied' : '⬇ CSV'}
+          </button>
+        ) : (
+          <div className="flex gap-1">
+            <button onClick={() => handleCopyHMB('csv')} style={{
+              fontSize: 10, padding: '2px 8px', borderRadius: 4,
+              border: '1px solid var(--border)', background: 'var(--bg-inset)',
+              color: 'var(--text-primary)', cursor: 'pointer',
+            }}>
+              {copied ? '✓' : '⬇ CSV'}
+            </button>
+            <button onClick={() => handleCopyHMB('md')} style={{
+              fontSize: 10, padding: '2px 8px', borderRadius: 4,
+              border: '1px solid var(--border)', background: 'var(--bg-inset)',
+              color: 'var(--text-primary)', cursor: 'pointer',
+            }}>
+              MD
+            </button>
+          </div>
+        )}
       </div>
 
+      {view === 'hmb' && hmbTable ? (
+        <HMBView table={hmbTable} />
+      ) : (
       <div className="overflow-y-auto flex-1 min-h-0">
         <table className="w-full text-[10px]">
           <thead className="sticky top-0" style={{ background: 'var(--bg-inset)' }}>
@@ -227,6 +282,107 @@ export default function StreamTablePanel() {
           </tbody>
         </table>
       </div>
+      )}
+    </div>
+  );
+}
+
+// ─── F20: HMB View ────────────────────────────────────────────────────────────
+
+import type { HMBTable } from '../../math/streamTableMapper';
+
+function HMBView({ table }: { table: HMBTable }) {
+  const { streams, speciesIds, massBalance, closed } = table;
+
+  const cell = (v: string) => (
+    <td className="text-right px-2 py-0.5">
+      <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'var(--text-primary)' }}>{v}</span>
+    </td>
+  );
+  const labelCell = (v: string, muted = false) => (
+    <td className="px-2 py-0.5 sticky left-0" style={{ background: 'var(--bg-inset)', minWidth: 110 }}>
+      <span style={{ fontSize: 10, color: muted ? 'var(--text-muted)' : 'var(--text-primary)', fontWeight: muted ? 400 : 600 }}>{v}</span>
+    </td>
+  );
+
+  const closedBadge = (
+    <span style={{
+      fontSize: 9, fontWeight: 700, borderRadius: 8, padding: '1px 6px',
+      background: closed ? 'var(--success-soft)' : 'var(--warn-soft)',
+      color: closed ? 'var(--success)' : 'var(--warn)',
+    }}>
+      {closed ? '✓ balanced' : '⚠ imbalanced'}
+    </span>
+  );
+
+  return (
+    <div className="overflow-auto flex-1 min-h-0">
+      {/* balance badge */}
+      <div className="px-3 py-1 flex items-center gap-2">
+        {closedBadge}
+        <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>
+          mass: in {massBalance.inlet_g_s.toFixed(2)} g/s · out {massBalance.outlet_g_s.toFixed(2)} g/s · err {massBalance.errorPct.toFixed(3)} %
+        </span>
+      </div>
+      {/* HMB table: rows = properties, columns = streams */}
+      <table style={{ borderCollapse: 'collapse', fontSize: 10 }}>
+        <thead style={{ background: 'var(--bg-inset)' }}>
+          <tr>
+            <th className="text-left px-2 py-0.5 sticky left-0" style={{ background: 'var(--bg-inset)', minWidth: 110, color: 'var(--text-primary)', fontWeight: 600 }}>Property</th>
+            {streams.map(s => (
+              <th key={s.edgeId} className="text-right px-2 py-0.5" style={{ minWidth: 72, color: s.isRecycle ? 'var(--accent)' : 'var(--text-primary)', fontWeight: 700 }}>
+                {s.label}{s.isRecycle ? ' ♻' : ''}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colSpan={streams.length + 1} style={{ borderTop: '1px solid var(--border)', padding: 0 }} /></tr>
+          <tr>
+            {labelCell('Description', true)}
+            {streams.map(s => <td key={s.edgeId} className="text-right px-2 py-0.5"><span style={{ fontSize: 9, color: 'var(--text-muted)' }}>{s.description}</span></td>)}
+          </tr>
+          <tr>
+            {labelCell('T [°C]')}
+            {streams.map(s => cell(s.T_C.toFixed(1)))}
+          </tr>
+          <tr>
+            {labelCell('P [bar]')}
+            {streams.map(s => cell(s.P_bar.toFixed(3)))}
+          </tr>
+          <tr>
+            {labelCell('Vapor frac [—]')}
+            {streams.map(s => cell(s.vaporFraction.toFixed(3)))}
+          </tr>
+          <tr><td colSpan={streams.length + 1} style={{ borderTop: '1px solid var(--border)', padding: 0 }} /></tr>
+          <tr>
+            {labelCell('F_total [mol/s]')}
+            {streams.map(s => cell(s.F_total_mol_s.toFixed(4)))}
+          </tr>
+          <tr>
+            {labelCell('Mass [g/s]')}
+            {streams.map(s => cell(s.mass_total_g_s.toFixed(3)))}
+          </tr>
+          <tr>
+            {labelCell('H [kJ/mol]')}
+            {streams.map(s => cell(s.H_kJ_mol.toFixed(3)))}
+          </tr>
+          <tr><td colSpan={streams.length + 1} style={{ borderTop: '1px solid var(--border)', padding: 0 }} /></tr>
+          {speciesIds.map(id => (
+            <tr key={id}>
+              {labelCell(`  F_${id} [mol/s]`, true)}
+              {streams.map(s => cell((s.F_mol_s[id] ?? 0).toFixed(4)))}
+            </tr>
+          ))}
+          <tr><td colSpan={streams.length + 1} style={{ borderTop: '1px solid var(--border)', padding: 0 }} /></tr>
+          {speciesIds.map(id => (
+            <tr key={`y_${id}`}>
+              {labelCell(`  y_${id} [mol/mol]`, true)}
+              {streams.map(s => cell((s.x_mol[id] ?? 0).toFixed(4)))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

@@ -58,22 +58,18 @@
 
 ## Last session (stage 5 — resume here, don't restart)
 
-**2026-06-13** · Phase 8 complete (F17, F18, F19). All 161 tests pass. Build clean.
+**2026-06-14** · Phase 9 — F20 complete. All 175 tests pass. Build clean.
 
-- F17: NTU/ε detailed jacket (CSTR + PFR co/counter-current BVP)
-- F18: Safety analysis — ΔT_ad badge, PFR hot-spot, ignition-extinction sweep
-- F19: Axial dispersion (Danckwerts analytical), segregation model, Thiele/η/Mears/deactivation
+- F20: Engineering Stream Table & HMB Report
+  - `src/math/streamTableMapper.ts` (new — pure math: buildHMBTable, hmbTableToCSV, hmbTableToMarkdown)
+  - `src/math/__tests__/streamTableMapper.test.ts` (new — 14 golden tests)
+  - `src/components/panels/StreamTablePanel.tsx` (updated — Solver ↔ HMB toggle, HMBView component)
 
-**Next:** F20 — Engineering Stream Table & HMB Report (`docs/FEATURE_PROPOSALS.md` §20).
+**Next:** F21 — P&ID / PFD Mode (`docs/FEATURE_PROPOSALS.md` §21).
 
-**Files changed this session (for context):**
-- `src/math/nonIdealFlowModels.ts` (new — F19 pure math)
-- `src/math/safetyAnalysis.ts` (new — F18 pure math)
-- `src/math/__tests__/nonIdealFlow.test.ts` (new — 16 golden tests)
-- `src/math/__tests__/safety.test.ts` (new — 8 golden tests)
-- `src/math/__tests__/hxDetailedModel.test.ts` (new — 4 golden tests)
-- `src/math/unitModels.ts` (catalyticPFR eta_eff, cooled-detailed CSTR/PFR)
-- `src/math/networkSolver.ts` (fixedbed η dispatch, reactorSafety computation)
-- `src/io/serializer.ts` (F17 + F19 back-compat migrations)
-- `src/types/reactor.ts` (ReactorSafetyData, NetworkResult.reactorSafety)
-- `src/types/simulation.ts` (ThermalMode += 'cooled-detailed')
+## Verified facts (additions from F20)
+- `AnnotatedStream` must be cast via `unknown` before `Record<string,unknown>` — TypeScript won't allow direct overlap cast (`as Record` fails; use `as unknown as Record`).
+- `FALLBACK_MW = 100 g/mol` for generic species A, R, S, T, U (not in speciesLibrary.json).
+- Generic species excluded from atom balance (no molecular formula) but included in mass balance via FALLBACK_MW.
+- Feed edge IDs: edges where `nodes.find(n => n.id === e.source)?.type === 'feed'`.
+- Product edge IDs: edges where the target node has no outgoing edges (out-degree = 0).
