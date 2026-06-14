@@ -3,11 +3,11 @@ import type { Node, Edge } from '@xyflow/react';
 import { solveNetwork } from '../networkSolver';
 import { semibatchSolve } from '../semibatchModel';
 import { buildChemistry } from '../chemistryFactory';
-import { buildCustomPreset } from '../reactionRegistry';
+import { buildCustomNetworkPreset } from '../reactionRegistry';
 import { computeXeq } from '../equilibrium';
 import { computeRTD } from '../rtdModel';
 import type { SimulationParams } from '../../types/reactor';
-import type { CustomReaction } from '../../types/simulation';
+import type { CustomReactionNetwork } from '../../types/simulation';
 
 const baseParams: SimulationParams = {
   reactionMode: 'single',
@@ -83,17 +83,21 @@ describe('P5.4 — Phase 4 math tests', () => {
     expect(result.profile.length).toBeGreaterThan(1);
   });
 
-  it('(3) buildCustomPreset factory: power-law A→R rateLaw matches first-order at same k', () => {
-    const customReaction: CustomReaction = {
-      species: [
-        { id: 'A', label: 'A', role: 'reactant', stoich: 1 },
-        { id: 'R', label: 'R', role: 'product',  stoich: 1 },
-      ],
-      rateType: 'power-law',
-      rateParams: { k: 0.5, Ea: 0, T_ref: 300 },
+  it('(3) buildCustomNetworkPreset factory: power-law A→R rateLaw matches first-order at same k', () => {
+    const net: CustomReactionNetwork = {
+      reactions: [{
+        id: 'cr-1',
+        reactants: [{ species: 'A', coeff: 1 }],
+        products: [{ species: 'R', coeff: 1 }],
+        reversible: false,
+        rateType: 'power-law',
+        rateParams: { k: 0.5, Ea: 0, T_ref: 300 },
+      }],
+      speciesMeta: {},
+      keyReactantId: 'A',
     };
 
-    const preset = buildCustomPreset(customReaction);
+    const preset = buildCustomNetworkPreset(net);
     expect(preset).not.toBeNull();
     expect(preset.buildReactions).toBeTypeOf('function');
 

@@ -39,6 +39,17 @@ export interface SessionSlice {
 
   pendingDesignTarget: { metric: string; value: number } | null;
   setPendingDesignTarget: (t: { metric: string; value: number } | null) => void;
+
+  viewMode: 'schematic' | 'pfd';
+  setViewMode: (m: 'schematic' | 'pfd') => void;
+
+  // F28: resizable layout
+  rightColWidth:    number;
+  graphHeight:      number;
+  graphCollapsed:   boolean;
+  setRightColWidth:  (w: number) => void;
+  setGraphHeight:    (h: number) => void;
+  setGraphCollapsed: (v: boolean) => void;
 }
 
 export const createSessionSlice: StateCreator<SimulatorStore, [], [], SessionSlice> =
@@ -81,4 +92,14 @@ export const createSessionSlice: StateCreator<SimulatorStore, [], [], SessionSli
 
   pendingDesignTarget: null,
   setPendingDesignTarget: (t) => set({ pendingDesignTarget: t }),
+
+  viewMode: 'schematic',
+  setViewMode: (m) => set({ viewMode: m }),
+
+  rightColWidth:    420,
+  graphHeight:      280,
+  graphCollapsed:   false,
+  setRightColWidth:  (w) => set({ rightColWidth: Math.max(220, Math.min(700, w)) }),
+  setGraphHeight:    (h) => set({ graphHeight: Math.max(80, Math.min(550, h)) }),
+  setGraphCollapsed: (v) => set({ graphCollapsed: v }),
 });

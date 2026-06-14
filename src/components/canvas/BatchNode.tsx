@@ -149,6 +149,7 @@ function BatchNode({ id, data, selected }: BatchNodeProps) {
           <select
             value={thermalMode}
             onChange={(e) => updateNodeThermal(id, { thermalMode: e.target.value as ThermalMode })}
+            onMouseDown={(e) => e.stopPropagation()}
             style={{ width: '100%', fontSize: 11, padding: '2px 4px',
                      border: `1px solid ${ACCENT}33`, borderRadius: 5,
                      background: '#ffffff', color: '#374151', outline: 'none', cursor: 'pointer' }}>

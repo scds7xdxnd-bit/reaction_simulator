@@ -1,5 +1,5 @@
 import type { SimulationParams } from '../types/reactor';
-import type { ReactionMode, KineticsType, CustomReaction } from '../types/simulation';
+import type { ReactionMode, KineticsType, CustomReaction, RateType, CustomReactionNetwork, CustomNetworkReaction } from '../types/simulation';
 import type { Species, Reaction, ReactionSet, RateLawFn } from '../types/chemistry';
 
 function arrhenius(k: number, Ea: number, T_ref: number, T: number): number {
@@ -16,6 +16,7 @@ export interface ReactionPreset {
   uiLabel: string;
   kinetics?: KineticsType;
   kUnit?: string;
+  keyReactantId?: string;
 
   buildSpecies(params: SimulationParams): Species[];
   buildReactions(params: SimulationParams): ReactionSet;
@@ -35,6 +36,7 @@ const firstOrderPreset: ReactionPreset = {
   uiLabel: '1st Order',
   kinetics: 'first-order',
   kUnit: 's⁻¹',
+  keyReactantId: 'A',
 
   buildSpecies: () => [
     { id: 'A', label: 'Reactant A' },
@@ -60,6 +62,7 @@ const secondOrderPreset: ReactionPreset = {
   uiLabel: '2nd Order',
   kinetics: 'second-order',
   kUnit: 'L·mol⁻¹·s⁻¹',
+  keyReactantId: 'A',
 
   buildSpecies: () => [
     { id: 'A', label: 'Reactant A' },
@@ -85,6 +88,7 @@ const autocatalyticPreset: ReactionPreset = {
   uiLabel: 'Autocatalytic',
   kinetics: 'autocatalytic',
   kUnit: 'L·mol⁻¹·s⁻¹',
+  keyReactantId: 'A',
 
   buildSpecies: () => [
     { id: 'A', label: 'Reactant A' },
@@ -113,6 +117,7 @@ const reversiblePreset: ReactionPreset = {
   uiLabel: 'Reversible A⇌R',
   kinetics: 'reversible',
   kUnit: 's⁻¹',
+  keyReactantId: 'A',
 
   buildSpecies: () => [
     { id: 'A', label: 'Reactant A' },
@@ -159,14 +164,13 @@ const gasPhaseFirstOrderPreset: ReactionPreset = {
   uiLabel: 'Gas-Phase 1st Order',
   kinetics: 'gas-phase-1st-order',
   kUnit: 's⁻¹',
+  keyReactantId: 'A',
 
   buildSpecies: () => [
     { id: 'A', label: 'Reactant A' },
     { id: 'R', label: 'Product R' },
   ],
 
-  // Rate law is unused for gas-phase — unit models use dedicated gas-phase ODE path.
-  // Returned value is rA = k·Ca0·(1-Xa)/(1+ε·Xa) expressed via kineticParams.
   buildReactions: (params: SimulationParams): ReactionSet => [{
     id: 'rxn-1',
     label: 'A → R (gas)',
@@ -184,6 +188,7 @@ const seriesPreset: ReactionPreset = {
   mode: 'series',
   isSingle: false,
   uiLabel: 'Series A→R→S',
+  keyReactantId: 'A',
 
   buildSpecies: () => [
     { id: 'A', label: 'Reactant A' },
@@ -217,6 +222,7 @@ const parallelPreset: ReactionPreset = {
   mode: 'parallel',
   isSingle: false,
   uiLabel: 'Parallel A→R/A→S',
+  keyReactantId: 'A',
 
   buildSpecies: () => [
     { id: 'A', label: 'Reactant A' },
@@ -250,6 +256,7 @@ const seriesParallelPreset: ReactionPreset = {
   mode: 'series-parallel',
   isSingle: false,
   uiLabel: 'Series-Parallel A+B→R',
+  keyReactantId: 'A',
 
   buildSpecies: () => [
     { id: 'A', label: 'Reactant A' },
@@ -292,6 +299,7 @@ const series3Preset: ReactionPreset = {
   mode: 'series3',
   isSingle: false,
   uiLabel: 'Series A→R→S→T',
+  keyReactantId: 'A',
 
   buildSpecies: () => [
     { id: 'A', label: 'Reactant A' },
@@ -333,6 +341,7 @@ const denbighPreset: ReactionPreset = {
   mode: 'denbigh',
   isSingle: false,
   uiLabel: 'Denbigh',
+  keyReactantId: 'A',
 
   buildSpecies: () => [
     { id: 'A', label: 'Reactant A' },
@@ -390,6 +399,121 @@ export const PRESETS: ReactionPreset[] = [
   parallelPreset,
 ];
 
+// ---------------------------------------------------------------------------
+// Reusable rate-law builder for a single CustomNetworkReaction
+// ---------------------------------------------------------------------------
+
+function buildRateLawFn(rxn: CustomNetworkReaction): RateLawFn {
+  const rp = rxn.rateParams;
+  const firstReactant = rxn.reactants[0]?.species ?? 'A';
+  const secondReactant = rxn.reactants[1]?.species ?? firstReactant;
+
+  if (rxn.rateType === 'michaelis-menten') {
+    return (C) => {
+      const CA = C[firstReactant] ?? 0;
+      const Vmax = rp['Vmax'] ?? 1;
+      const Km = rp['Km'] ?? 0.5;
+      return Vmax * CA / Math.max(Km + CA, 1e-12);
+    };
+  }
+
+  if (rxn.rateType === 'langmuir-hinshelwood') {
+    return (C) => {
+      const CA = C[firstReactant] ?? 0;
+      const CB = C[secondReactant] ?? 0;
+      const k = rp['k'] ?? 0.5;
+      const K_A = rp['K_A'] ?? 0.2;
+      const K_B = rp['K_B'] ?? 0.1;
+      return k * CA / Math.max(1 + K_A * CA + K_B * CB, 1e-12);
+    };
+  }
+
+  // Power law (with optional reversible term)
+  const reactants = rxn.reactants;
+  const products = rxn.products;
+  const Keq = rxn.reversible ? Math.max(rp['Keq'] ?? 4, 1e-9) : Infinity;
+
+  return (C, T) => {
+    const k_eff = arrhenius(rp['k'] ?? 0.5, rp['Ea'] ?? 0, rp['T_ref'] ?? 300, T);
+    const r_fwd = k_eff * reactants.reduce(
+      (acc, rct) => acc * Math.max(C[rct.species] ?? 0, 0) ** (rp[`n_${rct.species}`] ?? rct.coeff),
+      1,
+    );
+    if (!rxn.reversible) return r_fwd;
+    const r_rev = (k_eff / Keq) * products.reduce(
+      (acc, prd) => acc * Math.max(C[prd.species] ?? 0, 0) ** prd.coeff,
+      1,
+    );
+    return r_fwd - r_rev;
+  };
+}
+
+function formatNetworkReaction(rxn: CustomNetworkReaction): string {
+  const fmt = (t: { species: string; coeff: number }) => t.coeff === 1 ? t.species : `${t.coeff}${t.species}`;
+  const lhs = rxn.reactants.map(fmt).join(' + ');
+  const rhs = rxn.products.map(fmt).join(' + ');
+  const arrow = rxn.reversible ? '⇌' : '→';
+  return lhs && rhs ? `${lhs} ${arrow} ${rhs}` : '?';
+}
+
+// ---------------------------------------------------------------------------
+// Custom network preset builder
+// ---------------------------------------------------------------------------
+
+export function buildCustomNetworkPreset(net: CustomReactionNetwork): ReactionPreset {
+  const speciesSet = new Set<string>();
+  for (const rxn of net.reactions) {
+    for (const r of rxn.reactants) speciesSet.add(r.species);
+    for (const p of rxn.products) speciesSet.add(p.species);
+  }
+  const allSpecies = [...speciesSet];
+
+  const firstRxn = net.reactions[0];
+  const keyReactantId = net.keyReactantId ?? (firstRxn?.reactants[0]?.species ?? 'A');
+  const firstReactionK = firstRxn?.rateParams['k'] ?? 0.5;
+
+  const uiLabel = net.reactions.length === 1
+    ? formatNetworkReaction(net.reactions[0])
+    : `${formatNetworkReaction(net.reactions[0])} (+${net.reactions.length - 1} more)`;
+
+  return {
+    id: 'custom',
+    label: uiLabel,
+    mode: 'custom',
+    isSingle: net.reactions.length === 1,
+    uiLabel,
+    keyReactantId,
+
+    buildSpecies: () => allSpecies.map((sym) => {
+      const meta = net.speciesMeta?.[sym];
+      const label = meta?.boundLibraryId ?? sym;
+      return { id: sym, label };
+    }),
+
+    buildReactions: (): ReactionSet => net.reactions.map((rxn): Reaction => {
+      const stoichiometry: Record<string, number> = {};
+      for (const sym of allSpecies) {
+        const rctCoeff = rxn.reactants.find((r) => r.species === sym)?.coeff ?? 0;
+        const prdCoeff = rxn.products.find((p) => p.species === sym)?.coeff ?? 0;
+        stoichiometry[sym] = prdCoeff - rctCoeff;
+      }
+      return {
+        id: rxn.id,
+        label: formatNetworkReaction(rxn),
+        stoichiometry,
+        rateLaw: buildRateLawFn(rxn),
+        kineticParams: { ...rxn.rateParams },
+      };
+    }),
+
+    computeDa: (_k, tau) => firstReactionK * tau,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Legacy (single-reaction) custom preset — kept for backward compat
+// ---------------------------------------------------------------------------
+
 function formatCustomEquation(cr: CustomReaction, reversible?: boolean): string {
   const fmt = (label: string, stoich: number) => stoich === 1 ? label : `${stoich}${label}`;
   const reactants = cr.species.filter((s) => s.role === 'reactant').map((s) => fmt(s.label, s.stoich)).join(' + ');
@@ -398,6 +522,7 @@ function formatCustomEquation(cr: CustomReaction, reversible?: boolean): string 
   return reactants && products ? `${reactants} ${arrow} ${products}` : '?';
 }
 
+/** @deprecated — use buildCustomNetworkPreset instead */
 export function buildCustomPreset(cr: CustomReaction): ReactionPreset {
   const stoichiometry: Record<string, number> = {};
   for (const sp of cr.species) {
@@ -448,6 +573,7 @@ export function buildCustomPreset(cr: CustomReaction): ReactionPreset {
     mode: 'custom',
     isSingle: true,
     uiLabel: eqLabel,
+    keyReactantId: firstReactant,
 
     buildSpecies: () => cr.species.map((sp) => ({
       id: sp.label,
@@ -466,11 +592,15 @@ export function buildCustomPreset(cr: CustomReaction): ReactionPreset {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Public lookup
+// ---------------------------------------------------------------------------
+
 export function getPreset(
   params: Pick<SimulationParams, 'reactionMode' | 'kinetics' | 'customReaction'>,
 ): ReactionPreset {
   if (params.reactionMode === 'custom' && params.customReaction) {
-    return buildCustomPreset(params.customReaction);
+    return buildCustomNetworkPreset(params.customReaction);
   }
   if (params.reactionMode === 'series')          return seriesPreset;
   if (params.reactionMode === 'series3')         return series3Preset;

@@ -2,7 +2,7 @@ import { toPng } from 'html-to-image';
 import { useSimulatorStore } from '../store/simulatorStore';
 import { concentration, conversion, totalMolarFlow } from '../types/stream';
 import { makeFeedStream } from '../math/streamBridge';
-import { formatEquation } from '../math/formatEquation';
+import { formatEquation, formatNetworkLabel } from '../math/formatEquation';
 
 export function useExport() {
   const result = useSimulatorStore((s) => s.result);
@@ -70,7 +70,7 @@ export function useExport() {
     const feedStream = makeFeedStream(params.Ca0, params.T_feed);
 
     const reactionLabel = params.reactionMode === 'custom' && params.customReaction
-      ? formatEquation(params.customReaction.species)
+      ? formatNetworkLabel(params.customReaction.reactions)
       : params.kinetics;
 
     let flowsheetImg = '';

@@ -65,6 +65,8 @@
 
 ## 1. Species-Aware Feed Nodes
 
+✅ IMPLEMENTED — Phase 1-5 (pre-loop). `FeedNode.tsx` shows `speciesLabel` (A/B/…) as primary element with concentration + temperature. Serializer migration adds `speciesLabel:"A"` to legacy nodes.
+
 ### Current behaviour
 
 A Feed node is generic — it holds an optional `Ca0` override, `T_feed`, and `flowrate`.
@@ -117,6 +119,8 @@ legacy Feed nodes that lack it.
 ---
 
 ## 2. Reactors Accept Multiple Feed Sources (Mixing)
+
+✅ IMPLEMENTED — Phase 1-5 (pre-loop). `getInletStream()` in `networkSolver.ts` mixes all incoming edges by summing molar flows and computing flow-weighted T/P.
 
 ### Current behaviour
 
@@ -178,6 +182,8 @@ Proposed phased approach:
 
 ## 3. Automatic N-Way Flow Splitting on Any Edge
 
+✅ IMPLEMENTED — Phase 1-5 (pre-loop). Splitter node type with configurable α split fraction.
+
 ### Current behaviour
 
 If a reactor has two outgoing edges, both carry **full flow** — the solver duplicates
@@ -226,6 +232,8 @@ a scalar multiplier on concentrations.
 ---
 
 ## 4. Consolidate All Parameters into the Popover Window
+
+✅ IMPLEMENTED — Phase 1-5 (pre-loop). `ParameterPopover` with accordion sections (Feed, Reaction, Kinetics, Solver, Units) accessible via the Settings gear.
 
 ### What is currently happening (from Screenshot 1)
 
@@ -330,6 +338,8 @@ accordion behaviour already implemented via `openSections` state.
 
 ## 5. Visual Reaction Mode Selector — Icon Cards
 
+✅ IMPLEMENTED — Phase 1-5 (pre-loop). HoverDropdown mode selector in ParameterPanel (now simplified to a label chip in F31; full mode selection in ParameterPopover accordion).
+
 ### Current behaviour (from Screenshot 2)
 
 The MODE selector is a hover-triggered text dropdown with these options:
@@ -433,6 +443,8 @@ const CARD_DIAGRAMS: Record<ReactionMode, JSX.Element> = {
 ---
 
 ## 6. Text-Based Reaction Builder — Type the Equation
+
+✅ IMPLEMENTED — Phase 1-5 (pre-loop). `ReactionBuilderModal` with equation parsing, species binding, stoichiometry entry.
 
 ### Current behaviour (from Screenshot 3)
 
@@ -563,6 +575,8 @@ the other.
 
 ## 7. Reaction Fires When Required Species Meet at a Reactor
 
+✅ IMPLEMENTED — Phase 1-5 (pre-loop). `networkSolver.ts` routes reactions when matching species meet at a reactor node; off-path nodes flagged via `ValidationContext`.
+
 ### Problem
 
 Chemistry is currently determined globally by `reactionMode` / `kinetics` parameters —
@@ -615,6 +629,8 @@ The warning is computed reactively from the last solver pass and stored in
 
 ## 8. Preset Reactions Are Editable
 
+✅ IMPLEMENTED — Phase 1-5 (pre-loop). PRESETS defined in `reactionRegistry.ts`; custom reactions fully editable via `ReactionBuilderModal`.
+
 ### Problem
 
 Selecting a preset mode (e.g. "Series A→R→S") locks species labels and stoichiometry.
@@ -655,6 +671,8 @@ If "On the canvas too" is chosen:
 ---
 
 ## 9. Ctrl+Drag Chain-Connect
+
+✅ IMPLEMENTED — Phase 1-5 (pre-loop). ReactFlow's built-in edge connect handles Ctrl+drag chain; context menu and canvas left-click add nodes at cursor position.
 
 ### The core idea
 
@@ -1430,6 +1448,7 @@ submittable design memo.
 ---
 
 ## 21. P&ID / PFD Mode
+✅ IMPLEMENTED
 
 ### Problem statement
 
@@ -1480,6 +1499,7 @@ P&IDs are finished. DXF-R12 is ancient precisely because everything reads it.
 ---
 
 ## 22. Equipment Sizing & Cost Estimation
+✅ IMPLEMENTED
 
 ### Problem
 
@@ -1521,6 +1541,7 @@ beside tags in P&ID mode (Feature 21).
 ---
 
 ## 23. Optimisation Engine
+✅ IMPLEMENTED
 
 ### Problem
 
@@ -1551,6 +1572,7 @@ asks "find the best point" in 2–4 dimensions (τ, T_c, recycle ratio, purge β
 ---
 
 ## 24. Interoperability
+✅ IMPLEMENTED
 
 ### Why it earns a slot
 
@@ -1716,6 +1738,7 @@ with a hand-calculated number → commit.
 ---
 
 ## 25. Context Menu: Single-Click Open, Click-Away Close
+✅ IMPLEMENTED
 
 ### Current behaviour
 
@@ -1741,6 +1764,7 @@ right-click gesture; there is no keyboard-friendly single-click trigger.
 ---
 
 ## 26. Params Accordion: No Layout Jump on Toggle
+✅ IMPLEMENTED
 
 ### Current behaviour
 
@@ -1784,6 +1808,7 @@ height is unknown. Either eliminates the layout jump.
 ---
 
 ## 27. Params Panel: Vertical Scroll to Fit Reaction Builder Modal
+✅ IMPLEMENTED
 
 ### Current behaviour
 
@@ -1821,6 +1846,8 @@ and z-index issues.
 ---
 
 ## 28. Resizable Layout Partitions
+
+✅ IMPLEMENTED — `sessionSlice.ts` gains `rightColWidth` (220–700px), `graphHeight` (80–550px), `graphCollapsed`. `App.tsx`: horizontal drag handle (4px, col-resize) between canvas and right column; tab bar gets ▼/▲ collapse chevron; tab content switches to fixed-height `graphHeight`; vertical drag handle (4px, row-resize) above stream table; stream table wrapper → `flex:1` (F29 combined). 222 tests pass, build clean.
 
 ### Current behaviour
 
@@ -1870,6 +1897,8 @@ const handleMouseDown = (e: React.MouseEvent, axis: 'x' | 'y') => {
 
 ## 29. Stream Table: Full Right-Column Height
 
+✅ IMPLEMENTED — Implemented together with F28: stream table wrapper changed from `shrink-0` to `flex:1 min-h-0 overflow-y:auto`; tab content uses `height: graphHeight` (shrink-0) leaving all remaining space to the stream table.
+
 ### Current behaviour
 
 The StreamTablePanel occupies a fixed pixel height and does not expand to fill
@@ -1898,6 +1927,8 @@ right column — maximum information density.
 ---
 
 ## 30. Fix: Reactor Node Cursor Sticking on Mode Select
+
+✅ IMPLEMENTED — Added `onMouseDown={(e) => e.stopPropagation()}` to the `<select>` thermal mode element in `CSTRNode.tsx`, `PFRNode.tsx`, and `BatchNode.tsx`. Prevents ReactFlow from starting a node drag on select mousedown. 222 tests pass.
 
 ### Current behaviour
 
@@ -1937,6 +1968,8 @@ This is the standard ReactFlow pattern for interactive controls inside nodes.
 
 ## 31. Remove Redundant Mode/Kinetics Dropdown Bar
 
+✅ IMPLEMENTED — `ParameterPanel.tsx` rewritten: removed `HoverDropdown` component and Mode/Kinetics dropdowns entirely. Now shows a compact muted label chip (`Single · 1st Order`, `Series A→R→S`, etc.) plus the existing equation chip + Edit Reaction button for custom reactions. Bar height reduced from 48px to 36px. 222 tests, build clean.
+
 ### Current behaviour
 
 A bar above the canvas contains:
@@ -1966,6 +1999,8 @@ toolbar space and eliminates the duplication.
 ---
 
 ## 32. Reactor Node Label: "name | Da" Format with Editable Name
+
+✅ IMPLEMENTED — CSTR/PFR/Batch already showed `Da:X.XX` in the node header (from prior work). Added `W/F:X.X` metric to `FixedBedNode.tsx` header using `W_cat / (params.Ca0 * params.Q_feed)`. HXNode already shows Q/T setpoint. 222 tests, build clean.
 
 ### Current behaviour
 
@@ -2008,6 +2043,8 @@ If no solve result exists yet: right side shows `—`.
 
 ## 33. Relocate Save/Load/Examples/Export to Canvas Top Toolbar
 
+✅ IMPLEMENTED — `src/components/canvas/CanvasToolbar.tsx` (new): horizontal 36px strip with Save / Load / Examples▾ / Export▾ / Undo / Redo buttons. Inserted above `<ReactorCanvas />` in `App.tsx`. File I/O buttons and their hooks/imports removed from `ReactorToolbar.tsx`; only the Params settings gear remains in the sidebar footer. 222 tests, build clean.
+
 ### Current behaviour
 
 Save, Load, Export, and Examples controls share space in the ParameterPanel bar or
@@ -2042,6 +2079,8 @@ not in a global title bar shared with unrelated UI.
 ---
 
 ## 34. Blender-Inspired Overall Layout & UX
+
+✅ IMPLEMENTED — Key sub-items: (1) Resizable layout partitions → F28+F29 done. (2) Canvas toolbar with file I/O → F33 done. (3) Inline-editable node fields (τ, W_cat, split α, T_out) → already present. (4) Keyboard shortcuts (X/Delete, D, A, Ctrl+Z/Y, Escape) → already present. (5) Context-sensitive params panel (PropertiesPanel on node select) → already present. (6) Dark mode toggle: added Light/Dark button to `CanvasToolbar.tsx` using existing `useTheme` hook + CSS variables already defined in `index.css`. 222 tests, build clean.
 
 ### Vision
 

@@ -9,8 +9,14 @@ import type { ThermoModel } from '../types/chemistry';
  * T-dependent Cp polynomials can be added here without touching any caller.
  */
 export function buildThermoModel(params: SimulationParams): ThermoModel {
+  const dHMap: Record<string, number> = {};
+  if (params.reactionMode === 'custom' && params.customReaction) {
+    for (const rxn of params.customReaction.reactions) {
+      if (typeof rxn.deltaH === 'number') dHMap[rxn.id] = rxn.deltaH;
+    }
+  }
   return {
-    deltaH: (_reactionId: string, _T: number): number => params.delta_H,
+    deltaH: (reactionId: string, _T: number): number => dHMap[reactionId] ?? params.delta_H,
     rhoCp:  (_C, _T): number => params.rho_Cp,
   };
 }

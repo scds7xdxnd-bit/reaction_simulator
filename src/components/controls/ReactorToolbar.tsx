@@ -1,8 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Save, FolderOpen, BookOpen, Download, Settings } from 'lucide-react';
-import { useSaveFile, useLoadFile, useLoadExample } from '../../hooks/useFileIO';
-import { useExport } from '../../hooks/useExport';
-import { EXAMPLES } from '../../io/examples';
+import { Settings } from 'lucide-react';
 import { Tooltip } from '../ui';
 import { useSimulatorStore } from '../../store/simulatorStore';
 
@@ -295,12 +292,6 @@ export default function ReactorToolbar() {
     return { x: 260 + (n % 5) * 45, y: 340 + Math.floor(n / 5) * 80 };
   }, []);
 
-  const handleSave        = useSaveFile();
-  const handleLoad        = useLoadFile();
-  const handleLoadExample = useLoadExample();
-  const { exportPng, exportCsv, exportReport, hasResult } = useExport();
-  const [examplesOpen, setExamplesOpen] = useState(false);
-  const [exportOpen, setExportOpen]     = useState(false);
 
   return (
     <div className="w-[68px] h-full bg-[#ffffff] border-r border-[#dde3f0]
@@ -425,102 +416,8 @@ export default function ReactorToolbar() {
       {/* ── Spacer ────────────────────────────────── */}
       <div className="flex-1" />
 
-      {/* ── File actions ─────────────────────────── */}
-      <div className="flex flex-col items-center w-full gap-0.5 px-1">
-
-        {/* Export */}
-        <div style={{ position: 'relative', width: '100%' }}>
-          <button
-            onClick={() => setExportOpen((v) => !v)}
-            disabled={!hasResult}
-            title="Export"
-            className="flex flex-col items-center gap-0.5 w-full py-1.5 rounded-md
-                       hover:bg-[#f1f5f9] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            style={exportOpen ? { background: '#f0fdf4' } : {}}
-          >
-            <Download size={14} color="#374151" />
-            <span style={{ fontSize: 7.5, color: '#6b7280', fontWeight: 500 }}>Export</span>
-          </button>
-          {exportOpen && hasResult && (
-            <div style={{
-              position: 'absolute',
-              left: 'calc(100% + 4px)',
-              bottom: 0,
-              background: '#fff',
-              border: '1px solid #dde3f0',
-              borderRadius: 8,
-              boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-              minWidth: 145,
-              padding: '4px 0',
-              zIndex: 100,
-            }}>
-              {[
-                { label: 'PNG — Flowsheet', action: () => { exportPng();    setExportOpen(false); } },
-                { label: 'CSV — Streams',   action: () => { exportCsv();    setExportOpen(false); } },
-                { label: 'Report (PDF)',     action: () => { exportReport(); setExportOpen(false); } },
-              ].map((item) => (
-                <button key={item.label} onClick={item.action}
-                  className="w-full text-left px-3 py-1.5 hover:bg-[#f0fdf4] text-[12px] text-[#0f1730]">
-                  {item.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Examples */}
-        <div style={{ position: 'relative', width: '100%' }}>
-          <button
-            onClick={() => setExamplesOpen((v) => !v)}
-            title="Load example"
-            className="flex flex-col items-center gap-0.5 w-full py-1.5 rounded-md
-                       hover:bg-[#f1f5f9] transition-colors"
-            style={examplesOpen ? { background: '#eff6ff' } : {}}
-          >
-            <BookOpen size={14} color="#374151" />
-            <span style={{ fontSize: 7.5, color: '#6b7280', fontWeight: 500 }}>Examples</span>
-          </button>
-          {examplesOpen && (
-            <div style={{
-              position: 'absolute',
-              left: 'calc(100% + 4px)',
-              bottom: 0,
-              background: '#fff',
-              border: '1px solid #dde3f0',
-              borderRadius: 8,
-              boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-              padding: 8,
-              minWidth: 215,
-              zIndex: 100,
-            }}>
-              <div className="text-[11px] font-semibold text-[#374151] mb-2 px-1">Examples</div>
-              {EXAMPLES.map((ex) => (
-                <button key={ex.id}
-                  onClick={() => { handleLoadExample(ex); setExamplesOpen(false); }}
-                  className="w-full text-left px-2 py-1.5 rounded hover:bg-[#eff6ff]">
-                  <div className="text-[12px] font-medium text-[#0f1730]">{ex.name}</div>
-                  <div className="text-[10px] text-[#6b7280]">{ex.description}</div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Load */}
-        <button
-          onClick={handleLoad}
-          title="Load flowsheet"
-          className="flex flex-col items-center gap-0.5 w-full py-1.5 rounded-md
-                     hover:bg-[#f1f5f9] transition-colors"
-        >
-          <FolderOpen size={14} color="#374151" />
-          <span style={{ fontSize: 7.5, color: '#6b7280', fontWeight: 500 }}>Load</span>
-        </button>
-
-        {/* Thin divider */}
-        <div className="w-10 border-t border-[#e5e7eb] my-0.5" />
-
-        {/* Params — just above Save */}
+      {/* ── Settings ──────────────────────────────── */}
+      <div className="flex flex-col items-center w-full gap-0.5 px-1 pb-2">
         <button
           data-params-trigger
           onClick={() => setParamsOpen(!paramsOpen)}
@@ -533,18 +430,6 @@ export default function ReactorToolbar() {
             Params
           </span>
         </button>
-
-        {/* Save */}
-        <button
-          onClick={handleSave}
-          title="Save flowsheet"
-          className="flex flex-col items-center gap-0.5 w-full py-1.5 rounded-md
-                     hover:bg-[#f1f5f9] transition-colors"
-        >
-          <Save size={14} color="#374151" />
-          <span style={{ fontSize: 7.5, color: '#6b7280', fontWeight: 500 }}>Save</span>
-        </button>
-
       </div>
     </div>
   );

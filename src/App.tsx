@@ -21,7 +21,10 @@ import ParameterPopover from './components/controls/ParameterPopover';
 import PropertiesPanel from './components/panels/PropertiesPanel';
 import SelectivityPanel from './components/panels/SelectivityPanel';
 import DesignSpecsPanel from './components/panels/DesignSpecsPanel';
+import EquipmentPanel from './components/panels/EquipmentPanel';
+import OptimiserPanel from './components/panels/OptimiserPanel';
 import RTDPanel from './components/plots/RTDPanel';
+import CanvasToolbar from './components/canvas/CanvasToolbar';
 import { useSimulatorStore } from './store/simulatorStore';
 import { useClipboardActions } from './hooks/useClipboardActions';
 import { useDynamicSimulation } from './hooks/useDynamicSimulation';
@@ -34,7 +37,7 @@ const LS_KEY = 'reaction-simulator-v1';
 // 4 primary tabs (collapsed from 7)
 type RightTab = 'results' | 'dynamic' | 'analysis' | 'design';
 type ResultsView = 'levenspiel' | 'profiles' | 'thermal';
-type DesignView  = 'specs' | 'scenarios';
+type DesignView  = 'specs' | 'scenarios' | 'sizing' | 'optimise';
 
 function normalizeRightTab(s: string): RightTab {
   if (s === 'dynamic' || s === 'analysis') return s as RightTab;
@@ -73,7 +76,51 @@ export default function App() {
   const setPropertiesNodeId  = useSimulatorStore((s) => s.setPropertiesNodeId);
   const storeRightTab        = useSimulatorStore((s) => s.rightTab);
   const setStoreRightTab     = useSimulatorStore((s) => s.setRightTab);
+  const rightColWidth        = useSimulatorStore((s) => s.rightColWidth);
+  const setRightColWidth     = useSimulatorStore((s) => s.setRightColWidth);
+  const graphHeight          = useSimulatorStore((s) => s.graphHeight);
+  const setGraphHeight       = useSimulatorStore((s) => s.setGraphHeight);
+  const graphCollapsed       = useSimulatorStore((s) => s.graphCollapsed);
+  const setGraphCollapsed    = useSimulatorStore((s) => s.setGraphCollapsed);
   const { copySelected, paste, cut, duplicate } = useClipboardActions();
+
+  // F28: column drag handler
+  const startColResize = useRef<{ startX: number; startW: number } | null>(null);
+  const startRowResize = useRef<{ startY: number; startH: number } | null>(null);
+
+  function onRowDragStart(e: React.MouseEvent) {
+    e.preventDefault();
+    startRowResize.current = { startY: e.clientY, startH: graphHeight };
+    const onMove = (ev: MouseEvent) => {
+      if (!startRowResize.current) return;
+      const delta = ev.clientY - startRowResize.current.startY;
+      setGraphHeight(startRowResize.current.startH + delta);
+    };
+    const onUp = () => {
+      startRowResize.current = null;
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }
+
+  function onColDragStart(e: React.MouseEvent) {
+    e.preventDefault();
+    startColResize.current = { startX: e.clientX, startW: rightColWidth };
+    const onMove = (ev: MouseEvent) => {
+      if (!startColResize.current) return;
+      const delta = startColResize.current.startX - ev.clientX;
+      setRightColWidth(startColResize.current.startW + delta);
+    };
+    const onUp = () => {
+      startColResize.current = null;
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }
   const dynamic = useDynamicSimulation();
 
   const rightTab    = normalizeRightTab(storeRightTab);
@@ -195,15 +242,26 @@ export default function App() {
 
         <div className="flex-1 flex flex-col min-w-0">
           <ParameterPanel />
+          <CanvasToolbar />
           <div className="flex-1 min-h-0">
             <ReactorCanvas />
           </div>
         </div>
 
+        {/* ── Resize handle — canvas ↔ right column ───────────────────────── */}
+        <div
+          onMouseDown={onColDragStart}
+          style={{
+            width: 4, cursor: 'col-resize', flexShrink: 0,
+            background: 'transparent', zIndex: 10,
+          }}
+          title="Drag to resize"
+        />
+
         {/* ── Right panel ───────────────────────────────────────────────────── */}
         <div
-          className="w-[420px] flex flex-col shrink-0 overflow-hidden"
-          style={{ borderLeft: '1px solid var(--border)', background: 'var(--bg-surface)' }}
+          className="flex flex-col shrink-0 overflow-hidden"
+          style={{ width: rightColWidth, minWidth: 220, maxWidth: 700, borderLeft: '1px solid var(--border)', background: 'var(--bg-surface)' }}
         >
           {/* Tab bar — 4 primary tabs (hidden when node inspector is open) */}
           {!propertiesNodeId && (
@@ -216,11 +274,27 @@ export default function App() {
                   {tab.label}
                 </button>
               ))}
+              {rightTab !== 'dynamic' && (
+                <button
+                  onClick={() => setGraphCollapsed(!graphCollapsed)}
+                  style={{ marginLeft: 'auto', padding: '0 8px', fontSize: 11, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fg-muted)' }}
+                  title={graphCollapsed ? 'Expand graphs' : 'Collapse graphs'}
+                >
+                  {graphCollapsed ? '▲' : '▼'}
+                </button>
+              )}
             </div>
           )}
 
           {/* ── Tab content area ─────────────────────────────────────────────── */}
-          <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          <div
+            className="flex flex-col overflow-hidden"
+            style={
+              (!propertiesNodeId && rightTab !== 'dynamic')
+                ? { height: graphCollapsed ? 0 : graphHeight, flexShrink: 0 }
+                : { flex: 1, minHeight: 0 }
+            }
+          >
 
             {/* Node inspector (takes over the panel) */}
             {propertiesNodeId && (
@@ -309,28 +383,39 @@ export default function App() {
                   style={{ borderBottom: '1px solid var(--border)' }}
                 >
                   <div className="seg-ctrl">
-                    {(['specs', 'scenarios'] as DesignView[]).map((v) => (
+                    {(['specs', 'scenarios', 'sizing', 'optimise'] as DesignView[]).map((v) => (
                       <button
                         key={v}
                         className={designView === v ? 'active' : ''}
                         onClick={() => setDesignView(v)}
                       >
-                        {v === 'specs' ? 'Design Specs' : 'Scenarios'}
+                        {v === 'specs' ? 'Specs' : v === 'scenarios' ? 'Scenarios' : v === 'sizing' ? 'Sizing' : 'Optimise'}
                       </button>
                     ))}
                   </div>
                 </div>
                 <div className="flex-1 min-h-0 overflow-hidden">
-                  {designView === 'specs'      && <DesignSpecsPanel />}
-                  {designView === 'scenarios'  && <ScenariosPanel />}
+                  {designView === 'specs'     && <DesignSpecsPanel />}
+                  {designView === 'scenarios' && <ScenariosPanel />}
+                  {designView === 'sizing'    && <EquipmentPanel />}
+                  {designView === 'optimise'  && <OptimiserPanel />}
                 </div>
               </div>
             )}
           </div>
 
-          {/* ── Stream table — always docked at panel bottom ─────────────────── */}
+          {/* ── Vertical resize handle — graph section ↔ stream table ─────────── */}
+          {!propertiesNodeId && rightTab !== 'dynamic' && !graphCollapsed && (
+            <div
+              onMouseDown={onRowDragStart}
+              style={{ height: 4, cursor: 'row-resize', flexShrink: 0, background: 'transparent', zIndex: 10 }}
+              title="Drag to resize"
+            />
+          )}
+
+          {/* ── Stream table — fills remaining right-column height (F29) ──────── */}
           {!propertiesNodeId && rightTab !== 'dynamic' && (
-            <div className="shrink-0" style={{ borderTop: '1px solid var(--border)' }}>
+            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', borderTop: '1px solid var(--border)' }}>
               <StreamTablePanel />
             </div>
           )}

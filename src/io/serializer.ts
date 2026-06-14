@@ -1,5 +1,6 @@
 import type { Node, Edge } from '@xyflow/react';
 import type { SimulationParams } from '../types/reactor';
+import type { CustomReactionNetwork, LegacyCustomReaction } from '../types/simulation';
 
 export interface SavedState {
   version: 1;
@@ -17,6 +18,39 @@ export function serializeState(
 ): string {
   const state: SavedState = { version: 1, nodes, edges, params, mode };
   return JSON.stringify(state, null, 2);
+}
+
+export function migrateCustomReaction(value: unknown): CustomReactionNetwork | null {
+  if (!value || typeof value !== 'object') return null;
+  const v = value as Record<string, unknown>;
+
+  if (Array.isArray(v.reactions)) {
+    return value as CustomReactionNetwork;
+  }
+
+  if (Array.isArray(v.species)) {
+    const legacy = v as unknown as LegacyCustomReaction;
+    const isRev = !!legacy.reversible;
+    const rateParams = { ...legacy.rateParams };
+    if (legacy.Keq_custom != null && isRev) rateParams['Keq'] = legacy.Keq_custom;
+
+    const firstReactant = legacy.species.find((s) => s.role === 'reactant');
+
+    return {
+      reactions: [{
+        id: 'cr-1',
+        reactants: legacy.species.filter((s) => s.role === 'reactant').map((s) => ({ species: s.label, coeff: s.stoich })),
+        products: legacy.species.filter((s) => s.role === 'product').map((s) => ({ species: s.label, coeff: s.stoich })),
+        reversible: isRev,
+        rateType: legacy.rateType,
+        rateParams,
+      }],
+      speciesMeta: {},
+      keyReactantId: firstReactant?.label ?? 'A',
+    };
+  }
+
+  return null;
 }
 
 export function deserializeState(json: string): SavedState | null {
@@ -54,6 +88,8 @@ export function deserializeState(json: string): SavedState | null {
     // Back-compat: older saves lack customReaction
     if (!('customReaction' in p)) {
       s.params = { ...s.params, customReaction: null };
+    } else {
+      s.params = { ...s.params, customReaction: migrateCustomReaction(p.customReaction) };
     }
     // Back-compat: older saves lack k3
     if (!(typeof p.k3 === 'number')) {

@@ -333,7 +333,8 @@ function buildSegments(
       const rawProfile = unitResult.profile.map(p => ({
         cumTau: p.cumTau,
         Xa: Math.max(0, Math.min(0.9999, 1 - (p.C[chemistry.keyReactantId] ?? 0) / Math.max(params.Ca0, 1e-9))),
-        Ca: p.C['A'] ?? 0, Cr: p.C['R'] ?? 0, Cs: p.C['S'] ?? 0, T: p.T,
+        Ca: p.C['A'] ?? 0, Cr: p.C['R'] ?? 0, Cs: p.C['S'] ?? 0,
+        Ct: p.C['T'] ?? 0, Cu: p.C['U'] ?? 0, T: p.T,
       }));
       profile  = rawProfile.map((p) => ({ ...p, cumTau: cumTauOffset + p.cumTau }));
       cumTauOffset += tauEff;
@@ -371,7 +372,8 @@ function buildSegments(
       const rawProfile = unitResult.profile.map(p => ({
         cumTau: p.cumTau,
         Xa: Math.max(0, Math.min(0.9999, 1 - (p.C[chemistry.keyReactantId] ?? 0) / Math.max(params.Ca0, 1e-9))),
-        Ca: p.C['A'] ?? 0, Cr: p.C['R'] ?? 0, Cs: p.C['S'] ?? 0, T: p.T,
+        Ca: p.C['A'] ?? 0, Cr: p.C['R'] ?? 0, Cs: p.C['S'] ?? 0,
+        Ct: p.C['T'] ?? 0, Cu: p.C['U'] ?? 0, T: p.T,
       }));
       profile  = rawProfile.map((p) => ({ ...p, cumTau: cumTauOffset + p.cumTau }));
       cumTauOffset += tauEff;
@@ -672,8 +674,14 @@ export function solveNetwork(
 
   const Xa_eq = params.kinetics === 'reversible'
     ? computeXeq(params.Keq_ref)
-    : (params.reactionMode === 'custom' && params.customReaction?.reversible && params.customReaction.Keq_custom != null)
-      ? computeXeq(params.customReaction.Keq_custom)
+    : (params.reactionMode === 'custom' && params.customReaction)
+      ? (() => {
+          const net = params.customReaction;
+          for (const rxn of net.reactions) {
+            if (rxn.reversible && rxn.rateParams.Keq != null) return computeXeq(rxn.rateParams.Keq);
+          }
+          return undefined;
+        })()
       : undefined;
 
   // F18: compute safety data for every reactor node

@@ -1,0 +1,141 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://reaction-simulator/schema/flowsheet.schema.json",
+  "title": "Reaction Simulator Flowsheet",
+  "description": "Schema for the reaction-simulator save-file format (version 1+). All numeric quantities in SI units unless noted. Non-goal: Aspen .bkp/.dwxmz round-trip (proprietary format).",
+  "type": "object",
+  "required": ["version", "nodes", "edges", "params", "mode"],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Schema version. Increment when breaking changes are introduced."
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["steady-state", "dynamic"],
+      "description": "Simulation time mode."
+    },
+    "nodes": {
+      "type": "array",
+      "description": "Canvas nodes (@xyflow/react Node objects). Each node has an id, type, position, and type-specific data.",
+      "items": { "$ref": "#/definitions/Node" }
+    },
+    "edges": {
+      "type": "array",
+      "description": "Canvas edges (@xyflow/react Edge objects). Directed: source → target.",
+      "items": { "$ref": "#/definitions/Edge" }
+    },
+    "params": { "$ref": "#/definitions/SimulationParams" }
+  },
+  "definitions": {
+    "Node": {
+      "type": "object",
+      "required": ["id", "type", "position", "data"],
+      "properties": {
+        "id":   { "type": "string" },
+        "type": {
+          "type": "string",
+          "enum": [
+            "feed", "product",
+            "cstr", "pfr", "fixedbed", "batch", "semibatch",
+            "mixer", "splitter", "csplit",
+            "hx", "flash", "purge",
+            "pump", "comp", "valve"
+          ]
+        },
+        "position": {
+          "type": "object",
+          "required": ["x", "y"],
+          "properties": {
+            "x": { "type": "number" },
+            "y": { "type": "number" }
+          }
+        },
+        "data": {
+          "type": "object",
+          "description": "Node-specific parameters. Common fields listed; nodes may carry additional fields.",
+          "properties": {
+            "label":      { "type": "string", "description": "Display label on canvas." },
+            "tau":        { "type": "number", "description": "Residence time [s]. CSTR/PFR/Batch/Semibatch." },
+            "thermalMode":{ "type": "string", "enum": ["isothermal","adiabatic","cooled","cooled-detailed"] },
+            "Tc":         { "type": "number", "description": "Coolant temperature [K]." },
+            "W_cat":      { "type": "number", "description": "Catalyst mass [kg]. FixedBed only." },
+            "rho_bulk":   { "type": "number", "description": "Bulk catalyst density [kg/m³]. FixedBed only." },
+            "alpha":      { "type": "number", "description": "Split fraction [0–1]. Splitter/CSplit." },
+            "ratio":      { "type": "number", "description": "Recycle ratio. Used in downstream nodes." },
+            "P_out":      { "type": "number", "description": "Outlet pressure [Pa]. Pump/Comp." },
+            "T_c":        { "type": "number", "description": "Coolant temperature [K]. HX." },
+            "U_W_m2K":    { "type": "number", "description": "Overall heat transfer coefficient [W/(m²·K)]. HX." }
+          }
+        }
+      }
+    },
+    "Edge": {
+      "type": "object",
+      "required": ["id", "source", "target"],
+      "properties": {
+        "id":           { "type": "string" },
+        "source":       { "type": "string" },
+        "target":       { "type": "string" },
+        "sourceHandle": { "type": "string", "description": "Handle ID on the source node (e.g. 'out-vapor', 'out-liquid')." },
+        "targetHandle": { "type": "string" }
+      }
+    },
+    "SimulationParams": {
+      "type": "object",
+      "description": "Global kinetic and thermodynamic parameters for the legacy single-reactor mode.",
+      "required": ["reactionMode", "kinetics", "k", "Ca0", "Ea"],
+      "properties": {
+        "reactionMode": { "type": "string", "enum": ["single","series","series3","parallel","series-parallel","denbigh","custom"] },
+        "kinetics":     { "type": "string", "enum": ["first-order","second-order","autocatalytic","reversible","gas-phase-1st-order"] },
+        "k":            { "type": "number", "description": "Rate constant at T_ref [s⁻¹ for first-order; L/(mol·s) for second-order]." },
+        "k2":           { "type": "number" },
+        "k3":           { "type": "number" },
+        "k4":           { "type": "number" },
+        "Keq_ref":      { "type": "number", "description": "Equilibrium constant at T_ref (reversible kinetics)." },
+        "Ca0":          { "type": "number", "description": "Feed concentration of A [mol/L]." },
+        "Cr0_fraction": { "type": "number", "description": "Feed R fraction relative to Ca0." },
+        "T_ref":        { "type": "number", "description": "Reference temperature [K]." },
+        "Ea":           { "type": "number", "description": "Activation energy [J/mol]." },
+        "delta_H":      { "type": "number", "description": "Heat of reaction [J/mol]." },
+        "rho_Cp":       { "type": "number", "description": "Volumetric heat capacity [J/(L·K)]." },
+        "T_feed":       { "type": "number", "description": "Feed temperature [K]." },
+        "epsilon":      { "type": "number", "description": "Volumetric expansion factor (gas-phase)." },
+        "Q_feed":       { "type": "number", "description": "Volumetric feed flow rate [L/s]." },
+        "Cb0":          { "type": "number", "description": "Feed concentration of B [mol/L] (second-order)." },
+        "recycleMethod":{ "type": "string", "enum": ["direct","wegstein","newton"] },
+        "customReaction": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "description": "Custom multi-species reaction defined via the Reaction Builder.",
+              "properties": {
+                "label":      { "type": "string" },
+                "rateType":   { "type": "string", "enum": ["power-law","michaelis-menten","langmuir-hinshelwood"] },
+                "rateParams": { "type": "object", "description": "Rate constant parameters keyed by name (A, Ea, n, Km, …)." },
+                "reversible": { "type": "boolean" },
+                "Keq_custom": { "type": "number" },
+                "species": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["id","label"],
+                    "properties": {
+                      "id":          { "type": "string" },
+                      "label":       { "type": "string" },
+                      "mw":          { "type": "number", "description": "Molecular weight [g/mol]." },
+                      "stoich":      { "type": "number" },
+                      "role":        { "type": "string", "enum": ["reactant","product","inert"] }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

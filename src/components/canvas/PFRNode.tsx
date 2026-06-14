@@ -5,7 +5,7 @@ import type { ThermalMode } from '../../types/simulation';
 import { useSimulatorStore } from '../../store/simulatorStore';
 import { useReactorNode } from '../../hooks/useReactorNode';
 import { useNodeIssues } from '../../context/ValidationContext';
-import { formatEquation } from '../../math/formatEquation';
+import { formatEquation, formatNetworkLabel } from '../../math/formatEquation';
 
 type PFRNodeProps = NodeProps & { data: ReactorNodeData & { sideInjection?: boolean; FB0_side?: number } };
 
@@ -123,7 +123,7 @@ function PFRNode({ id, data, selected }: PFRNodeProps) {
         <div style={{ padding: '2px 8px', background: '#fffbeb', borderBottom: '1px solid #fde68a' }}>
           <span style={{ fontSize: 9, fontFamily: 'monospace', color: '#92400e', display: 'block',
                          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 140 }}>
-            {formatEquation(params.customReaction.species).slice(0, 16)}
+            {formatNetworkLabel(params.customReaction.reactions).slice(0, 16)}
           </span>
         </div>
       )}
@@ -163,6 +163,7 @@ function PFRNode({ id, data, selected }: PFRNodeProps) {
           <select
             value={thermalMode}
             onChange={(e) => updateNodeThermal(id, { thermalMode: e.target.value as ThermalMode })}
+            onMouseDown={(e) => e.stopPropagation()}
             style={{ width: '100%', fontSize: 11, padding: '2px 4px',
                      border: `1px solid ${ACCENT}33`, borderRadius: 5,
                      background: '#ffffff', color: '#374151', outline: 'none', cursor: 'pointer' }}>

@@ -15,7 +15,7 @@ const PILL_BG = '#fed7aa';
 function FixedBedNode({ id, data, selected }: FixedBedNodeProps) {
   const { updateNodeData } = useReactFlow();
   const d = useReactorNode(id, data);
-  const { segment, conversionColor } = d;
+  const { segment, conversionColor, params } = d;
 
   const [isEditing, setIsEditing] = useState(false);
   const [labelStr, setLabelStr] = useState(data.label);
@@ -27,6 +27,9 @@ function FixedBedNode({ id, data, selected }: FixedBedNodeProps) {
   const rho_bulk    = (data as { rho_bulk?: number }).rho_bulk    ?? 1200;
   const epsilon_bed = (data as { epsilon_bed?: number }).epsilon_bed ?? 0.4;
   const V_bed       = W_cat / (rho_bulk * (1 - epsilon_bed));
+
+  const FA0 = params.Ca0 * params.Q_feed; // mol/s
+  const wOverFA0 = FA0 > 0 ? (W_cat / FA0).toFixed(1) : '—';
 
   const { isOffPath } = useNodeIssues(id);
 
@@ -98,6 +101,10 @@ function FixedBedNode({ id, data, selected }: FixedBedNodeProps) {
             {data.label}
           </span>
         )}
+
+        <span style={{ fontSize: 10, fontFamily: 'monospace', color: '#94a3b8', flexShrink: 0 }}>
+          {`W/F:${wOverFA0}`}
+        </span>
       </div>
 
       {/* W_cat input */}

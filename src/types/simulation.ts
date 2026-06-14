@@ -21,6 +21,38 @@ export interface CustomReaction {
   label?: string;
 }
 
+export interface CustomNetworkReaction {
+  id: string;
+  reactants: { species: string; coeff: number }[];
+  products: { species: string; coeff: number }[];
+  reversible: boolean;
+  rateType: RateType;
+  rateParams: Record<string, number>;
+  deltaH?: number;
+}
+
+export interface CustomSpeciesMeta {
+  boundLibraryId?: string;
+  phase?: 'g' | 'l' | 's';
+  feedConc?: number;
+}
+
+export interface CustomReactionNetwork {
+  reactions: CustomNetworkReaction[];
+  speciesMeta: Record<string, CustomSpeciesMeta>;
+  keyReactantId?: string;
+}
+
+/** @deprecated — used only by the serializer migration. Replaced by CustomReactionNetwork. */
+export interface LegacyCustomReaction {
+  species: { id: string; label: string; role: 'reactant' | 'product'; stoich: number }[];
+  rateType: RateType;
+  rateParams: Record<string, number>;
+  reversible?: boolean;
+  Keq_custom?: number;
+  label?: string;
+}
+
 export type DesignMetric = 'Xa' | 'Ca_out' | 'T_out' | 'yield_R' | 'selectivity_R';
 
 export interface DesignSpec {

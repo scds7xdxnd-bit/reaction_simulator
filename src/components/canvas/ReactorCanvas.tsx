@@ -21,6 +21,9 @@ import {
   type ReactFlowInstance,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import { assignTags } from '../../math/tagging';
+import { pfdNodeTypes } from '../pid/PFDNodes';
+import PFDEdge from '../pid/PFDEdge';
 
 import CSTRNode from './CSTRNode';
 import PFRNode from './PFRNode';
@@ -45,6 +48,8 @@ import { ValidationProvider } from '../../context/ValidationContext';
 import { useSimulatorStore } from '../../store/simulatorStore';
 import { useSimulation } from '../../hooks/useSimulation';
 import { useClipboardActions } from '../../hooks/useClipboardActions';
+
+const pfdEdgeTypes = { smoothstep: PFDEdge } as const;
 
 type GhostNodeType = 'CSTR' | 'PFR' | 'Batch' | 'Mixer' | 'Splitter' | 'HX' | 'Product';
 const GHOST_TYPES: GhostNodeType[] = ['CSTR', 'PFR', 'Batch', 'Mixer', 'Splitter', 'HX', 'Product'];
@@ -112,11 +117,36 @@ export default function ReactorCanvas() {
   const viewportRef  = useRef<Viewport>({ x: 0, y: 0, zoom: 1 });
   const [addMenu, setAddMenu] = useState<{ screenX: number; screenY: number; flowPos: { x: number; y: number } } | null>(null);
 
+  // ── F21: PFD view mode (lifted to store so CanvasToolbar can toggle it) ─────
+  const viewMode    = useSimulatorStore((s) => s.viewMode);
+  const setViewMode = useSimulatorStore((s) => s.setViewMode);
+
+  const tags = useMemo(() => {
+    if (viewMode !== 'pfd') return {} as Record<string, string>;
+    return assignTags(
+      nodes.map(n => ({ id: n.id, type: n.type ?? '' })),
+      edges.map(e => ({ source: e.source, target: e.target })),
+    );
+  }, [viewMode, nodes, edges]);
+
+  // Inject _pfdTag into node data when in PFD mode (never written back to store)
+  const displayNodes = useMemo(() => {
+    if (viewMode !== 'pfd') return nodes;
+    return nodes.map(n => ({
+      ...n,
+      data: { ...n.data, _pfdTag: tags[n.id] ?? undefined },
+    }));
+  }, [viewMode, nodes, tags]);
+
   // Chain-connect state
   const [isChaining, setIsChaining] = useState(false);
   const chainRef    = useRef<{ sourceId: string; ghostType: GhostNodeType } | null>(null);
   const [ghostPos,  setGhostPos]  = useState({ x: 0, y: 0 });
   const [ghostType, setGhostType] = useState<GhostNodeType>('CSTR');
+
+  const [tbPos, setTbPos] = useState<{ x: number; y: number } | null>(null);
+  const tbRef    = useRef<HTMLDivElement>(null);
+  const tbDragRef = useRef<{ startX: number; startY: number; origX: number; origY: number } | null>(null);
   const chainTypeIdx = useRef(0);
 
   const clipboard = useSimulatorStore((s) => s.clipboard);
@@ -392,6 +422,10 @@ export default function ReactorCanvas() {
   // Keeping style out of the base `edges` state breaks the feedback loop:
   //   result → setEdges → storeSetEdges → simulation → result → ...
   const recycleIdsKey = result?.recycleEdgeIds.join(',') ?? '';
+  // Stream labels key — stable string to avoid recompute on every result object
+  const streamLabelsKey = result
+    ? Object.entries(result.streams ?? {}).map(([k, v]) => `${k}:${(v as { streamLabel?: string }).streamLabel ?? ''}`).join('|')
+    : '';
   const displayEdges = useMemo(() => {
     const recycleIds = new Set(result?.recycleEdgeIds ?? []);
 
@@ -408,6 +442,24 @@ export default function ReactorCanvas() {
       const isRecycle = recycleIds.has(e.id);
       const n = outCount.get(e.source) ?? 1;
       const showFrac = !isRecycle && n > 1;
+
+      // ── PFD mode: solid dark lines + stream label diamonds ────────────────
+      if (viewMode === 'pfd') {
+        const streamLabel = (result?.streams as Record<string, { streamLabel?: string }>)?.[e.id]?.streamLabel;
+        return {
+          ...e,
+          style: { stroke: '#374151', strokeWidth: 2 },
+          animated: false,
+          markerEnd: { type: MarkerType.ArrowClosed, color: '#374151' },
+          label: streamLabel ?? undefined,
+          labelStyle: undefined,
+          labelBgStyle: undefined,
+          labelBgPadding: undefined,
+          labelBgBorderRadius: undefined,
+          labelShowBg: undefined,
+        };
+      }
+
       return {
         ...e,
         style: { stroke: isRecycle ? '#7c3aed' : '#94a3b8', strokeWidth: 2 },
@@ -425,15 +477,15 @@ export default function ReactorCanvas() {
         labelShowBg: showFrac || isRecycle,
       };
     });
-  // recycleIdsKey is a stable string; avoids recompute on every new result object
+  // recycleIdsKey and streamLabelsKey are stable strings; avoids recompute on every result object
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [edges, recycleIdsKey, nodes]);
+  }, [edges, recycleIdsKey, streamLabelsKey, nodes, viewMode]);
 
   return (
     <ValidationProvider nodes={nodes} edges={edges}>
-    <div ref={containerRef} className="w-full h-full" style={{ background: 'var(--canvas-bg)' }}>
+    <div ref={containerRef} className="w-full h-full" style={{ background: 'var(--canvas-bg)', position: 'relative' }}>
       <ReactFlow
-        nodes={nodes}
+        nodes={displayNodes}
         edges={displayEdges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
@@ -455,7 +507,8 @@ export default function ReactorCanvas() {
         panOnDrag={[1, 2]}
         panOnScroll
         panOnScrollMode={PanOnScrollMode.Free}
-        nodeTypes={nodeTypes}
+        nodeTypes={viewMode === 'pfd' ? pfdNodeTypes : nodeTypes}
+        edgeTypes={viewMode === 'pfd' ? pfdEdgeTypes : undefined}
         defaultEdgeOptions={defaultEdgeOptions}
         deleteKeyCode={['Delete', 'Backspace']}
         fitView
@@ -500,6 +553,81 @@ export default function ReactorCanvas() {
       </ReactFlow>
       <ContextMenu />
       <CanvasContextMenu />
+
+      {/* ── F21: ISO 7200 title block overlay — draggable ───────────────── */}
+      {viewMode === 'pfd' && (
+        <div
+          ref={tbRef}
+          style={{
+            position: 'absolute',
+            ...(tbPos
+              ? { left: tbPos.x, top: tbPos.y }
+              : { bottom: 16, right: 16 }),
+            zIndex: 20,
+            background: 'var(--bg-surface)',
+            border: '1px solid var(--border-mid)',
+            fontFamily: 'monospace', fontSize: 11, lineHeight: 1.7,
+            minWidth: 200,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            userSelect: 'none',
+          }}
+        >
+          <div
+            style={{
+              borderBottom: '1px solid var(--border-mid)',
+              padding: '3px 8px', fontWeight: 700, fontSize: 12,
+              cursor: 'grab', color: 'var(--text-primary)',
+              display: 'flex', alignItems: 'center', gap: 6,
+            }}
+            onMouseDown={(e) => {
+              e.stopPropagation();
+              const el = tbRef.current;
+              const container = containerRef.current;
+              if (!el || !container) return;
+              const elRect = el.getBoundingClientRect();
+              const cRect  = container.getBoundingClientRect();
+              const origX  = elRect.left - cRect.left;
+              const origY  = elRect.top  - cRect.top;
+              if (!tbPos) setTbPos({ x: origX, y: origY });
+              tbDragRef.current = { startX: e.clientX, startY: e.clientY, origX, origY };
+              const onMove = (ev: MouseEvent) => {
+                if (!tbDragRef.current || !container) return;
+                const cR = container.getBoundingClientRect();
+                const dx = ev.clientX - tbDragRef.current.startX;
+                const dy = ev.clientY - tbDragRef.current.startY;
+                const nx = Math.max(0, Math.min(cR.width  - el.offsetWidth,  tbDragRef.current.origX + dx));
+                const ny = Math.max(0, Math.min(cR.height - el.offsetHeight, tbDragRef.current.origY + dy));
+                setTbPos({ x: nx, y: ny });
+              };
+              const onUp = () => {
+                tbDragRef.current = null;
+                window.removeEventListener('mousemove', onMove);
+                window.removeEventListener('mouseup', onUp);
+              };
+              window.addEventListener('mousemove', onMove);
+              window.addEventListener('mouseup', onUp);
+            }}
+          >
+            <span style={{ fontSize: 9, opacity: 0.5 }}>⠿</span>
+            Process Flow Diagram
+          </div>
+          <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+            <tbody>
+              {[
+                ['Project', 'Reaction Simulator'],
+                ['Drawing', 'PFD-001'],
+                ['Date', new Date().toISOString().slice(0, 10)],
+                ['Rev', 'A'],
+              ].map(([k, v]) => (
+                <tr key={k}>
+                  <td style={{ padding: '1px 8px', borderRight: '1px solid var(--border)', color: 'var(--text-muted)', width: 60 }}>{k}</td>
+                  <td style={{ padding: '1px 8px', color: 'var(--text-primary)' }}>{v}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
       {isChaining && (
         <div
           className="chain-ghost"

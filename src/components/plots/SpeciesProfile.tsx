@@ -20,13 +20,19 @@ export default function SpeciesProfile() {
   const cfg = useSimulatorStore((s) => s.plotConfig['species']);
 
   const profileData = useMemo(() => {
-    if (!result) return { allPoints: [], boundaries: [] };
-    const allPoints: { cumTau: number; Ca: number; Cr: number; Cs: number }[] = [];
+    if (!result) return { allPoints: [], boundaries: [], hasT: false, hasU: false };
+    const allPoints: { cumTau: number; Ca: number; Cr: number; Cs: number; Ct: number; Cu: number }[] = [];
     const boundaries: { cumTau: number; label: string }[] = [];
+    let hasT = false;
+    let hasU = false;
 
     for (const seg of result.segments) {
       for (const p of seg.profile) {
-        allPoints.push({ cumTau: p.cumTau, Ca: p.Ca, Cr: p.Cr, Cs: p.Cs });
+        const Ct = p.Ct ?? 0;
+        const Cu = p.Cu ?? 0;
+        if (Ct > 1e-10) hasT = true;
+        if (Cu > 1e-10) hasU = true;
+        allPoints.push({ cumTau: p.cumTau, Ca: p.Ca, Cr: p.Cr, Cs: p.Cs, Ct, Cu });
       }
       if (seg.profile.length > 0) {
         const last = seg.profile[seg.profile.length - 1];
@@ -35,7 +41,7 @@ export default function SpeciesProfile() {
     }
 
     allPoints.sort((a, b) => a.cumTau - b.cumTau);
-    return { allPoints, boundaries };
+    return { allPoints, boundaries, hasT, hasU };
   }, [result]);
 
   if (!result) {
@@ -53,6 +59,8 @@ export default function SpeciesProfile() {
       </div>
     );
   }
+
+  const { hasT, hasU } = profileData;
 
   const maxTau = profileData.allPoints.length > 0
     ? profileData.allPoints[profileData.allPoints.length - 1].cumTau
@@ -143,6 +151,28 @@ export default function SpeciesProfile() {
               isAnimationActive={false}
               name="S (Byproduct)"
             />
+            {hasT && (
+              <Line
+                dataKey="Ct"
+                stroke="#d97706"
+                strokeWidth={2}
+                strokeDasharray="6 3"
+                dot={false}
+                isAnimationActive={false}
+                name="T (Byproduct)"
+              />
+            )}
+            {hasU && (
+              <Line
+                dataKey="Cu"
+                stroke="#7c3aed"
+                strokeWidth={2}
+                strokeDasharray="3 3"
+                dot={false}
+                isAnimationActive={false}
+                name="U (Byproduct)"
+              />
+            )}
 
             <XAxis
               dataKey="cumTau"

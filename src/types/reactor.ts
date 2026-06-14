@@ -1,4 +1,4 @@
-import type { KineticsType, ReactorType, ReactionMode, ThermalMode, CustomReaction } from './simulation';
+import type { KineticsType, ReactorType, ReactionMode, ThermalMode, CustomReactionNetwork } from './simulation';
 import type { AnnotatedStream } from './stream';
 import type { ChemistryModel } from './chemistry';
 import type { OperatingDiagramData } from '../math/operatingDiagramModel';
@@ -50,7 +50,7 @@ export interface SimulationParams {
   epsilon: number;
   Q_feed: number;
   recycleMethod: 'direct' | 'wegstein' | 'newton';
-  customReaction: CustomReaction | null;
+  customReaction: CustomReactionNetwork | null;
 }
 
 export interface ReactorSegmentResult {
@@ -68,7 +68,7 @@ export interface ReactorSegmentResult {
   Cs_out: number;
   yield_R: number;
   selectivity_R: number;
-  profile: { cumTau: number; Xa: number; Ca: number; Cr: number; Cs: number; T: number }[];
+  profile: { cumTau: number; Xa: number; Ca: number; Cr: number; Cs: number; Ct?: number; Cu?: number; T: number }[];
   P_out?: number;
   V?: number;
 }
